@@ -1,0 +1,16 @@
+[build]
+ignore_patterns = []
+asset_dir = "assets/"
+export_dir = ".built_assets/"
+converters = [ "native2bam",]
+
+[general]
+name = "Game"
+renderer = "none"
+physics_engine = "builtin"
+material_mode = "legacy"
+
+[run]
+main_file = "main.py"
+auto_build = true
+auto_save = true
