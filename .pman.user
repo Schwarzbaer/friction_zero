@@ -1,3 +1,7 @@
+[blender]
+last_path = "blender"
+use_last_path = true
+
 [python]
-path = "/home/baribal/.virtualenvs/py3/bin/python3"
-in_venv = true
+path = "/usr/bin/python3"
+in_venv = false
