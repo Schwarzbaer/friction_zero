@@ -8,7 +8,13 @@ import pman.shim
 from panda3d.core import NodePath
 from panda3d.core import Vec3
 from panda3d.core import VBase4
+from panda3d.core import Plane
 from panda3d.core import DirectionalLight
+from panda3d.core import CollisionTraverser
+from panda3d.core import CollisionHandlerQueue
+from panda3d.core import CollisionNode
+from panda3d.core import CollisionRay
+from panda3d.core import CollisionPlane
 from panda3d.bullet import BulletWorld
 from panda3d.bullet import BulletRigidBodyNode
 from panda3d.bullet import BulletBoxShape
@@ -30,15 +36,24 @@ class GameApp(ShowBase):
 
         self.physics_world = BulletWorld()
         self.physics_world.setGravity(Vec3(0, 0, -9.81))
-        base.taskMgr.add(self.update_physics, 'physics', sort=0)
+        #self.bullet_debug()
+
+        self.repulsor_traverser = CollisionTraverser('repulsor')
+        #self.repulsor_traverser.show_collisions(base.render)
 
         environment = Environment(self)
         vehicle = Vehicle(self, "assets/diamond")
         vehicle.place(Vec3(0, 0, 3))
         camera = CameraController(self, base.cam, vehicle)
-        base.task_mgr.add(camera.update, "camera", sort=1)
 
-        self.bullet_debug()
+        base.task_mgr.add(self.run_repulsors, 'run repulsors', sort=0)
+        base.task_mgr.add(vehicle.apply_repulsors, 'apply repulsors', sort=1)
+        base.task_mgr.add(self.update_physics, 'physics', sort=2)
+        base.task_mgr.add(camera.update, "camera", sort=3)
+
+    def run_repulsors(self, task):
+        self.repulsor_traverser.traverse(base.render)
+        return task.cont
 
     def update_physics(self, task):
         dt = globalClock.getDt()
@@ -61,7 +76,7 @@ class Environment:
     def __init__(self, app):
         self.app = app
 
-        shape = BulletPlaneShape(Vec3(0, 0, 1), 1)
+        shape = BulletPlaneShape(Vec3(0, 0, 1), 0)
         node = BulletRigidBodyNode('Ground')
         node.addShape(shape)
         np = self.app.render.attach_new_node(node)
@@ -73,6 +88,13 @@ class Environment:
         model.set_pos(-50, -50, -1)
         model.set_sx(100)
         model.set_sy(100)
+
+        coll_solid = CollisionPlane(Plane((0, 0, 1), (0, 0, 0)))
+        coll_node = CollisionNode('ground')
+        coll_node.set_from_collide_mask(0)
+        coll_node.add_solid(coll_solid)
+        coll_np = np.attach_new_node(coll_node)
+        #coll_np.show()
 
         dlight = DirectionalLight('dlight')
         dlight.setColor(VBase4(0.8, 0.8, 0.5, 1))
@@ -98,6 +120,33 @@ class Vehicle:
         self.vehicle = NodePath(self.physics_node)
 
         model.reparent_to(self.vehicle)
+
+        self.repulsor_queue = CollisionHandlerQueue()
+        self.add_repulsor(Vec3( 0.4,  0.4, -0.5), Vec3(0, 0, -1))
+        self.add_repulsor(Vec3(-0.4,  0.4, -0.5), Vec3(0, 0, -1))
+        self.add_repulsor(Vec3( 0.4, -0.4, -0.5), Vec3(0, 0, -1))
+        self.add_repulsor(Vec3(-0.4, -0.4, -0.5), Vec3(0, 0, -1))
+
+    def add_repulsor(self, coord, vec):
+        repulsor_solid = CollisionRay(Vec3(0, 0, 0), vec)
+        repulsor_node = CollisionNode('repulsor')
+        repulsor_node.add_solid(repulsor_solid)
+        repulsor_node.set_into_collide_mask(0)
+        repulsor_np = self.vehicle.attach_new_node(repulsor_node)
+        repulsor_np.set_pos(coord)
+        repulsor_np.show()
+        self.app.repulsor_traverser.addCollider(
+            repulsor_np, self.repulsor_queue,
+        )
+
+    def apply_repulsors(self, task):
+        for entry in self.repulsor_queue.entries:
+            #from_pos = entry.from_node_path.get_pos(self.vehicle)
+            into_pos = entry.into_node_path.get_pos(entry.from_node_path)
+            #impulse = into_pos - from_pos
+            print(into_pos, self.vehicle.get_pos(base.render))
+            # TODO: Apply pressure to physics node
+        return task.cont
 
     def place(self, coordinate):
         self.vehicle.reparent_to(self.app.render)
