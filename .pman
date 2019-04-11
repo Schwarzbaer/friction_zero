@@ -1,8 +1,8 @@
 [build]
-ignore_patterns = []
+ignore_patterns = ["*.blend1", "*.blend2"]
 asset_dir = "assets/"
 export_dir = ".built_assets/"
-converters = [ "native2bam",]
+converters = [ "native2bam","blend2bam"]
 
 [general]
 name = "Game"
