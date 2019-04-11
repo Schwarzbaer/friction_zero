@@ -32,9 +32,12 @@ class GameApp(ShowBase):
         self.physics_world.setGravity(Vec3(0, 0, -9.81))
         base.taskMgr.add(self.update_physics, 'physics', sort=0)
 
-        environment = Environment(self)
-        vehicle = Vehicle(self, "assets/diamond")
-        vehicle.place(Vec3(0, 0, 3))
+        vehicle = Vehicle(self, "diamond.bam")
+        terrain = Terrain(self, "hills.bam")
+
+        vehicle.place(Vec3(0, 0, 10))
+        terrain.place(Vec3(0,0,0))
+
         camera = CameraController(self, base.cam, vehicle)
         base.task_mgr.add(camera.update, "camera", sort=1)
 
@@ -57,28 +60,40 @@ class GameApp(ShowBase):
         self.physics_world.setDebugNode(debugNP.node())
 
 
-class Environment:
-    def __init__(self, app):
+def triangleShape(model, dynamic=False):
+    mesh = BulletTriangleMesh()
+    geomNodeCollection = model.findAllMatches('**/+GeomNode')
+    for nodePath in geomNodeCollection:
+        geomNode = nodePath.node()
+        for i in range(geomNode.getNumGeoms()):
+            geom = geomNode.getGeom(i)
+            state = geomNode.getGeomState(i)
+            mesh.addGeom(geom)
+
+    shape = BulletTriangleMeshShape(mesh, dynamic=dynamic)
+    return shape
+
+class Terrain:
+    def __init__(self, app, model_file):
         self.app = app
 
-        shape = BulletPlaneShape(Vec3(0, 0, 1), 1)
-        node = BulletRigidBodyNode('Ground')
-        node.addShape(shape)
-        np = self.app.render.attach_new_node(node)
-        np.setPos(0, 0, 0)
-        self.app.physics_world.attachRigidBody(node)
+        model = app.loader.load_model(model_file)
 
-        model = loader.load_model("models/box")
-        model.reparent_to(np)
-        model.set_pos(-50, -50, -1)
-        model.set_sx(100)
-        model.set_sy(100)
+        self.physics_node = BulletRigidBodyNode('terrain')
 
-        dlight = DirectionalLight('dlight')
-        dlight.setColor(VBase4(0.8, 0.8, 0.5, 1))
-        dlnp = self.app.render.attachNewNode(dlight)
-        dlnp.setHpr(20, -75, 0)
-        self.app.render.setLight(dlnp)
+        shape = triangleShape(model, False)
+
+        self.physics_node.addShape(shape)
+        self.terrain = NodePath(self.physics_node)
+        model.reparent_to(self.terrain)
+
+    def place(self, coordinate):
+        self.terrain.reparent_to(self.app.render)
+        self.terrain.set_pos(coordinate)
+        self.app.physics_world.attachRigidBody(self.physics_node)
+
+    def np(self):
+        return self.terrain
 
 
 class Vehicle:
@@ -88,15 +103,15 @@ class Vehicle:
         model = app.loader.load_model(model_file)
 
         self.physics_node = BulletRigidBodyNode('vehicle')
-        self.physics_node.setMass(1.0)
-        # mesh = BulletTriangleMesh()
-        # for geom in model.node().get_child(0).get_geoms():
-        #     mesh.addGeom(geom)
-        # shape = BulletTriangleMeshShape(mesh, dynamic=False)
-        shape = BulletBoxShape(Vec3(0.5, 0.5, 0.5))
+        self.physics_node.setMass(5.0)
+
+        #shape = BulletBoxShape(Vec3(2, 3, 1))
+        collision_solid = model.find("collision_solid")
+        collision_solid.hide()
+        shape = triangleShape(collision_solid, dynamic=True)
+
         self.physics_node.addShape(shape)
         self.vehicle = NodePath(self.physics_node)
-
         model.reparent_to(self.vehicle)
 
     def place(self, coordinate):
@@ -117,8 +132,8 @@ class CameraController:
 
     def update(self, task):
         horiz_dist = 7
-        cam_offset = Vec3(0, 0, 2)
-        focus_offset = Vec3(0, 0, 1)
+        cam_offset = Vec3(0, -10, 10)
+        focus_offset = Vec3(0, -2, 2)
         vehicle_pos = self.vehicle.np().get_pos(self.app.render)
         vehicle_back = self.app.render.get_relative_vector(
             self.vehicle.np(),
@@ -133,7 +148,6 @@ class CameraController:
         base.cam.look_at(focus)
 
         return task.cont
-
 
 def main():
     app = GameApp()
