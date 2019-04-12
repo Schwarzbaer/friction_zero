@@ -42,19 +42,10 @@ class GameApp(ShowBase):
         self.repulsor_traverser = CollisionTraverser('repulsor')
         #self.repulsor_traverser.show_collisions(base.render)
 
-<<<<<<< HEAD
-        self.terrain = Terrain(self, "maps/hills.bam")
-        self.terrain.place(Vec3(0,0,0))
+        self.environment = Environment(self, "maps/hills.bam")
 
         vehicle = Vehicle(self, "cars/Ricardeaut_Magnesium.bam")
-        vehicle.place(Vec3(0, 0, 10))
-
-
-=======
-        environment = Environment(self)
-        vehicle = Vehicle(self, "assets/diamond")
         vehicle.place(Vec3(0, 0, 2))
->>>>>>> 3cd50278a9382b4e0b5882d6521f4796a1ee1396
         camera = CameraController(self, base.cam, vehicle)
 
         base.task_mgr.add(self.run_repulsors, 'run repulsors', sort=0)
@@ -79,9 +70,7 @@ class GameApp(ShowBase):
         debugNode.showNormals(False)
         debugNP = self.render.attachNewNode(debugNode)
         debugNP.show()
-
         self.physics_world.setDebugNode(debugNP.node())
-
 
 def triangleShape(model, dynamic=False):
     mesh = BulletTriangleMesh()
@@ -92,55 +81,23 @@ def triangleShape(model, dynamic=False):
             geom = geomNode.getGeom(i)
             state = geomNode.getGeomState(i)
             mesh.addGeom(geom)
-
     shape = BulletTriangleMeshShape(mesh, dynamic=dynamic)
     return shape
 
-class Terrain:
+class Environment:
     def __init__(self, app, model_file):
         self.app = app
-
-<<<<<<< HEAD
         self.model = app.loader.load_model(model_file)
-
-        self.physics_node = BulletRigidBodyNode('terrain')
+        self.physics_node = BulletRigidBodyNode('environment')
 
         shape = triangleShape(self.model, False)
-=======
-        shape = BulletPlaneShape(Vec3(0, 0, 1), 0)
         node = BulletRigidBodyNode('Ground')
         node.addShape(shape)
-        np = self.app.render.attach_new_node(node)
-        np.setPos(0, 0, 0)
         self.app.physics_world.attachRigidBody(node)
->>>>>>> 3cd50278a9382b4e0b5882d6521f4796a1ee1396
-
-        self.physics_node.addShape(shape)
-        self.terrain = NodePath(self.physics_node)
-        self.model.reparent_to(self.terrain)
-
-<<<<<<< HEAD
-    def place(self, coordinate):
-        self.terrain.reparent_to(self.app.render)
-        self.terrain.set_pos(coordinate)
+        self.environment = NodePath(self.physics_node)
+        self.model.reparent_to(self.environment)
+        self.environment.reparent_to(self.app.render)
         self.app.physics_world.attachRigidBody(self.physics_node)
-=======
-        coll_solid = CollisionPlane(Plane((0, 0, 1), (0, 0, 0)))
-        coll_node = CollisionNode('ground')
-        coll_node.set_from_collide_mask(0)
-        coll_node.add_solid(coll_solid)
-        coll_np = np.attach_new_node(coll_node)
-        #coll_np.show()
-
-        dlight = DirectionalLight('dlight')
-        dlight.setColor(VBase4(1, 1, 1, 1))
-        dlnp = self.app.render.attachNewNode(dlight)
-        dlnp.setHpr(20, -75, 0)
-        self.app.render.setLight(dlnp)
->>>>>>> 3cd50278a9382b4e0b5882d6521f4796a1ee1396
-
-    def np(self):
-        return self.terrain
 
 class Vehicle:
     def __init__(self, app, model_file):
@@ -149,7 +106,6 @@ class Vehicle:
         model = app.loader.load_model(model_file)
 
         self.physics_node = BulletRigidBodyNode('vehicle')
-<<<<<<< HEAD
         self.physics_node.setMass(5.0)
 
         #shape = BulletBoxShape(Vec3(2, 3, 1))
@@ -160,7 +116,6 @@ class Vehicle:
             pass
         shape = triangleShape(collision_solid, dynamic=True)
 
-=======
         self.physics_node.setLinearSleepThreshold(0)
         self.physics_node.setAngularSleepThreshold(0)
         self.physics_node.setMass(100.0)
@@ -168,8 +123,7 @@ class Vehicle:
         # for geom in model.node().get_child(0).get_geoms():
         #     mesh.addGeom(geom)
         # shape = BulletTriangleMeshShape(mesh, dynamic=False)
-        shape = BulletBoxShape(Vec3(0.5, 0.5, 0.5))
->>>>>>> 3cd50278a9382b4e0b5882d6521f4796a1ee1396
+        #shape = BulletBoxShape(Vec3(0.5, 0.5, 0.5))
         self.physics_node.addShape(shape)
         self.vehicle = NodePath(self.physics_node)
         model.reparent_to(self.vehicle)
@@ -221,7 +175,7 @@ class Vehicle:
         return task.cont
 
     def place(self, coordinate):
-        self.vehicle.reparent_to(self.app.terrain.model)
+        self.vehicle.reparent_to(self.app.environment.model)
         self.vehicle.set_pos(coordinate)
         self.app.physics_world.attachRigidBody(self.physics_node)
 
