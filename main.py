@@ -98,7 +98,7 @@ class Environment:
         #coll_np.show()
 
         dlight = DirectionalLight('dlight')
-        dlight.setColor(VBase4(0.8, 0.8, 0.5, 1))
+        dlight.setColor(VBase4(1, 1, 1, 1))
         dlnp = self.app.render.attachNewNode(dlight)
         dlnp.setHpr(20, -75, 0)
         self.app.render.setLight(dlnp)
