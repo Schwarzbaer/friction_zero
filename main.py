@@ -1,5 +1,6 @@
 import os
 import sys
+from math import cos, pi
 
 from direct.showbase.ShowBase import ShowBase
 import panda3d
@@ -36,14 +37,14 @@ class GameApp(ShowBase):
 
         self.physics_world = BulletWorld()
         self.physics_world.setGravity(Vec3(0, 0, -9.81))
-        #self.bullet_debug()
+        self.bullet_debug()
 
         self.repulsor_traverser = CollisionTraverser('repulsor')
         #self.repulsor_traverser.show_collisions(base.render)
 
         environment = Environment(self)
         vehicle = Vehicle(self, "assets/diamond")
-        vehicle.place(Vec3(0, 0, 3))
+        vehicle.place(Vec3(0, 0, 2))
         camera = CameraController(self, base.cam, vehicle)
 
         base.task_mgr.add(self.run_repulsors, 'run repulsors', sort=0)
@@ -110,7 +111,9 @@ class Vehicle:
         model = app.loader.load_model(model_file)
 
         self.physics_node = BulletRigidBodyNode('vehicle')
-        self.physics_node.setMass(1.0)
+        self.physics_node.setLinearSleepThreshold(0)
+        self.physics_node.setAngularSleepThreshold(0)
+        self.physics_node.setMass(100.0)
         # mesh = BulletTriangleMesh()
         # for geom in model.node().get_child(0).get_geoms():
         #     mesh.addGeom(geom)
@@ -122,10 +125,14 @@ class Vehicle:
         model.reparent_to(self.vehicle)
 
         self.repulsor_queue = CollisionHandlerQueue()
-        self.add_repulsor(Vec3( 0.4,  0.4, -0.5), Vec3(0, 0, -1))
-        self.add_repulsor(Vec3(-0.4,  0.4, -0.5), Vec3(0, 0, -1))
-        self.add_repulsor(Vec3( 0.4, -0.4, -0.5), Vec3(0, 0, -1))
-        self.add_repulsor(Vec3(-0.4, -0.4, -0.5), Vec3(0, 0, -1))
+        self.add_repulsor(Vec3( 0.45,  0.45, -0.3), Vec3( 0.5,  0.5, -1))
+        self.add_repulsor(Vec3(-0.45,  0.45, -0.3), Vec3(-0.5,  0.5, -1))
+        self.add_repulsor(Vec3( 0.45, -0.45, -0.3), Vec3( 0.5, -0.5, -1))
+        self.add_repulsor(Vec3(-0.45, -0.45, -0.3), Vec3(-0.5, -0.5, -1))
+        # self.add_repulsor(Vec3( 0.4,  0.4, -0.4), Vec3(0, 0, -1))
+        # self.add_repulsor(Vec3(-0.4,  0.4, -0.4), Vec3(0, 0, -1))
+        # self.add_repulsor(Vec3( 0.4, -0.4, -0.4), Vec3(0, 0, -1))
+        # self.add_repulsor(Vec3(-0.4, -0.4, -0.4), Vec3(0, 0, -1))
 
     def add_repulsor(self, coord, vec):
         repulsor_solid = CollisionRay(Vec3(0, 0, 0), vec)
@@ -140,12 +147,27 @@ class Vehicle:
         )
 
     def apply_repulsors(self, task):
+        dt = globalClock.dt
         for entry in self.repulsor_queue.entries:
-            #from_pos = entry.from_node_path.get_pos(self.vehicle)
-            into_pos = entry.into_node_path.get_pos(entry.from_node_path)
-            #impulse = into_pos - from_pos
-            print(into_pos, self.vehicle.get_pos(base.render))
-            # TODO: Apply pressure to physics node
+            # Distance below which the repulsor strength is > 0
+            activation_distance = 3
+            repulsor_feeler = entry.get_surface_point(entry.from_node_path)
+            if repulsor_feeler.length() < activation_distance:
+                # Direction of the impulse
+                impulse_vec = -repulsor_feeler / repulsor_feeler.length()
+                # Repulsor power at zero distance
+                base_strength = 400
+                # Fraction of the repulsor beam above the ground
+                activation_frac = repulsor_feeler.length() / activation_distance
+                # Effective fraction of repulsors force
+                activation = cos(0.5*pi * activation_frac)
+                # Effective repulsor force
+                strength = activation * base_strength
+                # Resulting impulse
+                impulse = impulse_vec * strength
+                # Apply
+                repulsor_pos = entry.from_node_path.get_pos(self.vehicle)
+                self.physics_node.apply_impulse(impulse * dt, repulsor_pos)
         return task.cont
 
     def place(self, coordinate):
