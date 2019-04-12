@@ -1,7 +1,0 @@
-[python]
-path = "/usr/bin/python3"
-in_venv = false
-
-[blender]
-last_path = "blender"
-use_last_path = true
