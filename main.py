@@ -117,6 +117,8 @@ class Vehicle:
         model = app.loader.load_model(model_file)
 
         self.physics_node = BulletRigidBodyNode('vehicle')
+        self.physics_node.setLinearDamping(0.5)
+        self.physics_node.setAngularDamping(0.5)
         self.physics_node.setLinearSleepThreshold(0)
         self.physics_node.setAngularSleepThreshold(0)
         self.physics_node.setMass(100.0)
