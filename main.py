@@ -43,17 +43,23 @@ class GameApp(ShowBase):
         #self.repulsor_traverser.show_collisions(base.render)
 
         environment = Environment(self)
-        vehicle = Vehicle(self, "assets/diamond")
-        vehicle.place(Vec3(0, 0, 2))
-        camera = CameraController(self, base.cam, vehicle)
+        self.vehicles = []
+        vehicle_1 = Vehicle(self, "assets/diamond")
+        vehicle_1.place(Vec3(0, 0, 2))
+        self.vehicles.append(vehicle_1)
+        vehicle_2 = Vehicle(self, "assets/diamond")
+        vehicle_2.place(Vec3(0, 10, 2))
+        self.vehicles.append(vehicle_2)
+        camera = CameraController(self, base.cam, vehicle_1)
 
         base.task_mgr.add(self.run_repulsors, 'run repulsors', sort=0)
-        base.task_mgr.add(vehicle.apply_repulsors, 'apply repulsors', sort=1)
-        base.task_mgr.add(self.update_physics, 'physics', sort=2)
-        base.task_mgr.add(camera.update, "camera", sort=3)
+        base.task_mgr.add(self.update_physics, 'physics', sort=1)
+        base.task_mgr.add(camera.update, "camera", sort=2)
 
     def run_repulsors(self, task):
         self.repulsor_traverser.traverse(base.render)
+        for vehicle in self.vehicles:
+            vehicle.apply_repulsors()
         return task.cont
 
     def update_physics(self, task):
@@ -146,7 +152,7 @@ class Vehicle:
             repulsor_np, self.repulsor_queue,
         )
 
-    def apply_repulsors(self, task):
+    def apply_repulsors(self):
         dt = globalClock.dt
         for entry in self.repulsor_queue.entries:
             # Distance below which the repulsor strength is > 0
@@ -168,7 +174,6 @@ class Vehicle:
                 # Apply
                 repulsor_pos = entry.from_node_path.get_pos(self.vehicle)
                 self.physics_node.apply_impulse(impulse * dt, repulsor_pos)
-        return task.cont
 
     def place(self, coordinate):
         self.vehicle.reparent_to(self.app.render)
