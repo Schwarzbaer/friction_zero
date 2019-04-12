@@ -32,10 +32,10 @@ class GameApp(ShowBase):
         self.physics_world.setGravity(Vec3(0, 0, -9.81))
         base.taskMgr.add(self.update_physics, 'physics', sort=0)
 
-        self.terrain = Terrain(self, "hills.bam")
+        self.terrain = Terrain(self, "maps/hills.bam")
         self.terrain.place(Vec3(0,0,0))
 
-        vehicle = Vehicle(self, "diamond.bam")
+        vehicle = Vehicle(self, "cars/Ricardeaut_Magnesium.bam")
         vehicle.place(Vec3(0, 0, 10))
 
 
