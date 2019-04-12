@@ -32,11 +32,12 @@ class GameApp(ShowBase):
         self.physics_world.setGravity(Vec3(0, 0, -9.81))
         base.taskMgr.add(self.update_physics, 'physics', sort=0)
 
-        vehicle = Vehicle(self, "diamond.bam")
-        terrain = Terrain(self, "hills.bam")
+        self.terrain = Terrain(self, "hills.bam")
+        self.terrain.place(Vec3(0,0,0))
 
+        vehicle = Vehicle(self, "diamond.bam")
         vehicle.place(Vec3(0, 0, 10))
-        terrain.place(Vec3(0,0,0))
+
 
         camera = CameraController(self, base.cam, vehicle)
         base.task_mgr.add(camera.update, "camera", sort=1)
@@ -77,15 +78,15 @@ class Terrain:
     def __init__(self, app, model_file):
         self.app = app
 
-        model = app.loader.load_model(model_file)
+        self.model = app.loader.load_model(model_file)
 
         self.physics_node = BulletRigidBodyNode('terrain')
 
-        shape = triangleShape(model, False)
+        shape = triangleShape(self.model, False)
 
         self.physics_node.addShape(shape)
         self.terrain = NodePath(self.physics_node)
-        model.reparent_to(self.terrain)
+        self.model.reparent_to(self.terrain)
 
     def place(self, coordinate):
         self.terrain.reparent_to(self.app.render)
@@ -94,7 +95,6 @@ class Terrain:
 
     def np(self):
         return self.terrain
-
 
 class Vehicle:
     def __init__(self, app, model_file):
@@ -107,7 +107,10 @@ class Vehicle:
 
         #shape = BulletBoxShape(Vec3(2, 3, 1))
         collision_solid = model.find("collision_solid")
-        collision_solid.hide()
+        try:
+            collision_solid.hide()
+        except AssertionError:
+            pass
         shape = triangleShape(collision_solid, dynamic=True)
 
         self.physics_node.addShape(shape)
@@ -115,7 +118,7 @@ class Vehicle:
         model.reparent_to(self.vehicle)
 
     def place(self, coordinate):
-        self.vehicle.reparent_to(self.app.render)
+        self.vehicle.reparent_to(self.app.terrain.model)
         self.vehicle.set_pos(coordinate)
         self.app.physics_world.attachRigidBody(self.physics_node)
 
