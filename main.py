@@ -45,7 +45,7 @@ class GameApp(ShowBase):
         self.environment = Environment(self, "maps/hills.bam")
 
         vehicle = Vehicle(self, "cars/Ricardeaut_Magnesium.bam")
-        vehicle.place(Vec3(0, 0, 2))
+        vehicle.place(Vec3(0, 0, 5))
         camera = CameraController(self, base.cam, vehicle)
 
         base.task_mgr.add(self.run_repulsors, 'run repulsors', sort=0)
@@ -91,9 +91,7 @@ class Environment:
         self.physics_node = BulletRigidBodyNode('environment')
 
         shape = triangleShape(self.model, False)
-        node = BulletRigidBodyNode('Ground')
-        node.addShape(shape)
-        self.app.physics_world.attachRigidBody(node)
+        self.physics_node.addShape(shape)
         self.environment = NodePath(self.physics_node)
         self.model.reparent_to(self.environment)
         self.environment.reparent_to(self.app.render)
@@ -129,10 +127,10 @@ class Vehicle:
         model.reparent_to(self.vehicle)
 
         self.repulsor_queue = CollisionHandlerQueue()
-        self.add_repulsor(Vec3( 0.45,  0.45, -0.3), Vec3( 0.5,  0.5, -1))
-        self.add_repulsor(Vec3(-0.45,  0.45, -0.3), Vec3(-0.5,  0.5, -1))
-        self.add_repulsor(Vec3( 0.45, -0.45, -0.3), Vec3( 0.5, -0.5, -1))
-        self.add_repulsor(Vec3(-0.45, -0.45, -0.3), Vec3(-0.5, -0.5, -1))
+        self.add_repulsor(Vec3( 0.45,  0.45, -1.3), Vec3( 0.5,  0.5, -1))
+        self.add_repulsor(Vec3(-0.45,  0.45, -1.3), Vec3(-0.5,  0.5, -1))
+        self.add_repulsor(Vec3( 0.45, -0.45, -1.3), Vec3( 0.5, -0.5, -1))
+        self.add_repulsor(Vec3(-0.45, -0.45, -1.3), Vec3(-0.5, -0.5, -1))
         # self.add_repulsor(Vec3( 0.4,  0.4, -0.4), Vec3(0, 0, -1))
         # self.add_repulsor(Vec3(-0.4,  0.4, -0.4), Vec3(0, 0, -1))
         # self.add_repulsor(Vec3( 0.4, -0.4, -0.4), Vec3(0, 0, -1))

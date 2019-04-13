@@ -1,0 +1,7 @@
+[blender]
+last_path = "blender"
+use_last_path = true
+
+[python]
+path = "/usr/bin/python3"
+in_venv = false
