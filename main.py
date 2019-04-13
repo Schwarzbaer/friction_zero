@@ -50,11 +50,26 @@ class GameApp(ShowBase):
         vehicle_2 = Vehicle(self, "assets/diamond")
         vehicle_2.place(Vec3(0, 10, 2))
         self.vehicles.append(vehicle_2)
-        camera = CameraController(self, base.cam, vehicle_1)
+
+        self.player_vehicle_idx = 0
+        self.player_camera = CameraController(
+            self,
+            base.cam,
+            self.vehicles[self.player_vehicle_idx],
+        )
+        self.player_controller = VehicleController(
+            self,
+            self.vehicles[self.player_vehicle_idx],
+        )
 
         base.task_mgr.add(self.run_repulsors, 'run repulsors', sort=0)
         base.task_mgr.add(self.update_physics, 'physics', sort=1)
-        base.task_mgr.add(camera.update, "camera", sort=2)
+        base.task_mgr.add(self.player_camera.update, "camera", sort=2)
+
+    def next_vehicle(self):
+        self.player_vehicle_idx = (self.player_vehicle_idx + 1) % len(self.vehicles)
+        self.player_camera.set_vehicle(self.vehicles[self.player_vehicle_idx])
+        self.player_controller.set_vehicle(self.vehicles[self.player_vehicle_idx])
 
     def run_repulsors(self, task):
         self.repulsor_traverser.traverse(base.render)
@@ -131,6 +146,7 @@ class Vehicle:
         self.vehicle = NodePath(self.physics_node)
 
         model.reparent_to(self.vehicle)
+        model.set_pos(0, 0, -0.5)
 
         self.repulsor_queue = CollisionHandlerQueue()
         self.add_repulsor(Vec3( 0.45,  0.45, -0.3), Vec3( 0.5,  0.5, -1))
@@ -141,6 +157,11 @@ class Vehicle:
         # self.add_repulsor(Vec3(-0.4,  0.4, -0.4), Vec3(0, 0, -1))
         # self.add_repulsor(Vec3( 0.4, -0.4, -0.4), Vec3(0, 0, -1))
         # self.add_repulsor(Vec3(-0.4, -0.4, -0.4), Vec3(0, 0, -1))
+
+        self.repulsors_active = False
+
+    def toggle_repulsors(self):
+        self.repulsors_active = not self.repulsors_active
 
     def add_repulsor(self, coord, vec):
         repulsor_solid = CollisionRay(Vec3(0, 0, 0), vec)
@@ -160,7 +181,7 @@ class Vehicle:
             # Distance below which the repulsor strength is > 0
             activation_distance = 3
             repulsor_feeler = entry.get_surface_point(entry.from_node_path)
-            if repulsor_feeler.length() < activation_distance:
+            if repulsor_feeler.length() < activation_distance and self.repulsors_active:
                 # Direction of the impulse
                 impulse_vec = -repulsor_feeler / repulsor_feeler.length()
                 # Repulsor power at zero distance
@@ -193,6 +214,9 @@ class CameraController:
         self.vehicle = vehicle
         self.camera.reparent_to(self.app.render)
 
+    def set_vehicle(self, vehicle):
+        self.vehicle = vehicle
+
     def update(self, task):
         horiz_dist = 7
         cam_offset = Vec3(0, 0, 2)
@@ -211,6 +235,23 @@ class CameraController:
         base.cam.look_at(focus)
 
         return task.cont
+
+
+class VehicleController:
+    def __init__(self, app, vehicle):
+        self.app = app
+        self.vehicle = vehicle
+        self.app.accept("r", self.toggle_repulsors)
+        self.app.accept("n", self.next_vehicle)
+
+    def toggle_repulsors(self):
+        self.vehicle.toggle_repulsors()
+
+    def next_vehicle(self):
+        self.app.next_vehicle()
+
+    def set_vehicle(self, vehicle):
+        self.vehicle = vehicle
 
 
 def main():
