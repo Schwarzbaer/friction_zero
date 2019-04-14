@@ -1,6 +1,7 @@
 import os
 import sys
 from math import cos, pi
+from random import random
 
 from direct.showbase.ShowBase import ShowBase
 import panda3d
@@ -69,8 +70,9 @@ class GameApp(ShowBase):
         )
 
         base.task_mgr.add(self.run_repulsors, 'run repulsors', sort=0)
-        base.task_mgr.add(self.update_physics, 'physics', sort=1)
-        base.task_mgr.add(self.player_camera.update, "camera", sort=2)
+        base.task_mgr.add(self.run_gyrosopes, 'run gyroscopes', sort=1)
+        base.task_mgr.add(self.update_physics, 'physics', sort=2)
+        base.task_mgr.add(self.player_camera.update, "camera", sort=3)
 
     def next_vehicle(self):
         self.player_vehicle_idx = (self.player_vehicle_idx + 1) % len(self.vehicles)
@@ -81,6 +83,11 @@ class GameApp(ShowBase):
         self.repulsor_traverser.traverse(base.render)
         for vehicle in self.vehicles:
             vehicle.apply_repulsors()
+        return task.cont
+
+    def run_gyroscopes(self, task):
+        for vehicle in self.vehicles:
+            vehicle.apply_gyroscope()
         return task.cont
 
     def update_physics(self, task):
@@ -150,7 +157,7 @@ class Vehicle:
 
         self.physics_node = BulletRigidBodyNode('vehicle')
         self.physics_node.setLinearDamping(0.5)
-        self.physics_node.setAngularDamping(0.5)
+        #self.physics_node.setAngularDamping(0.5)
         self.physics_node.setLinearSleepThreshold(0)
         self.physics_node.setAngularSleepThreshold(0)
         self.physics_node.setMass(100.0)
@@ -177,9 +184,22 @@ class Vehicle:
         # self.add_repulsor(Vec3(-0.4, -0.4, -0.4), Vec3(0, 0, -1))
 
         self.repulsors_active = False
+        self.gyroscope_active = False
+
+    def np(self):
+        return self.vehicle
+
+    def place(self, coordinate, orientation):
+        self.vehicle.reparent_to(self.app.render)
+        self.vehicle.set_pos(coordinate)
+        self.vehicle.set_hpr(orientation)
+        self.app.physics_world.attachRigidBody(self.physics_node)
 
     def toggle_repulsors(self):
         self.repulsors_active = not self.repulsors_active
+
+    def toggle_gyroscope(self):
+        self.gyroscope_active = not self.gyroscope_active
 
     def add_repulsor(self, coord, vec):
         repulsor_solid = CollisionRay(Vec3(0, 0, 0), vec)
@@ -216,14 +236,17 @@ class Vehicle:
                 repulsor_pos = entry.from_node_path.get_pos(self.vehicle)
                 self.physics_node.apply_impulse(impulse * dt, repulsor_pos)
 
-    def place(self, coordinate, orientation):
-        self.vehicle.reparent_to(self.app.render)
-        self.vehicle.set_pos(coordinate)
-        self.vehicle.set_hpr(orientation)
-        self.app.physics_world.attachRigidBody(self.physics_node)
+    def apply_gyroscope(self):
+        pass
 
-    def np(self):
-        return self.vehicle
+    def shock(self):
+        #self.physics_node.apply_impulse(
+        #    Vec3(0,0,0),
+        #    Vec3(random(), random(), random()) * 10,
+        #)
+        self.physics_node.apply_torque_impulse(
+            (Vec3(random(), random(), random()) - Vec3(0.5, 0.5, 0.5)) * 20,
+        )
 
 
 class CameraController:
@@ -260,17 +283,25 @@ class VehicleController:
     def __init__(self, app, vehicle):
         self.app = app
         self.vehicle = vehicle
-        self.app.accept("r", self.toggle_repulsors)
         self.app.accept("n", self.next_vehicle)
-
-    def toggle_repulsors(self):
-        self.vehicle.toggle_repulsors()
+        self.app.accept("r", self.toggle_repulsors)
+        self.app.accept("g", self.toggle_gyroscope)
+        self.app.accept("s", self.shock)
 
     def next_vehicle(self):
         self.app.next_vehicle()
 
+    def toggle_repulsors(self):
+        self.vehicle.toggle_repulsors()
+
+    def toggle_repulsors(self):
+        self.vehicle.toggle_gyroscope()
+
     def set_vehicle(self, vehicle):
         self.vehicle = vehicle
+
+    def shock(self):
+        self.vehicle.shock()
 
 
 def main():
