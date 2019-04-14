@@ -42,14 +42,20 @@ class GameApp(ShowBase):
         self.repulsor_traverser = CollisionTraverser('repulsor')
         #self.repulsor_traverser.show_collisions(base.render)
 
-        environment = Environment(self)
+        environment = Environment(self, "assets/plane.bam")
+        spawn_points = environment.get_spawn_points()
+
         self.vehicles = []
-        vehicle_1 = Vehicle(self, "assets/diamond")
-        vehicle_1.place(Vec3(0, 0, 2))
+        vehicle_1 = Vehicle(self, "assets/Cadarache_Diamond.bam")
         self.vehicles.append(vehicle_1)
-        vehicle_2 = Vehicle(self, "assets/diamond")
-        vehicle_2.place(Vec3(0, 10, 2))
+        vehicle_2 = Vehicle(self, "assets/Ricardeaut_Magnesium.bam")
         self.vehicles.append(vehicle_2)
+
+        for vehicle, spawn_point in zip(self.vehicles, spawn_points):
+            vehicle.place(
+                spawn_point.get_pos() + Vec3(0, 0, 0.5),
+                spawn_point.get_hpr(),
+            )
 
         self.player_vehicle_idx = 0
         self.player_camera = CameraController(
@@ -95,27 +101,24 @@ class GameApp(ShowBase):
 
 
 class Environment:
-    def __init__(self, app):
+    def __init__(self, app, map_file):
         self.app = app
 
         shape = BulletPlaneShape(Vec3(0, 0, 1), 0)
         node = BulletRigidBodyNode('Ground')
         node.addShape(shape)
-        np = self.app.render.attach_new_node(node)
-        np.setPos(0, 0, 0)
+        self.np = self.app.render.attach_new_node(node)
+        self.np.setPos(0, 0, 0)
         self.app.physics_world.attachRigidBody(node)
 
-        model = loader.load_model("models/box")
-        model.reparent_to(np)
-        model.set_pos(-50, -50, -1)
-        model.set_sx(100)
-        model.set_sy(100)
+        model = loader.load_model(map_file)
+        model.reparent_to(self.np)
 
         coll_solid = CollisionPlane(Plane((0, 0, 1), (0, 0, 0)))
         coll_node = CollisionNode('ground')
         coll_node.set_from_collide_mask(0)
         coll_node.add_solid(coll_solid)
-        coll_np = np.attach_new_node(coll_node)
+        coll_np = self.np.attach_new_node(coll_node)
         #coll_np.show()
 
         dlight = DirectionalLight('dlight')
@@ -124,12 +127,26 @@ class Environment:
         dlnp.setHpr(20, -75, 0)
         self.app.render.setLight(dlnp)
 
+    def get_spawn_points(self):
+        spawn_nodes = [sp for sp in self.np.find_all_matches("**/spawn_point*")]
+        spawn_points = {}
+        for sn in spawn_nodes:
+            _, _, idx = sn.name.partition(':')
+            idx = int(idx)
+            spawn_points[idx] = sn
+        sorted_spawn_points = [
+            spawn_points[key]
+            for key in sorted(spawn_points.keys())
+        ]
+        return sorted_spawn_points
+
 
 class Vehicle:
     def __init__(self, app, model_file):
         self.app = app
 
         model = app.loader.load_model(model_file)
+        model.find("collision_solid").hide()
 
         self.physics_node = BulletRigidBodyNode('vehicle')
         self.physics_node.setLinearDamping(0.5)
@@ -146,7 +163,8 @@ class Vehicle:
         self.vehicle = NodePath(self.physics_node)
 
         model.reparent_to(self.vehicle)
-        model.set_pos(0, 0, -0.5)
+        # FIXME: Temporary
+        model.set_pos(0, 0, -1)
 
         self.repulsor_queue = CollisionHandlerQueue()
         self.add_repulsor(Vec3( 0.45,  0.45, -0.3), Vec3( 0.5,  0.5, -1))
@@ -198,9 +216,10 @@ class Vehicle:
                 repulsor_pos = entry.from_node_path.get_pos(self.vehicle)
                 self.physics_node.apply_impulse(impulse * dt, repulsor_pos)
 
-    def place(self, coordinate):
+    def place(self, coordinate, orientation):
         self.vehicle.reparent_to(self.app.render)
         self.vehicle.set_pos(coordinate)
+        self.vehicle.set_hpr(orientation)
         self.app.physics_world.attachRigidBody(self.physics_node)
 
     def np(self):
@@ -218,9 +237,9 @@ class CameraController:
         self.vehicle = vehicle
 
     def update(self, task):
-        horiz_dist = 7
-        cam_offset = Vec3(0, 0, 2)
-        focus_offset = Vec3(0, 0, 1)
+        horiz_dist = 30
+        cam_offset = Vec3(0, 0, 10)
+        focus_offset = Vec3(0, 0, 5)
         vehicle_pos = self.vehicle.np().get_pos(self.app.render)
         vehicle_back = self.app.render.get_relative_vector(
             self.vehicle.np(),
