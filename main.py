@@ -43,13 +43,13 @@ class GameApp(ShowBase):
         self.repulsor_traverser = CollisionTraverser('repulsor')
         #self.repulsor_traverser.show_collisions(base.render)
 
-        environment = Environment(self, "assets/plane.bam")
+        environment = Environment(self, "assets/maps/plane.bam")
         spawn_points = environment.get_spawn_points()
 
         self.vehicles = []
-        vehicle_1 = Vehicle(self, "assets/Cadarache_Diamond.bam")
+        vehicle_1 = Vehicle(self, "assets/cars/Cadarache_Diamond.bam")
         self.vehicles.append(vehicle_1)
-        vehicle_2 = Vehicle(self, "assets/Ricardeaut_Magnesium.bam")
+        vehicle_2 = Vehicle(self, "assets/cars/Ricardeaut_Magnesium.bam")
         self.vehicles.append(vehicle_2)
 
         for vehicle, spawn_point in zip(self.vehicles, spawn_points):
@@ -162,8 +162,10 @@ class Vehicle:
         self.physics_node.setAngularSleepThreshold(0)
         self.physics_node.setMass(100.0)
         # mesh = BulletTriangleMesh()
-        # for geom in model.node().get_child(0).get_geoms():
-        #     mesh.addGeom(geom)
+        # for geom_node in model.find_all_matches("**/+GeomNode"):
+        #     for geom in geom_node.node().get_geoms():
+        #         # import pdb; pdb.set_trace()
+        #         mesh.addGeom(geom)
         # shape = BulletTriangleMeshShape(mesh, dynamic=False)
         shape = BulletBoxShape(Vec3(0.5, 0.5, 0.5))
         self.physics_node.addShape(shape)
@@ -174,10 +176,10 @@ class Vehicle:
         model.set_pos(0, 0, -1)
 
         self.repulsor_queue = CollisionHandlerQueue()
-        self.add_repulsor(Vec3( 0.45,  0.45, -0.3), Vec3( 0.5,  0.5, -1))
-        self.add_repulsor(Vec3(-0.45,  0.45, -0.3), Vec3(-0.5,  0.5, -1))
-        self.add_repulsor(Vec3( 0.45, -0.45, -0.3), Vec3( 0.5, -0.5, -1))
-        self.add_repulsor(Vec3(-0.45, -0.45, -0.3), Vec3(-0.5, -0.5, -1))
+        self.add_repulsor(Vec3( 0.45,  0.45, -0.0), Vec3( 0.5,  0.5, -1))
+        self.add_repulsor(Vec3(-0.45,  0.45, -0.0), Vec3(-0.5,  0.5, -1))
+        self.add_repulsor(Vec3( 0.45, -0.45, -0.0), Vec3( 0.5, -0.5, -1))
+        self.add_repulsor(Vec3(-0.45, -0.45, -0.0), Vec3(-0.5, -0.5, -1))
         # self.add_repulsor(Vec3( 0.4,  0.4, -0.4), Vec3(0, 0, -1))
         # self.add_repulsor(Vec3(-0.4,  0.4, -0.4), Vec3(0, 0, -1))
         # self.add_repulsor(Vec3( 0.4, -0.4, -0.4), Vec3(0, 0, -1))
@@ -217,7 +219,7 @@ class Vehicle:
         dt = globalClock.dt
         for entry in self.repulsor_queue.entries:
             # Distance below which the repulsor strength is > 0
-            activation_distance = 3
+            activation_distance = 10
             repulsor_feeler = entry.get_surface_point(entry.from_node_path)
             if repulsor_feeler.length() < activation_distance and self.repulsors_active:
                 # Direction of the impulse
