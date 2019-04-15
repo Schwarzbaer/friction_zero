@@ -1,0 +1,16 @@
+[run]
+auto_build = true
+auto_save = true
+main_file = "main.py"
+
+[build]
+ignore_patterns = [ "*.blend1", "*.blend2",]
+asset_dir = "assets/"
+export_dir = ".built_assets/"
+converters = [ "native2bam", "blend2bam",]
+
+[general]
+renderer = "none"
+name = "Game"
+material_mode = "legacy"
+physics_engine = "builtin"
