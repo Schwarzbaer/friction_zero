@@ -70,7 +70,7 @@ class GameApp(ShowBase):
         )
 
         base.task_mgr.add(self.run_repulsors, 'run repulsors', sort=0)
-        base.task_mgr.add(self.run_gyrosopes, 'run gyroscopes', sort=1)
+        base.task_mgr.add(self.run_gyroscopes, 'run gyroscopes', sort=1)
         base.task_mgr.add(self.update_physics, 'physics', sort=2)
         base.task_mgr.add(self.player_camera.update, "camera", sort=3)
 
@@ -183,8 +183,8 @@ class Vehicle:
         # self.add_repulsor(Vec3( 0.4, -0.4, -0.4), Vec3(0, 0, -1))
         # self.add_repulsor(Vec3(-0.4, -0.4, -0.4), Vec3(0, 0, -1))
 
-        self.repulsors_active = False
-        self.gyroscope_active = False
+        self.repulsors_active = True
+        self.gyroscope_active = True
 
     def np(self):
         return self.vehicle
@@ -237,7 +237,10 @@ class Vehicle:
                 self.physics_node.apply_impulse(impulse * dt, repulsor_pos)
 
     def apply_gyroscope(self):
-        pass
+        rot = self.physics_node.get_angular_velocity()
+        dt = globalClock.dt
+        self.physics_node.apply_torque_impulse(-rot * dt * 50)
+
 
     def shock(self):
         #self.physics_node.apply_impulse(
@@ -245,7 +248,7 @@ class Vehicle:
         #    Vec3(random(), random(), random()) * 10,
         #)
         self.physics_node.apply_torque_impulse(
-            (Vec3(random(), random(), random()) - Vec3(0.5, 0.5, 0.5)) * 20,
+            (Vec3(random(), random(), random()) - Vec3(0.5, 0.5, 0.5)) * 100,
         )
 
 
@@ -294,7 +297,7 @@ class VehicleController:
     def toggle_repulsors(self):
         self.vehicle.toggle_repulsors()
 
-    def toggle_repulsors(self):
+    def toggle_gyroscope(self):
         self.vehicle.toggle_gyroscope()
 
     def set_vehicle(self, vehicle):
