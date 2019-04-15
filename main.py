@@ -107,7 +107,7 @@ class Vehicle:
         self.physics_node.setMass(5.0)
 
         #shape = BulletBoxShape(Vec3(2, 3, 1))
-        collision_solid = model.find("collision_solid")
+        collision_solid = model.find("collision_solid").hide()
         try:
             collision_solid.hide()
         except AssertionError:
