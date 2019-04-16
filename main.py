@@ -47,10 +47,12 @@ class GameApp(ShowBase):
         spawn_points = environment.get_spawn_points()
 
         self.vehicles = []
-        vehicle_1 = Vehicle(self, "assets/cars/Cadarache_Diamond.bam")
+        vehicle_1 = Vehicle(self, "assets/cars/Ricardeaut_Magnesium.bam")
         self.vehicles.append(vehicle_1)
         vehicle_2 = Vehicle(self, "assets/cars/Ricardeaut_Magnesium.bam")
         self.vehicles.append(vehicle_2)
+
+
 
         for vehicle, spawn_point in zip(self.vehicles, spawn_points):
             vehicle.place(
@@ -64,6 +66,8 @@ class GameApp(ShowBase):
             base.cam,
             self.vehicles[self.player_vehicle_idx],
         )
+
+
         self.player_controller = VehicleController(
             self,
             self.vehicles[self.player_vehicle_idx],
@@ -153,7 +157,8 @@ class Vehicle:
         self.app = app
 
         model = app.loader.load_model(model_file)
-        model.find("collision_solid").hide()
+
+
 
         self.physics_node = BulletRigidBodyNode('vehicle')
         self.physics_node.setLinearDamping(0.5)
@@ -171,9 +176,11 @@ class Vehicle:
         self.physics_node.addShape(shape)
         self.vehicle = NodePath(self.physics_node)
 
+        z = model.find("fz_repulsor*")
+        print(z.getHpr())
+
         model.reparent_to(self.vehicle)
-        # FIXME: Temporary
-        model.set_pos(0, 0, -1)
+
 
         self.repulsor_queue = CollisionHandlerQueue()
         self.add_repulsor(Vec3( 0.45,  0.45, -0.0), Vec3( 0.5,  0.5, -1))
