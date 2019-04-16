@@ -52,7 +52,7 @@ class GameApp(ShowBase):
         self.vehicles = []
         vehicle_1 = Vehicle(self, "assets/cars/Ricardeaut_Magnesium.bam")
         self.vehicles.append(vehicle_1)
-        vehicle_2 = Vehicle(self, "assets/cars/Cadarache_Diamond.bam")
+        vehicle_2 = Vehicle(self, "assets/cars/Ricardeaut_Magnesium.bam")
         self.vehicles.append(vehicle_2)
 
         for vehicle, spawn_point in zip(self.vehicles, spawn_points):
@@ -67,6 +67,7 @@ class GameApp(ShowBase):
             base.cam,
             self.vehicles[self.player_vehicle_idx],
         )
+
         self.player_controller = VehicleController(
             self,
             self.vehicles[self.player_vehicle_idx],
@@ -178,7 +179,7 @@ class Vehicle:
         model.set_pos(0, 0, 0.2)
 
         self.repulsor_queue = CollisionHandlerQueue()
-        for repulsor in model.find_all_matches('**/repulsor:*'):
+        for repulsor in model.find_all_matches('**/fz_repulsor:*'):
             self.add_repulsor(repulsor)
 
         self.repulsors_active = False

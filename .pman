@@ -6,7 +6,7 @@ main_file = "main.py"
 [build]
 ignore_patterns = [ "*.blend1", "*.blend2",]
 asset_dir = "assets/"
-export_dir = ".built_assets/"
+export_dir = "assets/"
 converters = [ "native2bam", "blend2bam",]
 
 [general]
