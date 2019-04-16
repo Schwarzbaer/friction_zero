@@ -57,7 +57,7 @@ class GameApp(ShowBase):
 
         for vehicle, spawn_point in zip(self.vehicles, spawn_points):
             vehicle.place(
-                spawn_point.get_pos() + Vec3(0, 0, 5),
+                spawn_point.get_pos(),
                 spawn_point.get_hpr(),
             )
 
@@ -175,8 +175,6 @@ class Vehicle:
         self.vehicle = NodePath(self.physics_node)
 
         model.reparent_to(self.vehicle)
-        # FIXME: Is this due to the model somehow?
-        model.set_pos(0, 0, 0.2)
 
         self.repulsor_queue = CollisionHandlerQueue()
         for repulsor in model.find_all_matches('**/fz_repulsor:*'):
@@ -202,7 +200,7 @@ class Vehicle:
 
     def add_repulsor(self, repulsor):
         force = float(repulsor.get_tag('force'))
-        activation_distance = float(repulsor.get_tag('activation_distance')) * 20
+        activation_distance = float(repulsor.get_tag('activation_distance'))
         repulsor_solid = CollisionSegment(
             Vec3(0, 0, 0),
             Vec3(0, 0, -activation_distance),
@@ -268,9 +266,9 @@ class CameraController:
         self.vehicle = vehicle
 
     def update(self, task):
-        horiz_dist = 10
-        cam_offset = Vec3(0, 0, 5)
-        focus_offset = Vec3(0, 0, 1)
+        horiz_dist = 30
+        cam_offset = Vec3(0, 0, 0)
+        focus_offset = Vec3(0, 0, 0)
         vehicle_pos = self.vehicle.np().get_pos(self.app.render)
         vehicle_back = self.app.render.get_relative_vector(
             self.vehicle.np(),
