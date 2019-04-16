@@ -170,7 +170,9 @@ class Vehicle:
             for geom in geom_node.node().get_geoms():
                 vertices = GeomVertexReader(geom.get_vertex_data(), 'vertex')
                 while not vertices.is_at_end():
-                    shape.add_point(vertices.getData3f())
+                    v_geom = vertices.getData3f()
+                    v_model = model.get_relative_point(geom_node, v_geom)
+                    shape.add_point(v_model)
         self.physics_node.addShape(shape)
         self.vehicle = NodePath(self.physics_node)
 
@@ -266,9 +268,9 @@ class CameraController:
         self.vehicle = vehicle
 
     def update(self, task):
-        horiz_dist = 30
-        cam_offset = Vec3(0, 0, 0)
-        focus_offset = Vec3(0, 0, 0)
+        horiz_dist = 15
+        cam_offset = Vec3(0, 0, 5)
+        focus_offset = Vec3(0, 0, 2)
         vehicle_pos = self.vehicle.np().get_pos(self.app.render)
         vehicle_back = self.app.render.get_relative_vector(
             self.vehicle.np(),
