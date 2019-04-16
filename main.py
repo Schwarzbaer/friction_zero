@@ -55,8 +55,6 @@ class GameApp(ShowBase):
         vehicle_2 = Vehicle(self, "assets/cars/Ricardeaut_Magnesium.bam")
         self.vehicles.append(vehicle_2)
 
-
-
         for vehicle, spawn_point in zip(self.vehicles, spawn_points):
             vehicle.place(
                 spawn_point.get_pos() + Vec3(0, 0, 5),
@@ -69,7 +67,6 @@ class GameApp(ShowBase):
             base.cam,
             self.vehicles[self.player_vehicle_idx],
         )
-
 
         self.player_controller = VehicleController(
             self,
