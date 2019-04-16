@@ -16,12 +16,15 @@ from panda3d.core import CollisionTraverser
 from panda3d.core import CollisionHandlerQueue
 from panda3d.core import CollisionNode
 from panda3d.core import CollisionRay
+from panda3d.core import CollisionSegment
 from panda3d.core import CollisionPlane
+from panda3d.core import GeomVertexReader
 from panda3d.bullet import BulletWorld
 from panda3d.bullet import BulletRigidBodyNode
 from panda3d.bullet import BulletBoxShape
 from panda3d.bullet import BulletTriangleMesh
 from panda3d.bullet import BulletTriangleMeshShape
+from panda3d.bullet import BulletConvexHullShape
 from panda3d.bullet import BulletPlaneShape
 from panda3d.bullet import BulletDebugNode
 
@@ -49,14 +52,14 @@ class GameApp(ShowBase):
         self.vehicles = []
         vehicle_1 = Vehicle(self, "assets/cars/Ricardeaut_Magnesium.bam")
         self.vehicles.append(vehicle_1)
-        vehicle_2 = Vehicle(self, "assets/cars/Ricardeaut_Magnesium.bam")
+        vehicle_2 = Vehicle(self, "assets/cars/Cadarache_Diamond.bam")
         self.vehicles.append(vehicle_2)
 
 
 
         for vehicle, spawn_point in zip(self.vehicles, spawn_points):
             vehicle.place(
-                spawn_point.get_pos() + Vec3(0, 0, 0.5),
+                spawn_point.get_pos() + Vec3(0, 0, 5),
                 spawn_point.get_hpr(),
             )
 
@@ -158,21 +161,19 @@ class Vehicle:
 
         model = app.loader.load_model(model_file)
 
-
-
         self.physics_node = BulletRigidBodyNode('vehicle')
         self.physics_node.setLinearDamping(0.5)
         #self.physics_node.setAngularDamping(0.5)
         self.physics_node.setLinearSleepThreshold(0)
         self.physics_node.setAngularSleepThreshold(0)
         self.physics_node.setMass(100.0)
-        # mesh = BulletTriangleMesh()
-        # for geom_node in model.find_all_matches("**/+GeomNode"):
-        #     for geom in geom_node.node().get_geoms():
-        #         # import pdb; pdb.set_trace()
-        #         mesh.addGeom(geom)
-        # shape = BulletTriangleMeshShape(mesh, dynamic=False)
-        shape = BulletBoxShape(Vec3(0.5, 0.5, 0.5))
+
+        shape = BulletConvexHullShape()
+        for geom_node in model.find_all_matches("**/+GeomNode"):
+            for geom in geom_node.node().get_geoms():
+                vertices = GeomVertexReader(geom.get_vertex_data(), 'vertex')
+                while not vertices.is_at_end():
+                    shape.add_point(vertices.getData3f())
         self.physics_node.addShape(shape)
         self.vehicle = NodePath(self.physics_node)
 
@@ -180,19 +181,14 @@ class Vehicle:
         print(z.getHpr())
 
         model.reparent_to(self.vehicle)
-
+        # FIXME: Is this due to the model somehow?
+        model.set_pos(0, 0, 0.2)
 
         self.repulsor_queue = CollisionHandlerQueue()
-        self.add_repulsor(Vec3( 0.45,  0.45, -0.0), Vec3( 0.5,  0.5, -1))
-        self.add_repulsor(Vec3(-0.45,  0.45, -0.0), Vec3(-0.5,  0.5, -1))
-        self.add_repulsor(Vec3( 0.45, -0.45, -0.0), Vec3( 0.5, -0.5, -1))
-        self.add_repulsor(Vec3(-0.45, -0.45, -0.0), Vec3(-0.5, -0.5, -1))
-        # self.add_repulsor(Vec3( 0.4,  0.4, -0.4), Vec3(0, 0, -1))
-        # self.add_repulsor(Vec3(-0.4,  0.4, -0.4), Vec3(0, 0, -1))
-        # self.add_repulsor(Vec3( 0.4, -0.4, -0.4), Vec3(0, 0, -1))
-        # self.add_repulsor(Vec3(-0.4, -0.4, -0.4), Vec3(0, 0, -1))
+        for repulsor in model.find_all_matches('**/repulsor:*'):
+            self.add_repulsor(repulsor)
 
-        self.repulsors_active = True
+        self.repulsors_active = False
         self.gyroscope_active = True
 
     def np(self):
@@ -210,13 +206,19 @@ class Vehicle:
     def toggle_gyroscope(self):
         self.gyroscope_active = not self.gyroscope_active
 
-    def add_repulsor(self, coord, vec):
-        repulsor_solid = CollisionRay(Vec3(0, 0, 0), vec)
+    def add_repulsor(self, repulsor):
+        force = float(repulsor.get_tag('force'))
+        activation_distance = float(repulsor.get_tag('activation_distance')) * 20
+        repulsor_solid = CollisionSegment(
+            Vec3(0, 0, 0),
+            Vec3(0, 0, -activation_distance),
+        )
         repulsor_node = CollisionNode('repulsor')
         repulsor_node.add_solid(repulsor_solid)
         repulsor_node.set_into_collide_mask(0)
-        repulsor_np = self.vehicle.attach_new_node(repulsor_node)
-        repulsor_np.set_pos(coord)
+        repulsor_np = repulsor.attach_new_node(repulsor_node)
+        repulsor_np.set_python_tag('force', force)
+        repulsor_np.set_python_tag('activation_distance', activation_distance)
         repulsor_np.show()
         self.app.repulsor_traverser.addCollider(
             repulsor_np, self.repulsor_queue,
@@ -225,31 +227,31 @@ class Vehicle:
     def apply_repulsors(self):
         dt = globalClock.dt
         for entry in self.repulsor_queue.entries:
-            # Distance below which the repulsor strength is > 0
-            activation_distance = 10
-            repulsor_feeler = entry.get_surface_point(entry.from_node_path)
-            if repulsor_feeler.length() < activation_distance and self.repulsors_active:
-                # Direction of the impulse
-                impulse_vec = -repulsor_feeler / repulsor_feeler.length()
+            repulsor = entry.get_from_node_path()
+            hit_feeler = entry.get_surface_point(repulsor)
+            max_distance = repulsor.get_python_tag('activation_distance')
+            if hit_feeler.length() < max_distance and self.repulsors_active:
                 # Repulsor power at zero distance
-                base_strength = 400
+                base_strength = repulsor.get_python_tag('force')
                 # Fraction of the repulsor beam above the ground
-                activation_frac = repulsor_feeler.length() / activation_distance
+                activation_frac = hit_feeler.length() / max_distance
                 # Effective fraction of repulsors force
                 activation = cos(0.5*pi * activation_frac)
                 # Effective repulsor force
                 strength = activation * base_strength
                 # Resulting impulse
-                impulse = impulse_vec * strength
+                impulse = self.vehicle.get_relative_vector(
+                    repulsor,
+                    Vec3(0, 0, strength),
+                )
                 # Apply
-                repulsor_pos = entry.from_node_path.get_pos(self.vehicle)
+                repulsor_pos = repulsor.get_pos(self.vehicle)
                 self.physics_node.apply_impulse(impulse * dt, repulsor_pos)
 
     def apply_gyroscope(self):
         rot = self.physics_node.get_angular_velocity()
         dt = globalClock.dt
         self.physics_node.apply_torque_impulse(-rot * dt * 50)
-
 
     def shock(self):
         #self.physics_node.apply_impulse(
@@ -272,9 +274,9 @@ class CameraController:
         self.vehicle = vehicle
 
     def update(self, task):
-        horiz_dist = 30
-        cam_offset = Vec3(0, 0, 10)
-        focus_offset = Vec3(0, 0, 5)
+        horiz_dist = 10
+        cam_offset = Vec3(0, 0, 5)
+        focus_offset = Vec3(0, 0, 1)
         vehicle_pos = self.vehicle.np().get_pos(self.app.render)
         vehicle_back = self.app.render.get_relative_vector(
             self.vehicle.np(),
