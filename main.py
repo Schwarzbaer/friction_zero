@@ -33,6 +33,10 @@ panda3d.core.load_prc_file(
 )
 
 
+FORCE = 'force'
+ACTIVATION_DISTANCE = 'activation_distance'
+
+
 class GameApp(ShowBase):
     def __init__(self):
         ShowBase.__init__(self)
@@ -216,8 +220,8 @@ class Vehicle:
         self.thrust = strength
 
     def add_repulsor(self, repulsor):
-        force = float(repulsor.get_tag('force'))
-        activation_distance = float(repulsor.get_tag('activation_distance'))
+        force = float(repulsor.get_tag(FORCE))
+        activation_distance = float(repulsor.get_tag(ACTIVATION_DISTANCE))
         repulsor_solid = CollisionSegment(
             Vec3(0, 0, 0),
             Vec3(0, 0, -activation_distance),
@@ -226,8 +230,8 @@ class Vehicle:
         repulsor_node.add_solid(repulsor_solid)
         repulsor_node.set_into_collide_mask(0)
         repulsor_np = repulsor.attach_new_node(repulsor_node)
-        repulsor_np.set_python_tag('force', force)
-        repulsor_np.set_python_tag('activation_distance', activation_distance)
+        repulsor_np.set_python_tag(FORCE, force)
+        repulsor_np.set_python_tag(ACTIVATION_DISTANCE, activation_distance)
         repulsor_np.show()
         self.app.repulsor_traverser.addCollider(
             repulsor_np, self.repulsor_queue,
@@ -238,10 +242,10 @@ class Vehicle:
         for entry in self.repulsor_queue.entries:
             repulsor = entry.get_from_node_path()
             hit_feeler = entry.get_surface_point(repulsor)
-            max_distance = repulsor.get_python_tag('activation_distance')
+            max_distance = repulsor.get_python_tag(ACTIVATION_DISTANCE)
             if hit_feeler.length() < max_distance and self.repulsors_active:
                 # Repulsor power at zero distance
-                base_strength = repulsor.get_python_tag('force')
+                base_strength = repulsor.get_python_tag(FORCE)
                 # Fraction of the repulsor beam above the ground
                 activation_frac = hit_feeler.length() / max_distance
                 # Effective fraction of repulsors force
@@ -258,14 +262,14 @@ class Vehicle:
                 self.physics_node.apply_impulse(impulse * dt, repulsor_pos)
 
     def add_thruster(self, thruster):
-        force = float(thruster.get_tag('force'))
-        thruster.set_python_tag('force', force)
+        force = float(thruster.get_tag(FORCE))
+        thruster.set_python_tag(FORCE, force)
         self.thruster_nodes.append(thruster)
 
     def apply_thrusters(self):
         dt = globalClock.dt
         for thruster in self.thruster_nodes:
-            max_force = thruster.get_python_tag('force')
+            max_force = thruster.get_python_tag(FORCE)
             real_force = max_force * self.thrust
             thruster_pos = thruster.get_pos(self.vehicle)
             thrust_direction = self.app.render.get_relative_vector(
