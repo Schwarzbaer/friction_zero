@@ -77,38 +77,37 @@ class GameApp(ShowBase):
             self.vehicles[self.player_vehicle_idx],
         )
 
-        #base.task_mgr.add(self.player_controller.run, "input", sort=0)
-        base.task_mgr.add(self.run_repulsors, 'run repulsors', sort=1)
-        base.task_mgr.add(self.run_gyroscopes, 'run gyroscopes', sort=2)
-        base.task_mgr.add(self.run_thrusters, 'run thrusters', sort=3)
-        base.task_mgr.add(self.update_physics, 'physics', sort=4)
-        base.task_mgr.add(self.player_camera.update, "camera", sort=5)
+        base.task_mgr.add(self.game_loop, "game_loop", sort=5)
+
+    def game_loop(self, task):
+        self.run_repulsors()
+        self.run_gyroscopes()
+        self.run_thrusters()
+        self.update_physics()
+        self.player_camera.update()
+        return task.cont
 
     def next_vehicle(self):
         self.player_vehicle_idx = (self.player_vehicle_idx + 1) % len(self.vehicles)
         self.player_camera.set_vehicle(self.vehicles[self.player_vehicle_idx])
         self.player_controller.set_vehicle(self.vehicles[self.player_vehicle_idx])
 
-    def run_repulsors(self, task):
+    def run_repulsors(self):
         self.repulsor_traverser.traverse(base.render)
         for vehicle in self.vehicles:
             vehicle.apply_repulsors()
-        return task.cont
 
-    def run_gyroscopes(self, task):
+    def run_gyroscopes(self):
         for vehicle in self.vehicles:
             vehicle.apply_gyroscope()
-        return task.cont
 
-    def run_thrusters(self, task):
+    def run_thrusters(self):
         for vehicle in self.vehicles:
             vehicle.apply_thrusters()
-        return task.cont
 
-    def update_physics(self, task):
+    def update_physics(self):
         dt = globalClock.getDt()
         self.physics_world.doPhysics(dt)
-        return task.cont
 
     def bullet_debug(self):
         debugNode = BulletDebugNode('Debug')
@@ -307,7 +306,7 @@ class CameraController:
     def set_vehicle(self, vehicle):
         self.vehicle = vehicle
 
-    def update(self, task):
+    def update(self):
         horiz_dist = 15
         cam_offset = Vec3(0, 0, 5)
         focus_offset = Vec3(0, 0, 2)
@@ -323,8 +322,6 @@ class CameraController:
         focus = vehicle_pos + focus_offset
         base.cam.set_pos(cam_pos)
         base.cam.look_at(focus)
-
-        return task.cont
 
 
 class VehicleController:
