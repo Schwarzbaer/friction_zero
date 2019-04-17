@@ -290,9 +290,11 @@ class Vehicle:
             )
 
     def apply_gyroscope(self):
-        rot = self.physics_node.get_angular_velocity() - self.rot_target
-        dt = globalClock.dt
-        self.physics_node.apply_torque_impulse(-rot * dt * 1500)
+        if self.gyroscope_active:
+            current_rot = self.physics_node.get_angular_velocity()
+            unwanted_rot = current_rot - self.rot_target
+            dt = globalClock.dt
+            self.physics_node.apply_torque_impulse(-unwanted_rot * dt * 1500)
 
     def shock(self):
         #self.physics_node.apply_impulse(
