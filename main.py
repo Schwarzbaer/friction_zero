@@ -19,6 +19,7 @@ from panda3d.core import CollisionRay
 from panda3d.core import CollisionSegment
 from panda3d.core import CollisionPlane
 from panda3d.core import GeomVertexReader
+from panda3d.core import KeyboardButton
 from panda3d.bullet import BulletWorld
 from panda3d.bullet import BulletRigidBodyNode
 from panda3d.bullet import BulletBoxShape
@@ -50,7 +51,7 @@ class GameApp(ShowBase):
         self.repulsor_traverser = CollisionTraverser('repulsor')
         #self.repulsor_traverser.show_collisions(base.render)
 
-        environment = Environment(self, "assets/maps/plane.bam")
+        environment = Environment(self, "assets/maps/hills.bam")
         spawn_points = environment.get_spawn_points()
 
         self.vehicles = []
@@ -80,6 +81,7 @@ class GameApp(ShowBase):
         base.task_mgr.add(self.game_loop, "game_loop", sort=5)
 
     def game_loop(self, task):
+        self.player_controller.gather_inputs()
         self.run_repulsors()
         self.run_gyroscopes()
         self.run_thrusters()
@@ -169,7 +171,7 @@ class Vehicle:
         model = app.loader.load_model(model_file)
 
         self.physics_node = BulletRigidBodyNode('vehicle')
-        self.physics_node.setLinearDamping(0.5)
+        self.physics_node.setLinearDamping(0.1)
         #self.physics_node.setAngularDamping(0.5)
         self.physics_node.setLinearSleepThreshold(0)
         self.physics_node.setAngularSleepThreshold(0)
@@ -198,6 +200,7 @@ class Vehicle:
 
         self.repulsors_active = False
         self.gyroscope_active = True
+        self.rot_target = Vec3(0, 0, 0)
         self.thrust = 0
 
     def np(self):
@@ -214,6 +217,9 @@ class Vehicle:
 
     def toggle_gyroscope(self):
         self.gyroscope_active = not self.gyroscope_active
+
+    def set_rot_target(self, rot_target):
+        self.rot_target = rot_target
 
     def set_thrust(self, strength):
         self.thrust = strength
@@ -281,7 +287,7 @@ class Vehicle:
             )
 
     def apply_gyroscope(self):
-        rot = self.physics_node.get_angular_velocity()
+        rot = self.physics_node.get_angular_velocity() - self.rot_target
         dt = globalClock.dt
         self.physics_node.apply_torque_impulse(-rot * dt * 1500)
 
@@ -332,13 +338,23 @@ class VehicleController:
         self.app.accept("r", self.toggle_repulsors)
         self.app.accept("g", self.toggle_gyroscope)
         self.app.accept("s", self.shock)
-        self.app.accept("1", self.set_thrust, [0])
-        self.app.accept("2", self.set_thrust, [0.33])
-        self.app.accept("3", self.set_thrust, [0.66])
-        self.app.accept("4", self.set_thrust, [1])
+        # self.app.accept("1", self.set_thrust, [0])
+        # self.app.accept("2", self.set_thrust, [0.33])
+        # self.app.accept("3", self.set_thrust, [0.66])
+        # self.app.accept("4", self.set_thrust, [1])
 
-    def gather_inputs(self, task):
-        return task.cont
+    def gather_inputs(self):
+        rot_target = Vec3(0, 0, 0)
+        if self.app.mouseWatcherNode.is_button_down(KeyboardButton.left()):
+            rot_target.z += 2
+        if self.app.mouseWatcherNode.is_button_down(KeyboardButton.right()):
+            rot_target.z -= 2
+        self.vehicle.set_rot_target(rot_target)
+
+        thrust = 0
+        if self.app.mouseWatcherNode.is_button_down(KeyboardButton.up()):
+            thrust = 1
+        self.vehicle.set_thrust(thrust)
 
     def next_vehicle(self):
         self.app.next_vehicle()
