@@ -135,6 +135,9 @@ class Environment:
         self.app.physics_world.attachRigidBody(node)
 
         model = loader.load_model(map_file)
+        collision_solids = model.find("fz_collision")
+        collision_solids.hide()
+
         model.reparent_to(self.np)
 
         coll_solid = CollisionPlane(Plane((0, 0, 1), (0, 0, 0)))
