@@ -5,3 +5,4 @@ build/
 dist/
 .built_assets/
 __pycache__/
+*.pyc
