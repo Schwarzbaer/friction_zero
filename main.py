@@ -19,6 +19,7 @@ from panda3d.core import CollisionRay
 from panda3d.core import CollisionSegment
 from panda3d.core import CollisionPlane
 from panda3d.core import GeomVertexReader
+from panda3d.core import KeyboardButton
 from panda3d.bullet import BulletWorld
 from panda3d.bullet import BulletRigidBodyNode
 from panda3d.bullet import BulletBoxShape
@@ -31,6 +32,10 @@ from panda3d.bullet import BulletDebugNode
 panda3d.core.load_prc_file(
     panda3d.core.Filename.expand_from('$MAIN_DIR/settings.prc')
 )
+
+
+FORCE = 'force'
+ACTIVATION_DISTANCE = 'activation_distance'
 
 
 class GameApp(ShowBase):
@@ -46,7 +51,7 @@ class GameApp(ShowBase):
         self.repulsor_traverser = CollisionTraverser('repulsor')
         #self.repulsor_traverser.show_collisions(base.render)
 
-        environment = Environment(self, "assets/maps/plane.bam")
+        environment = Environment(self, "assets/maps/hills.bam")
         spawn_points = environment.get_spawn_points()
 
         self.vehicles = []
@@ -73,38 +78,38 @@ class GameApp(ShowBase):
             self.vehicles[self.player_vehicle_idx],
         )
 
-        #base.task_mgr.add(self.player_controller.run, "input", sort=0)
-        base.task_mgr.add(self.run_repulsors, 'run repulsors', sort=1)
-        base.task_mgr.add(self.run_gyroscopes, 'run gyroscopes', sort=2)
-        base.task_mgr.add(self.run_thrusters, 'run thrusters', sort=3)
-        base.task_mgr.add(self.update_physics, 'physics', sort=4)
-        base.task_mgr.add(self.player_camera.update, "camera", sort=5)
+        base.task_mgr.add(self.game_loop, "game_loop", sort=5)
+
+    def game_loop(self, task):
+        self.player_controller.gather_inputs()
+        self.run_repulsors()
+        self.run_gyroscopes()
+        self.run_thrusters()
+        self.update_physics()
+        self.player_camera.update()
+        return task.cont
 
     def next_vehicle(self):
         self.player_vehicle_idx = (self.player_vehicle_idx + 1) % len(self.vehicles)
         self.player_camera.set_vehicle(self.vehicles[self.player_vehicle_idx])
         self.player_controller.set_vehicle(self.vehicles[self.player_vehicle_idx])
 
-    def run_repulsors(self, task):
+    def run_repulsors(self):
         self.repulsor_traverser.traverse(base.render)
         for vehicle in self.vehicles:
             vehicle.apply_repulsors()
-        return task.cont
 
-    def run_gyroscopes(self, task):
+    def run_gyroscopes(self):
         for vehicle in self.vehicles:
             vehicle.apply_gyroscope()
-        return task.cont
 
-    def run_thrusters(self, task):
+    def run_thrusters(self):
         for vehicle in self.vehicles:
             vehicle.apply_thrusters()
-        return task.cont
 
-    def update_physics(self, task):
+    def update_physics(self):
         dt = globalClock.getDt()
         self.physics_world.doPhysics(dt)
-        return task.cont
 
     def bullet_debug(self):
         debugNode = BulletDebugNode('Debug')
@@ -166,7 +171,7 @@ class Vehicle:
         model = app.loader.load_model(model_file)
 
         self.physics_node = BulletRigidBodyNode('vehicle')
-        self.physics_node.setLinearDamping(0.5)
+        self.physics_node.setLinearDamping(0.1)
         #self.physics_node.setAngularDamping(0.5)
         self.physics_node.setLinearSleepThreshold(0)
         self.physics_node.setAngularSleepThreshold(0)
@@ -195,6 +200,7 @@ class Vehicle:
 
         self.repulsors_active = False
         self.gyroscope_active = True
+        self.rot_target = Vec3(0, 0, 0)
         self.thrust = 0
 
     def np(self):
@@ -212,12 +218,15 @@ class Vehicle:
     def toggle_gyroscope(self):
         self.gyroscope_active = not self.gyroscope_active
 
+    def set_rot_target(self, rot_target):
+        self.rot_target = rot_target
+
     def set_thrust(self, strength):
         self.thrust = strength
 
     def add_repulsor(self, repulsor):
-        force = float(repulsor.get_tag('force'))
-        activation_distance = float(repulsor.get_tag('activation_distance'))
+        force = float(repulsor.get_tag(FORCE))
+        activation_distance = float(repulsor.get_tag(ACTIVATION_DISTANCE))
         repulsor_solid = CollisionSegment(
             Vec3(0, 0, 0),
             Vec3(0, 0, -activation_distance),
@@ -226,8 +235,8 @@ class Vehicle:
         repulsor_node.add_solid(repulsor_solid)
         repulsor_node.set_into_collide_mask(0)
         repulsor_np = repulsor.attach_new_node(repulsor_node)
-        repulsor_np.set_python_tag('force', force)
-        repulsor_np.set_python_tag('activation_distance', activation_distance)
+        repulsor_np.set_python_tag(FORCE, force)
+        repulsor_np.set_python_tag(ACTIVATION_DISTANCE, activation_distance)
         repulsor_np.show()
         self.app.repulsor_traverser.addCollider(
             repulsor_np, self.repulsor_queue,
@@ -238,10 +247,10 @@ class Vehicle:
         for entry in self.repulsor_queue.entries:
             repulsor = entry.get_from_node_path()
             hit_feeler = entry.get_surface_point(repulsor)
-            max_distance = repulsor.get_python_tag('activation_distance')
+            max_distance = repulsor.get_python_tag(ACTIVATION_DISTANCE)
             if hit_feeler.length() < max_distance and self.repulsors_active:
                 # Repulsor power at zero distance
-                base_strength = repulsor.get_python_tag('force')
+                base_strength = repulsor.get_python_tag(FORCE)
                 # Fraction of the repulsor beam above the ground
                 activation_frac = hit_feeler.length() / max_distance
                 # Effective fraction of repulsors force
@@ -258,14 +267,14 @@ class Vehicle:
                 self.physics_node.apply_impulse(impulse * dt, repulsor_pos)
 
     def add_thruster(self, thruster):
-        force = float(thruster.get_tag('force'))
-        thruster.set_python_tag('force', force)
+        force = float(thruster.get_tag(FORCE))
+        thruster.set_python_tag(FORCE, force)
         self.thruster_nodes.append(thruster)
 
     def apply_thrusters(self):
         dt = globalClock.dt
         for thruster in self.thruster_nodes:
-            max_force = thruster.get_python_tag('force')
+            max_force = thruster.get_python_tag(FORCE)
             real_force = max_force * self.thrust
             thruster_pos = thruster.get_pos(self.vehicle)
             thrust_direction = self.app.render.get_relative_vector(
@@ -278,7 +287,7 @@ class Vehicle:
             )
 
     def apply_gyroscope(self):
-        rot = self.physics_node.get_angular_velocity()
+        rot = self.physics_node.get_angular_velocity() - self.rot_target
         dt = globalClock.dt
         self.physics_node.apply_torque_impulse(-rot * dt * 1500)
 
@@ -303,7 +312,7 @@ class CameraController:
     def set_vehicle(self, vehicle):
         self.vehicle = vehicle
 
-    def update(self, task):
+    def update(self):
         horiz_dist = 15
         cam_offset = Vec3(0, 0, 5)
         focus_offset = Vec3(0, 0, 2)
@@ -320,8 +329,6 @@ class CameraController:
         base.cam.set_pos(cam_pos)
         base.cam.look_at(focus)
 
-        return task.cont
-
 
 class VehicleController:
     def __init__(self, app, vehicle):
@@ -331,13 +338,23 @@ class VehicleController:
         self.app.accept("r", self.toggle_repulsors)
         self.app.accept("g", self.toggle_gyroscope)
         self.app.accept("s", self.shock)
-        self.app.accept("1", self.set_thrust, [0])
-        self.app.accept("2", self.set_thrust, [0.33])
-        self.app.accept("3", self.set_thrust, [0.66])
-        self.app.accept("4", self.set_thrust, [1])
+        # self.app.accept("1", self.set_thrust, [0])
+        # self.app.accept("2", self.set_thrust, [0.33])
+        # self.app.accept("3", self.set_thrust, [0.66])
+        # self.app.accept("4", self.set_thrust, [1])
 
-    def gather_inputs(self, task):
-        return task.cont
+    def gather_inputs(self):
+        rot_target = Vec3(0, 0, 0)
+        if self.app.mouseWatcherNode.is_button_down(KeyboardButton.left()):
+            rot_target.z += 2
+        if self.app.mouseWatcherNode.is_button_down(KeyboardButton.right()):
+            rot_target.z -= 2
+        self.vehicle.set_rot_target(rot_target)
+
+        thrust = 0
+        if self.app.mouseWatcherNode.is_button_down(KeyboardButton.up()):
+            thrust = 1
+        self.vehicle.set_thrust(thrust)
 
     def next_vehicle(self):
         self.app.next_vehicle()
