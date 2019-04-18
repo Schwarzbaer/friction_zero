@@ -1,1 +1,1 @@
-window-title Panda3D Game
+window-title Friction: Zero
