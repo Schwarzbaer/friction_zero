@@ -127,18 +127,28 @@ class Environment:
     def __init__(self, app, map_file):
         self.app = app
 
-        shape = BulletPlaneShape(Vec3(0, 0, 1), 0)
         node = BulletRigidBodyNode('Ground')
-        node.addShape(shape)
         self.np = self.app.render.attach_new_node(node)
         self.np.setPos(0, 0, 0)
         self.app.physics_world.attachRigidBody(node)
 
         model = loader.load_model(map_file)
-        collision_solids = model.find("fz_collision")
-        collision_solids.hide()
-
         model.reparent_to(self.np)
+
+        # Bullet collision mesh
+        collision_solids = model.find_all_matches("fz_collision*")
+        collision_solids.hide()
+        for collision_solid in collision_solids:
+            collision_solid.flatten_strong()
+            for geom_node in collision_solid.find_all_matches('**/+GeomNode'):
+                mesh = BulletTriangleMesh()
+                # FIXME: Is this universally correct?
+                mesh.addGeom(geom_node.node().get_geom(0))
+                shape = BulletTriangleMeshShape(mesh, dynamic=False)
+                terrain_node = BulletRigidBodyNode('terrain')
+                terrain_node.addShape(shape)
+                geom_node.attach_new_node(terrain_node)
+                self.app.physics_world.attachRigidBody(terrain_node)
 
         coll_solid = CollisionPlane(Plane((0, 0, 1), (0, 0, 0)))
         coll_node = CollisionNode('ground')
