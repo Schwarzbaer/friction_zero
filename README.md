@@ -9,7 +9,10 @@ TODO
 
 ### Code
 
-* Spawn point connectors
+* Air drag and aerodynamics
+  * Drag scales with the square of the speed
+  * Artist-defined air density
+  * Air brakes
 * Course gates
 * Friction
 * Refactoring: Move vehicle control logic into an ECU method
@@ -18,9 +21,6 @@ TODO
     * Angular damping works just fine, now proper logic for control and
       environment-sensitive stabilization has to be implemented.
   * Replacement of linear damping on repulsors
-* Air drag
-  * Artist-defined air density
-* Aerodynamics
 * Camera controls and automatics
 * GUI
 * Menu
@@ -33,7 +33,7 @@ TODO
 * Countdown to start
 * Animations
 * Gamepad support
-
+  * D-pad for gyro?
 
 
 ### Art
@@ -50,3 +50,8 @@ TODO
 * Music:
   * menu
   * track
+
+
+### Other
+
+* Add license
