@@ -47,7 +47,7 @@ class GameApp(ShowBase):
 
         self.physics_world = BulletWorld()
         self.physics_world.setGravity(Vec3(0, 0, -9.81))
-        # self.bullet_debug()
+        self.bullet_debug()
 
         environment = Environment(self, "assets/maps/hills.bam")
         spawn_points = environment.get_spawn_points()

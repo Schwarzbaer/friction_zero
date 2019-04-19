@@ -18,10 +18,6 @@ TODO
     * Angular damping works just fine, now proper logic for control and
       environment-sensitive stabilization has to be implemented.
   * Replacement of linear damping on repulsors
-* Artist-defined repulsors
-  * Find a better name than repulsor:*
-    * Maybe fz_repulsor*?
-* Artist-defined gravity
 * Air drag
   * Artist-defined air density
 * Aerodynamics
@@ -54,7 +50,3 @@ TODO
 * Music:
   * menu
   * track
-* Add 'fz_spawn_point_connector' Empty
-* After spawn point connectors are implemented: Move center of mass of Magnesium
-  up
-* Rename 'spawn_point' to 'fz_spawn_point' and change symbol value in code.
