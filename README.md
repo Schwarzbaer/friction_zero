@@ -33,5 +33,7 @@ TODO
 
 ### Art
 
-* After spawn point connectors are implements: Move center of mass of Magnesium
+* Add 'fz_spawn_point_connector' Empty
+* After spawn point connectors are implemented: Move center of mass of Magnesium
   up
+* Rename 'spawn_point' to 'fz_spawn_point' and change symbol value in code.
