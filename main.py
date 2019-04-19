@@ -300,13 +300,12 @@ class Vehicle:
             self.physics_node.apply_torque_impulse(-unwanted_rot * dt * 1500)
 
     def shock(self):
-        #self.physics_node.apply_impulse(
-        #    Vec3(0,0,0),
-        #    Vec3(random(), random(), random()) * 10,
-        #)
+        self.physics_node.apply_impulse(
+            Vec3(0,0,0),
+            Vec3(random(), random(), random()) * 10,
+        )
         self.physics_node.apply_torque_impulse(
-            Vec3(0, 0, 1000),
-            #(Vec3(random(), random(), random()) - Vec3(0.5, 0.5, 0.5)) * 1000,
+            (Vec3(random(), random(), random()) - Vec3(0.5, 0.5, 0.5)) * 1000,
         )
 
 
