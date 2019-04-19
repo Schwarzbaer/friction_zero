@@ -9,9 +9,6 @@ TODO
 
 ### Code
 
-* TriangleMesh-based maps
-  * Collision
-  * Repulsors
 * Spawn point connectors
 * Course gates
 * Friction
@@ -28,6 +25,7 @@ TODO
 * Air drag
   * Artist-defined air density
 * Aerodynamics
+* Camera controls and automatics
 * GUI
 * Menu
   * Main menu
@@ -53,8 +51,12 @@ TODO
   * Add surroundings
 * Sounds:
   * engine (playbackrate to speed?)
-  * vehicleXvehicle impact 
+  * vehicleXvehicle impact
   * vehicleXenvironment impact
-* Music: 
+* Music:
   * menu
   * track
+* Add 'fz_spawn_point_connector' Empty
+* After spawn point connectors are implemented: Move center of mass of Magnesium
+  up
+* Rename 'spawn_point' to 'fz_spawn_point' and change symbol value in code.
