@@ -29,6 +29,7 @@ panda3d.core.load_prc_file(
 
 
 SPAWN_POINTS = 'fz_spawn_point'
+SPAWN_POINT_CONNECTOR = 'fz_spawn_point_connector'
 REPULSOR = 'fz_repulsor'
 THRUSTER = 'fz_thruster'
 SKYSPHERE = 'fz_skysphere'
@@ -47,10 +48,10 @@ class GameApp(ShowBase):
 
         self.physics_world = BulletWorld()
         self.physics_world.setGravity(Vec3(0, 0, -9.81))
-        # self.bullet_debug()
+        self.bullet_debug()
 
-        environment = Environment(self, "assets/maps/hills.bam")
-        spawn_points = environment.get_spawn_points()
+        self.environment = Environment(self, "assets/maps/hills.bam")
+        spawn_points = self.environment.get_spawn_points()
 
         self.vehicles = []
         vehicle_1 = Vehicle(self, "assets/cars/Ricardeaut_Magnesium.bam")
@@ -59,10 +60,7 @@ class GameApp(ShowBase):
         self.vehicles.append(vehicle_2)
 
         for vehicle, spawn_point in zip(self.vehicles, spawn_points):
-            vehicle.place(
-                spawn_point.get_pos(),
-                spawn_point.get_hpr(),
-            )
+            vehicle.place(spawn_point)
 
         self.player_vehicle_idx = 0
         self.player_camera = CameraController(
@@ -129,10 +127,10 @@ class Environment:
         self.np.setPos(0, 0, 0)
         self.app.physics_world.attachRigidBody(node)
 
-        model = loader.load_model(map_file)
-        model.reparent_to(self.np)
+        self.model = loader.load_model(map_file)
+        self.model.reparent_to(self.np)
 
-        sky = model.find(SKYSPHERE)
+        sky = self.model.find(SKYSPHERE)
         sky.reparent_to(base.cam)
         sky.set_bin('background', 0)
         sky.set_depth_write(False)
@@ -140,7 +138,7 @@ class Environment:
         sky.setLightOff()
 
         # Bullet collision mesh
-        collision_solids = model.find_all_matches(
+        collision_solids = self.model.find_all_matches(
             '{}*'.format(TERRAIN_COLLIDER)
         )
         collision_solids.hide()
@@ -184,7 +182,7 @@ class Vehicle:
     def __init__(self, app, model_file):
         self.app = app
 
-        model = app.loader.load_model(model_file)
+        self.model = app.loader.load_model(model_file)
 
         self.physics_node = BulletRigidBodyNode('vehicle')
         self.physics_node.setLinearDamping(0.1)
@@ -194,24 +192,24 @@ class Vehicle:
         self.physics_node.setMass(100.0)
 
         shape = BulletConvexHullShape()
-        for geom_node in model.find_all_matches("**/+GeomNode"):
+        for geom_node in self.model.find_all_matches("**/+GeomNode"):
             for geom in geom_node.node().get_geoms():
                 vertices = GeomVertexReader(geom.get_vertex_data(), 'vertex')
                 while not vertices.is_at_end():
                     v_geom = vertices.getData3f()
-                    v_model = model.get_relative_point(geom_node, v_geom)
+                    v_model = self.model.get_relative_point(geom_node, v_geom)
                     shape.add_point(v_model)
         self.physics_node.addShape(shape)
         self.vehicle = NodePath(self.physics_node)
 
-        model.reparent_to(self.vehicle)
+        self.model.reparent_to(self.vehicle)
 
         self.repulsor_nodes = []
-        for repulsor in model.find_all_matches('**/{}*'.format(REPULSOR)):
+        for repulsor in self.model.find_all_matches('**/{}*'.format(REPULSOR)):
             self.add_repulsor(repulsor)
 
         self.thruster_nodes = []
-        for thruster in model.find_all_matches('**/{}*'.format(THRUSTER)):
+        for thruster in self.model.find_all_matches('**/{}*'.format(THRUSTER)):
             self.add_thruster(thruster)
 
         self.repulsors_active = False
@@ -222,10 +220,11 @@ class Vehicle:
     def np(self):
         return self.vehicle
 
-    def place(self, coordinate, orientation):
-        self.vehicle.reparent_to(self.app.render)
-        self.vehicle.set_pos(coordinate)
-        self.vehicle.set_hpr(orientation)
+    def place(self, spawn_point):
+        self.vehicle.reparent_to(self.app.environment.model)
+        connector = self.model.find(SPAWN_POINT_CONNECTOR)
+        self.vehicle.set_hpr(-connector.get_hpr(spawn_point))
+        self.vehicle.set_pos(-connector.get_pos(spawn_point))
         self.app.physics_world.attachRigidBody(self.physics_node)
 
     def toggle_repulsors(self):

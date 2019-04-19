@@ -9,7 +9,11 @@ TODO
 
 ### Code
 
-* Spawn point connectors
+* Air drag and aerodynamics
+  * Drag scales with the square of the speed
+  * Artist-defined air density
+  * Air brakes
+* Reparent vehicles to environment instead of render, then remove dlight
 * Course gates
 * Friction
 * Refactoring: Move vehicle control logic into an ECU method
@@ -22,9 +26,6 @@ TODO
   * Find a better name than repulsor:*
     * Maybe fz_repulsor*?
 * Artist-defined gravity
-* Air drag
-  * Artist-defined air density
-* Aerodynamics
 * Camera controls and automatics
 * GUI
 * Menu
@@ -37,7 +38,7 @@ TODO
 * Countdown to start
 * Animations
 * Gamepad support
-
+  * D-pad for gyro?
 
 
 ### Art
@@ -54,7 +55,8 @@ TODO
 * Music:
   * menu
   * track
-* Add 'fz_spawn_point_connector' Empty
-* After spawn point connectors are implemented: Move center of mass of Magnesium
-  up
-* Rename 'spawn_point' to 'fz_spawn_point' and change symbol value in code.
+
+
+### Other
+
+* Add license
