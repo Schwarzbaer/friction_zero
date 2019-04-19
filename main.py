@@ -28,6 +28,10 @@ panda3d.core.load_prc_file(
 )
 
 
+SPAWN_POINTS = 'spawn_point'
+REPULSOR = 'fz_repulsor'
+THRUSTER = 'fz_thruster'
+TERRAIN_COLLIDER = 'fz_collision'
 FORCE = 'force'
 ACTIVATION_DISTANCE = 'activation_distance'
 CM_TERRAIN = BitMask32.bit(0)
@@ -38,6 +42,7 @@ class GameApp(ShowBase):
         ShowBase.__init__(self)
         pman.shim.init(self)
         self.accept('escape', sys.exit)
+        self.set_frame_rate_meter(True)
 
         self.physics_world = BulletWorld()
         self.physics_world.setGravity(Vec3(0, 0, -9.81))
@@ -127,7 +132,9 @@ class Environment:
         model.reparent_to(self.np)
 
         # Bullet collision mesh
-        collision_solids = model.find_all_matches("fz_collision*")
+        collision_solids = model.find_all_matches(
+            '{}*'.format(TERRAIN_COLLIDER)
+        )
         collision_solids.hide()
         for collision_solid in collision_solids:
             collision_solid.flatten_strong()
@@ -149,7 +156,10 @@ class Environment:
         self.app.render.setLight(dlnp)
 
     def get_spawn_points(self):
-        spawn_nodes = [sp for sp in self.np.find_all_matches("**/spawn_point*")]
+        spawn_nodes = [
+            sp
+            for sp in self.np.find_all_matches("**/{}*".format(SPAWN_POINTS))
+        ]
         spawn_points = {}
         for sn in spawn_nodes:
             _, _, idx = sn.name.partition(':')
@@ -189,11 +199,11 @@ class Vehicle:
         model.reparent_to(self.vehicle)
 
         self.repulsor_nodes = []
-        for repulsor in model.find_all_matches('**/fz_repulsor:*'):
+        for repulsor in model.find_all_matches('**/{}*'.format(REPULSOR)):
             self.add_repulsor(repulsor)
 
         self.thruster_nodes = []
-        for thruster in model.find_all_matches('**/fz_thruster:*'):
+        for thruster in model.find_all_matches('**/{}*'.format(THRUSTER)):
             self.add_thruster(thruster)
 
         self.repulsors_active = False
