@@ -9,9 +9,6 @@ TODO
 
 ### Code
 
-* TriangleMesh-based maps
-  * Collision
-  * Repulsors
 * Spawn point connectors
 * Course gates
 * Friction
@@ -28,6 +25,7 @@ TODO
 * Air drag
   * Artist-defined air density
 * Aerodynamics
+* Camera controls and automatics
 * GUI
 * Animations
 * Gamepad support

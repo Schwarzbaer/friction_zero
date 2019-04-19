@@ -10,14 +10,8 @@ import pman.shim
 from panda3d.core import NodePath
 from panda3d.core import Vec3
 from panda3d.core import VBase4
-from panda3d.core import Plane
+from panda3d.core import BitMask32
 from panda3d.core import DirectionalLight
-from panda3d.core import CollisionTraverser
-from panda3d.core import CollisionHandlerQueue
-from panda3d.core import CollisionNode
-from panda3d.core import CollisionRay
-from panda3d.core import CollisionSegment
-from panda3d.core import CollisionPlane
 from panda3d.core import GeomVertexReader
 from panda3d.core import KeyboardButton
 from panda3d.bullet import BulletWorld
@@ -36,6 +30,7 @@ panda3d.core.load_prc_file(
 
 FORCE = 'force'
 ACTIVATION_DISTANCE = 'activation_distance'
+CM_TERRAIN = BitMask32.bit(0)
 
 
 class GameApp(ShowBase):
@@ -46,10 +41,7 @@ class GameApp(ShowBase):
 
         self.physics_world = BulletWorld()
         self.physics_world.setGravity(Vec3(0, 0, -9.81))
-        self.bullet_debug()
-
-        self.repulsor_traverser = CollisionTraverser('repulsor')
-        #self.repulsor_traverser.show_collisions(base.render)
+        # self.bullet_debug()
 
         environment = Environment(self, "assets/maps/hills.bam")
         spawn_points = environment.get_spawn_points()
@@ -57,7 +49,7 @@ class GameApp(ShowBase):
         self.vehicles = []
         vehicle_1 = Vehicle(self, "assets/cars/Ricardeaut_Magnesium.bam")
         self.vehicles.append(vehicle_1)
-        vehicle_2 = Vehicle(self, "assets/cars/Ricardeaut_Magnesium.bam")
+        vehicle_2 = Vehicle(self, "assets/cars/Cadarache_DiamondMII.bam")
         self.vehicles.append(vehicle_2)
 
         for vehicle, spawn_point in zip(self.vehicles, spawn_points):
@@ -95,7 +87,6 @@ class GameApp(ShowBase):
         self.player_controller.set_vehicle(self.vehicles[self.player_vehicle_idx])
 
     def run_repulsors(self):
-        self.repulsor_traverser.traverse(base.render)
         for vehicle in self.vehicles:
             vehicle.apply_repulsors()
 
@@ -147,15 +138,9 @@ class Environment:
                 shape = BulletTriangleMeshShape(mesh, dynamic=False)
                 terrain_node = BulletRigidBodyNode('terrain')
                 terrain_node.addShape(shape)
-                geom_node.attach_new_node(terrain_node)
+                terrain_np = geom_node.attach_new_node(terrain_node)
+                terrain_np.setCollideMask(CM_TERRAIN)
                 self.app.physics_world.attachRigidBody(terrain_node)
-
-        coll_solid = CollisionPlane(Plane((0, 0, 1), (0, 0, 0)))
-        coll_node = CollisionNode('ground')
-        coll_node.set_from_collide_mask(0)
-        coll_node.add_solid(coll_solid)
-        coll_np = self.np.attach_new_node(coll_node)
-        #coll_np.show()
 
         dlight = DirectionalLight('dlight')
         dlight.setColor(VBase4(1, 1, 1, 1))
@@ -203,7 +188,7 @@ class Vehicle:
 
         model.reparent_to(self.vehicle)
 
-        self.repulsor_queue = CollisionHandlerQueue()
+        self.repulsor_nodes = []
         for repulsor in model.find_all_matches('**/fz_repulsor:*'):
             self.add_repulsor(repulsor)
 
@@ -240,32 +225,30 @@ class Vehicle:
     def add_repulsor(self, repulsor):
         force = float(repulsor.get_tag(FORCE))
         activation_distance = float(repulsor.get_tag(ACTIVATION_DISTANCE))
-        repulsor_solid = CollisionSegment(
-            Vec3(0, 0, 0),
-            Vec3(0, 0, -activation_distance),
-        )
-        repulsor_node = CollisionNode('repulsor')
-        repulsor_node.add_solid(repulsor_solid)
-        repulsor_node.set_into_collide_mask(0)
-        repulsor_np = repulsor.attach_new_node(repulsor_node)
+        repulsor_np = repulsor.attach_new_node('repulsor')
         repulsor_np.set_python_tag(FORCE, force)
         repulsor_np.set_python_tag(ACTIVATION_DISTANCE, activation_distance)
-        repulsor_np.show()
-        self.app.repulsor_traverser.addCollider(
-            repulsor_np, self.repulsor_queue,
-        )
+        self.repulsor_nodes.append(repulsor_np)
 
     def apply_repulsors(self):
         dt = globalClock.dt
-        for entry in self.repulsor_queue.entries:
-            repulsor = entry.get_from_node_path()
-            hit_feeler = entry.get_surface_point(repulsor)
+        for repulsor in self.repulsor_nodes:
             max_distance = repulsor.get_python_tag(ACTIVATION_DISTANCE)
-            if hit_feeler.length() < max_distance and self.repulsors_active:
+            repulsor_pos = repulsor.get_pos(self.app.render)
+            repulsor_dir = self.app.render.get_relative_vector(
+                repulsor,
+                Vec3(0, 0, -max_distance),
+            )
+            feeler = self.app.physics_world.ray_test_closest(
+                repulsor_pos,
+                repulsor_pos + repulsor_dir,
+                CM_TERRAIN,
+            )
+            if feeler.hasHit() and self.repulsors_active:
                 # Repulsor power at zero distance
                 base_strength = repulsor.get_python_tag(FORCE)
                 # Fraction of the repulsor beam above the ground
-                activation_frac = hit_feeler.length() / max_distance
+                activation_frac = feeler.get_hit_fraction()
                 # Effective fraction of repulsors force
                 activation = cos(0.5*pi * activation_frac)
                 # Effective repulsor force
