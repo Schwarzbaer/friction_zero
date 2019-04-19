@@ -21,10 +21,6 @@ TODO
     * Angular damping works just fine, now proper logic for control and
       environment-sensitive stabilization has to be implemented.
   * Replacement of linear damping on repulsors
-* Artist-defined repulsors
-  * Find a better name than repulsor:*
-    * Maybe fz_repulsor*?
-* Artist-defined gravity
 * Camera controls and automatics
 * GUI
 * Menu
