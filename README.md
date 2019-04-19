@@ -13,7 +13,6 @@ TODO
   * Drag scales with the square of the speed
   * Artist-defined air density
   * Air brakes
-* Reparent vehicles to environment instead of render, then remove dlight
 * Course gates
 * Friction
 * Refactoring: Move vehicle control logic into an ECU method

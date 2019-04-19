@@ -155,12 +155,6 @@ class Environment:
                 terrain_np.setCollideMask(CM_TERRAIN)
                 self.app.physics_world.attachRigidBody(terrain_node)
 
-        dlight = DirectionalLight('dlight')
-        dlight.setColor(VBase4(1, 1, 1, 1))
-        dlnp = self.app.render.attachNewNode(dlight)
-        dlnp.setHpr(20, -75, 0)
-        self.app.render.setLight(dlnp)
-
     def get_spawn_points(self):
         spawn_nodes = [
             sp
