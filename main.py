@@ -309,12 +309,23 @@ class Vehicle:
         )
 
 
+CAM_MODE_FOLLOW = 1
+CAM_MODE_DIRECTION = 2
+CAM_MODES = [CAM_MODE_FOLLOW, CAM_MODE_DIRECTION]
+
+
 class CameraController:
     def __init__(self, app, camera, vehicle):
         self.app = app
         self.camera = camera
         self.vehicle = vehicle
         self.camera.reparent_to(self.app.render)
+
+        self.camera_mode = 0
+        self.app.accept("c", self.switch_camera_mode)
+
+    def switch_camera_mode(self):
+        self.camera_mode = (self.camera_mode + 1) % len(CAM_MODES)
 
     def set_vehicle(self, vehicle):
         self.vehicle = vehicle
@@ -324,10 +335,13 @@ class CameraController:
         cam_offset = Vec3(0, 0, 5)
         focus_offset = Vec3(0, 0, 2)
         vehicle_pos = self.vehicle.np().get_pos(self.app.render)
-        vehicle_back = self.app.render.get_relative_vector(
-            self.vehicle.np(),
-            Vec3(0, -1, 0),
-        )
+        if CAM_MODES[self.camera_mode] == CAM_MODE_FOLLOW:
+            vehicle_back = self.app.render.get_relative_vector(
+                self.vehicle.np(),
+                Vec3(0, -1, 0),
+            )
+        elif CAM_MODES[self.camera_mode] == CAM_MODE_DIRECTION:
+            vehicle_back = -self.vehicle.physics_node.get_linear_velocity()
         vehicle_back.z = 0
         vehicle_back = vehicle_back / vehicle_back.length()
 
