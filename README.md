@@ -42,8 +42,6 @@ TODO
 
 ### Art
 
-* After spawn point connectors are implemented: Move center of mass of Magnesium
-  up
 * Design two other vehicles
 * When movement is mostly implemented, make racetrack
   * Start with a looping road.
