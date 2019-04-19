@@ -29,11 +29,32 @@ TODO
   * Artist-defined air density
 * Aerodynamics
 * GUI
+* Menu
+  * Main menu
+  * Options
+  * Track selection screen
+  * Vehicle selection screen
+    * Vehicle material color-picker
+    * Choose repulsor model
+* Countdown to start
 * Animations
 * Gamepad support
 
 
+
 ### Art
 
-* After spawn point connectors are implements: Move center of mass of Magnesium
+* After spawn point connectors are implemented: Move center of mass of Magnesium
   up
+* Design two other vehicles
+* When movement is mostly implemented, make racetrack
+  * Start with a looping road.
+  * Add start/finish, gates, spawn points
+  * Add surroundings
+* Sounds:
+  * engine (playbackrate to speed?)
+  * vehicleXvehicle impact 
+  * vehicleXenvironment impact
+* Music: 
+  * menu
+  * track
