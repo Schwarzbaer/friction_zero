@@ -311,7 +311,8 @@ class Vehicle:
 
 CAM_MODE_FOLLOW = 1
 CAM_MODE_DIRECTION = 2
-CAM_MODES = [CAM_MODE_FOLLOW, CAM_MODE_DIRECTION]
+CAM_MODE_MIXED = 3
+CAM_MODES = [CAM_MODE_FOLLOW, CAM_MODE_DIRECTION, CAM_MODE_MIXED]
 
 
 class CameraController:
@@ -342,6 +343,11 @@ class CameraController:
             )
         elif CAM_MODES[self.camera_mode] == CAM_MODE_DIRECTION:
             vehicle_back = -self.vehicle.physics_node.get_linear_velocity()
+        elif CAM_MODES[self.camera_mode] == CAM_MODE_MIXED:
+            vehicle_back = self.app.render.get_relative_vector(
+                self.vehicle.np(),
+                Vec3(0, -1, 0),
+            ) + (-self.vehicle.physics_node.get_linear_velocity())
         vehicle_back.z = 0
         vehicle_back = vehicle_back / vehicle_back.length()
 
