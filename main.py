@@ -347,7 +347,10 @@ class CameraController:
             vehicle_back = self.app.render.get_relative_vector(
                 self.vehicle.np(),
                 Vec3(0, -1, 0),
-            ) + (-self.vehicle.physics_node.get_linear_velocity())
+            )
+            movement = self.vehicle.physics_node.get_linear_velocity()
+            movement_back = -movement / movement.length()
+            vehicle_back = vehicle_back + movement_back
         vehicle_back.z = 0
         vehicle_back = vehicle_back / vehicle_back.length()
 

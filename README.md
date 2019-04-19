@@ -33,6 +33,10 @@ TODO
 
 ### Art
 
+* Add 'gravity' property or 'fz_gravity' Empty to map. Earth gravity is 9.81.
+* Add 'mass' property to vehicle. Current code-defined value is 100. 1000 would
+  be more realistic, but also requires upping the forces of repulsors and
+  thrusters.
 * Add 'fz_spawn_point_connector' Empty
 * After spawn point connectors are implemented: Move center of mass of Magnesium
   up
