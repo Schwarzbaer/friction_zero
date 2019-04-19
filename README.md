@@ -27,16 +27,33 @@ TODO
 * Aerodynamics
 * Camera controls and automatics
 * GUI
+* Menu
+  * Main menu
+  * Options
+  * Track selection screen
+  * Vehicle selection screen
+    * Vehicle material color-picker
+    * Choose repulsor model
+* Countdown to start
 * Animations
 * Gamepad support
 
 
+
 ### Art
 
-* Add 'gravity' property or 'fz_gravity' Empty to map. Earth gravity is 9.81.
-* Add 'mass' property to vehicle. Current code-defined value is 100. 1000 would
-  be more realistic, but also requires upping the forces of repulsors and
-  thrusters.
+* Design two other vehicles
+* When movement is mostly implemented, make racetrack
+  * Start with a looping road.
+  * Add start/finish, gates, spawn points
+  * Add surroundings
+* Sounds:
+  * engine (playbackrate to speed?)
+  * vehicleXvehicle impact
+  * vehicleXenvironment impact
+* Music:
+  * menu
+  * track
 * Add 'fz_spawn_point_connector' Empty
 * After spawn point connectors are implemented: Move center of mass of Magnesium
   up

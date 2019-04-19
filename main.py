@@ -28,9 +28,10 @@ panda3d.core.load_prc_file(
 )
 
 
-SPAWN_POINTS = 'spawn_point'
+SPAWN_POINTS = 'fz_spawn_point'
 REPULSOR = 'fz_repulsor'
 THRUSTER = 'fz_thruster'
+SKYSPHERE = 'fz_skysphere'
 TERRAIN_COLLIDER = 'fz_collision'
 FORCE = 'force'
 ACTIVATION_DISTANCE = 'activation_distance'
@@ -130,6 +131,13 @@ class Environment:
 
         model = loader.load_model(map_file)
         model.reparent_to(self.np)
+
+        sky = model.find(SKYSPHERE)
+        sky.reparent_to(base.cam)
+        sky.set_bin('background', 0)
+        sky.set_depth_write(False)
+        sky.set_compass()
+        sky.setLightOff()
 
         # Bullet collision mesh
         collision_solids = model.find_all_matches(
