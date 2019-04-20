@@ -40,7 +40,7 @@ CM_TERRAIN = BitMask32.bit(0)
 
 
 class GameApp(ShowBase):
-    def __init__(self):
+    def __init__(self, map="assets/maps/hills.bam"):
         ShowBase.__init__(self)
         pman.shim.init(self)
         self.accept('escape', sys.exit)
@@ -50,7 +50,7 @@ class GameApp(ShowBase):
         self.physics_world.setGravity(Vec3(0, 0, -9.81))
         self.bullet_debug()
 
-        self.environment = Environment(self, "assets/maps/hills.bam")
+        self.environment = Environment(self, map)
         spawn_points = self.environment.get_spawn_points()
 
         self.vehicles = []
@@ -215,6 +215,7 @@ class Vehicle:
         return self.vehicle
 
     def place(self, spawn_point):
+
         self.vehicle.reparent_to(self.app.environment.model)
         connector = self.model.find(SPAWN_POINT_CONNECTOR)
         self.vehicle.set_hpr(-connector.get_hpr(spawn_point))
@@ -407,8 +408,13 @@ class VehicleController:
 
 
 def main():
-    app = GameApp()
+    if len(sys.argv) > 1:
+        map = "assets/maps/"+sys.argv[1]
+        app = GameApp(map)
+    else:
+        app = GameApp()
     app.run()
+
 
 if __name__ == '__main__':
     main()
