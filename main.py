@@ -216,8 +216,7 @@ class Vehicle:
 
     def place(self, spawn_point):
         self.vehicle.reparent_to(self.app.environment.model)
-        vehicle = self.model.find("fz_vehicle")
-        connector = vehicle.find(SPAWN_POINT_CONNECTOR)
+        connector = self.model.find("**/"+SPAWN_POINT_CONNECTOR)
         self.vehicle.set_hpr(-connector.get_hpr(spawn_point))
         self.vehicle.set_pos(-connector.get_pos(spawn_point))
         self.app.physics_world.attachRigidBody(self.physics_node)
