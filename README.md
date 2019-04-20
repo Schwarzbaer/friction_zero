@@ -76,5 +76,3 @@ TODO
     * named_collision
       * friction		(1)
   * fz_spawn_point:N
-  
-
