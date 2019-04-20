@@ -51,7 +51,30 @@ TODO
   * menu
   * track
 
-
 ### Other
 
 * Add license
+
+
+### Models checklist
+
+* Vehicles
+  * Scene
+    * friction			(1)
+    * mass			(1000)
+  * fz_repulsor:N
+    * activation_distance	(5)
+    * force			(3000)
+  * fz_thruster:N
+    * force			(20000)
+  * fz_spawn_point_connector
+
+* Map
+  * Scene
+    * gravity (temp)		(9.810)
+  * fz_collision
+    * named_collision
+      * friction		(1)
+  * fz_spawn_point:N
+  
+
