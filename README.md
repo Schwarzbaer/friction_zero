@@ -10,22 +10,26 @@ TODO
 ### Code
 
 * Shadows
-* Air drag and aerodynamics
-  * Drag scales with the square of the speed
-  * Artist-defined air density
-  * Air brakes
 * Refactoring: Move vehicle control logic into an ECU method
 * Avionics (should come after ECU)
   * Gyroscopic stabilization
     * Angular damping works just fine, now proper logic for control and
       environment-sensitive stabilization has to be implemented.
   * Replacement of linear damping on repulsors
+* Artist-defined gyro torque clamp
+* Terrain collision mesh: If no explicit mesh is present, use the visual one.
+* Air drag and aerodynamics
+  * Drag scales with the square of the speed
+  * Artist-defined air density
+  * Air brakes
 * Course gates
 * GUI
   * Speed
 * Gamepad support
   * D-pad for gyro?
 * Camera controls and automatics
+  * Camera distance should be related to vehicle's linear speed.
+  * Camera should respect the ground / objects.
 * Animations
 * Repulsoring other vehicles
 * Clamp timestep in physics simulation

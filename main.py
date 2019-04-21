@@ -50,7 +50,7 @@ class GameApp(ShowBase):
         ShowBase.__init__(self)
         pman.shim.init(self)
         self.accept('escape', sys.exit)
-        # self.render.setShaderAuto()
+        #self.render.setShaderAuto()
         self.set_frame_rate_meter(True)
 
         self.environment = Environment(self, map)
@@ -188,6 +188,11 @@ TARGET_ORIENTATION = 'target_orientation'
 TARGET_ROTATION = 'target_rotation'
 REPULSOR_ACTIVATION = 'repulsor_activation'
 THRUST = 'thrust'
+CURRENT_ORIENTATION = 'current_orientation'
+CURRENT_MOVEMENT = 'current_movement'
+CURRENT_ROTATION = 'current_rotation'
+REPULSOR_RAY_ACTIVE = 'repulsor_ray_active'
+REPULSOR_RAY_FRAC = 'repulsor_ray_frac'
 
 
 class Vehicle:
@@ -237,6 +242,9 @@ class Vehicle:
             REPULSOR_ACTIVATION: 0,
             THRUST: 0,
         }
+        self.sensors = {}
+        self.commands = {}
+
         # self.light = self.app.render.attachNewNode(Spotlight("Spot"))
         # self.light.node().setScene(base.render)
         # self.light.node().setShadowCaster(True)
@@ -274,12 +282,15 @@ class Vehicle:
         self.thruster_nodes.append(thruster)
 
     def game_loop(self):
+        self.gather_sensors()
+        self.ecu()
         self.apply_repulsors()
         self.apply_gyroscope()
         self.apply_thrusters()
 
-    def apply_repulsors(self):
-        dt = globalClock.dt
+    def gather_sensors(self):
+        repulsor_ray_active = []
+        repulsor_ray_frac = []
         for repulsor in self.repulsor_nodes:
             max_distance = repulsor.get_python_tag(ACTIVATION_DISTANCE)
             repulsor_pos = repulsor.get_pos(self.app.render)
@@ -294,22 +305,49 @@ class Vehicle:
                 CM_TERRAIN,
             )
             if feeler.hasHit():
+                repulsor_ray_active.append(True)
+                repulsor_ray_frac.append(feeler.get_hit_fraction())
+            else:
+                repulsor_ray_active.append(False)
+                repulsor_ray_frac.append(1.0)
+
+        self.sensors = {
+            CURRENT_ORIENTATION: self.vehicle.get_hpr(self.app.render),
+            CURRENT_MOVEMENT: self.physics_node.get_linear_velocity(),
+            CURRENT_ROTATION: self.physics_node.get_angular_velocity(),
+            REPULSOR_RAY_ACTIVE: repulsor_ray_active,
+            REPULSOR_RAY_FRAC: repulsor_ray_frac,
+        }
+
+    def ecu(self):
+        self.commands = {
+            REPULSOR_ACTIVATION: [self.inputs[REPULSOR_ACTIVATION]
+                                  for _ in self.repulsor_nodes]
+        }
+
+    def apply_repulsors(self):
+        dt = globalClock.dt
+        repulsor_data = zip(
+            self.repulsor_nodes,
+            self.sensors[REPULSOR_RAY_ACTIVE],
+            self.sensors[REPULSOR_RAY_FRAC],
+            self.commands[REPULSOR_ACTIVATION],
+        )
+        for node, active, frac, activation in repulsor_data:
+            if active:
                 # Repulsor power at zero distance
-                base_strength = repulsor.get_python_tag(FORCE)
-                # Fraction of the repulsor beam above the ground
-                transfer_ray_frac = feeler.get_hit_fraction()
+                base_strength = node.get_python_tag(FORCE)
                 # Effective fraction of repulsors force
-                transfer_frac = cos(0.5*pi * transfer_ray_frac)
+                transfer_frac = cos(0.5*pi * frac)
                 # Effective repulsor force
-                activation = self.inputs[REPULSOR_ACTIVATION]
                 strength = base_strength * activation * transfer_frac
                 # Resulting impulse
                 impulse = self.vehicle.get_relative_vector(
-                    repulsor,
+                    node,
                     Vec3(0, 0, strength),
                 )
                 # Apply
-                repulsor_pos = repulsor.get_pos(self.vehicle)
+                repulsor_pos = node.get_pos(self.vehicle)
                 self.physics_node.apply_impulse(impulse * dt, repulsor_pos)
 
     def apply_gyroscope(self):
