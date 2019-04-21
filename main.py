@@ -83,29 +83,18 @@ class GameApp(ShowBase):
 
     def game_loop(self, task):
         self.player_controller.gather_inputs()
-        self.run_repulsors()
-        self.run_gyroscopes()
-        self.run_thrusters()
+        for vehicle in self.vehicles:
+            vehicle.game_loop()
         self.environment.update_physics()
         self.player_camera.update()
         return task.cont
 
     def next_vehicle(self):
-        self.player_vehicle_idx = (self.player_vehicle_idx + 1) % len(self.vehicles)
-        self.player_camera.set_vehicle(self.vehicles[self.player_vehicle_idx])
-        self.player_controller.set_vehicle(self.vehicles[self.player_vehicle_idx])
-
-    def run_repulsors(self):
-        for vehicle in self.vehicles:
-            vehicle.apply_repulsors()
-
-    def run_gyroscopes(self):
-        for vehicle in self.vehicles:
-            vehicle.apply_gyroscope()
-
-    def run_thrusters(self):
-        for vehicle in self.vehicles:
-            vehicle.apply_thrusters()
+        num_vehicles = len(self.vehicles)
+        self.player_vehicle_idx = (self.player_vehicle_idx + 1) % num_vehicles
+        new_vehicle = self.vehicles[self.player_vehicle_idx]
+        self.player_camera.set_vehicle(new_vehicle)
+        self.player_controller.set_vehicle(new_vehicle)
 
     def bullet_debug(self):
         debugNode = BulletDebugNode('Debug')
@@ -195,6 +184,12 @@ class Environment:
         return sorted_spawn_points
 
 
+TARGET_ORIENTATION = 'target_orientation'
+TARGET_ROTATION = 'target_rotation'
+REPULSOR_ACTIVATION = 'repulsor_activation'
+THRUST = 'thrust'
+
+
 class Vehicle:
     def __init__(self, app, model_file):
         self.app = app
@@ -236,11 +231,12 @@ class Vehicle:
         for thruster in self.model.find_all_matches('**/{}*'.format(THRUSTER)):
             self.add_thruster(thruster)
 
-        self.repulsors_active = False
-        self.gyroscope_active = True
-        self.rot_target = Vec3(0, 0, 0)
-        self.thrust = 0
-
+        self.inputs = {
+            TARGET_ORIENTATION: Vec3(0, 0, 0),
+            TARGET_ROTATION: Vec3(0, 0, 0),
+            REPULSOR_ACTIVATION: 0,
+            THRUST: 0,
+        }
         # self.light = self.app.render.attachNewNode(Spotlight("Spot"))
         # self.light.node().setScene(base.render)
         # self.light.node().setShadowCaster(True)
@@ -261,17 +257,8 @@ class Vehicle:
         self.vehicle.set_pos(-connector.get_pos(spawn_point))
         self.app.environment.add_physics_node(self.physics_node)
 
-    def toggle_repulsors(self):
-        self.repulsors_active = not self.repulsors_active
-
-    def toggle_gyroscope(self):
-        self.gyroscope_active = not self.gyroscope_active
-
-    def set_rot_target(self, rot_target):
-        self.rot_target = rot_target
-
-    def set_thrust(self, strength):
-        self.thrust = strength
+    def set_inputs(self, inputs):
+        self.inputs = inputs
 
     def add_repulsor(self, repulsor):
         force = float(repulsor.get_tag(FORCE))
@@ -280,6 +267,16 @@ class Vehicle:
         repulsor_np.set_python_tag(FORCE, force)
         repulsor_np.set_python_tag(ACTIVATION_DISTANCE, activation_distance)
         self.repulsor_nodes.append(repulsor_np)
+
+    def add_thruster(self, thruster):
+        force = float(thruster.get_tag(FORCE))
+        thruster.set_python_tag(FORCE, force)
+        self.thruster_nodes.append(thruster)
+
+    def game_loop(self):
+        self.apply_repulsors()
+        self.apply_gyroscope()
+        self.apply_thrusters()
 
     def apply_repulsors(self):
         dt = globalClock.dt
@@ -296,15 +293,16 @@ class Vehicle:
                 repulsor_pos + repulsor_dir,
                 CM_TERRAIN,
             )
-            if feeler.hasHit() and self.repulsors_active:
+            if feeler.hasHit():
                 # Repulsor power at zero distance
                 base_strength = repulsor.get_python_tag(FORCE)
                 # Fraction of the repulsor beam above the ground
-                activation_frac = feeler.get_hit_fraction()
+                transfer_ray_frac = feeler.get_hit_fraction()
                 # Effective fraction of repulsors force
-                activation = cos(0.5*pi * activation_frac)
+                transfer_frac = cos(0.5*pi * transfer_ray_frac)
                 # Effective repulsor force
-                strength = activation * base_strength
+                activation = self.inputs[REPULSOR_ACTIVATION]
+                strength = base_strength * activation * transfer_frac
                 # Resulting impulse
                 impulse = self.vehicle.get_relative_vector(
                     repulsor,
@@ -314,16 +312,22 @@ class Vehicle:
                 repulsor_pos = repulsor.get_pos(self.vehicle)
                 self.physics_node.apply_impulse(impulse * dt, repulsor_pos)
 
-    def add_thruster(self, thruster):
-        force = float(thruster.get_tag(FORCE))
-        thruster.set_python_tag(FORCE, force)
-        self.thruster_nodes.append(thruster)
+    def apply_gyroscope(self):
+        current_rot = self.physics_node.get_angular_velocity()
+        unwanted_rot = current_rot - self.inputs[TARGET_ROTATION]
+        dt = globalClock.dt
+        max_torque = 1000
+        target_torque = -unwanted_rot * dt * 15000
+        capped_torque = target_torque
+        if capped_torque > max_torque:
+            capped_torque = capped_torque / capped_torque.length() * max_torque
+        self.physics_node.apply_torque_impulse(capped_torque)
 
     def apply_thrusters(self):
         dt = globalClock.dt
         for thruster in self.thruster_nodes:
             max_force = thruster.get_python_tag(FORCE)
-            real_force = max_force * self.thrust
+            real_force = max_force * self.inputs[THRUST]
             thruster_pos = thruster.get_pos(self.vehicle)
             thrust_direction = self.app.render.get_relative_vector(
                 thruster,
@@ -333,18 +337,6 @@ class Vehicle:
                 thrust_direction * real_force * dt,
                 thruster_pos,
             )
-
-    def apply_gyroscope(self):
-        if self.gyroscope_active:
-            current_rot = self.physics_node.get_angular_velocity()
-            unwanted_rot = current_rot - self.rot_target
-            dt = globalClock.dt
-            max_torque = 1000
-            target_torque = -unwanted_rot * dt * 15000
-            capped_torque = target_torque
-            if capped_torque > max_torque:
-                capped_torque = capped_torque / capped_torque.length() * max_torque
-            self.physics_node.apply_torque_impulse(capped_torque)
 
     def shock(self):
         self.physics_node.apply_impulse(
@@ -421,23 +413,33 @@ class VehicleController:
         self.app.accept("r", self.toggle_repulsors)
         self.app.accept("g", self.toggle_gyroscope)
         self.app.accept("s", self.shock)
-        # self.app.accept("1", self.set_thrust, [0])
-        # self.app.accept("2", self.set_thrust, [0.33])
-        # self.app.accept("3", self.set_thrust, [0.66])
-        # self.app.accept("4", self.set_thrust, [1])
+        self.repulsors_active = False
+        self.gyroscope_active = True
 
     def gather_inputs(self):
-        rot_target = Vec3(0, 0, 0)
+        target_orientation = Vec3(0, 0, 0)
+        target_rotation = Vec3(0, 0, 0)
         if self.app.mouseWatcherNode.is_button_down(KeyboardButton.left()):
-            rot_target.z += 2
+            target_rotation.z += 2
         if self.app.mouseWatcherNode.is_button_down(KeyboardButton.right()):
-            rot_target.z -= 2
-        self.vehicle.set_rot_target(rot_target)
+            target_rotation.z -= 2
+
+        repulsor_activation = 0
+        if self.repulsors_active:
+            repulsor_activation = 1
 
         thrust = 0
         if self.app.mouseWatcherNode.is_button_down(KeyboardButton.up()):
             thrust = 1
-        self.vehicle.set_thrust(thrust)
+
+        self.vehicle.set_inputs(
+            {
+                TARGET_ORIENTATION: target_orientation,
+                TARGET_ROTATION: target_rotation,
+                REPULSOR_ACTIVATION: repulsor_activation,
+                THRUST: thrust,
+            }
+        )
 
     def next_vehicle(self):
         self.app.next_vehicle()
@@ -445,17 +447,14 @@ class VehicleController:
     def set_vehicle(self, vehicle):
         self.vehicle = vehicle
 
-    def shock(self):
-        self.vehicle.shock()
-
     def toggle_repulsors(self):
-        self.vehicle.toggle_repulsors()
+        self.repulsors_active = not self.repulsors_active
 
     def toggle_gyroscope(self):
-        self.vehicle.toggle_gyroscope()
+        self.gyroscope_active = not self.gyroscope_active
 
-    def set_thrust(self, strength):
-        self.vehicle.set_thrust(strength)
+    def shock(self):
+        self.vehicle.shock()
 
 
 def main():
