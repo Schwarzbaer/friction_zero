@@ -9,31 +9,28 @@ TODO
 
 ### Code
 
+* Shadows
 * Air drag and aerodynamics
   * Drag scales with the square of the speed
   * Artist-defined air density
   * Air brakes
-* Course gates
-* Friction
 * Refactoring: Move vehicle control logic into an ECU method
 * Avionics (should come after ECU)
   * Gyroscopic stabilization
     * Angular damping works just fine, now proper logic for control and
       environment-sensitive stabilization has to be implemented.
   * Replacement of linear damping on repulsors
-* Camera controls and automatics
+* Course gates
 * GUI
-* Menu
-  * Main menu
-  * Options
-  * Track selection screen
-  * Vehicle selection screen
-    * Vehicle material color-picker
-    * Choose repulsor model
-* Countdown to start
-* Animations
+  * Speed
 * Gamepad support
   * D-pad for gyro?
+* Camera controls and automatics
+* Animations
+* Repulsoring other vehicles
+* Clamp timestep in physics simulation
+* CCD
+* Countdown to start
 
 
 ### Art
@@ -51,12 +48,26 @@ TODO
   * menu
   * track
 
+
 ### Other
 
 * Add license
 
 
-### Models checklist
+### Post-Prototype
+
+* Menu
+  * Main menu
+  * Options
+  * Track selection screen
+  * Vehicle selection screen
+    * Vehicle material color-picker
+    * Choose repulsor model
+* AI
+
+
+Models checklist
+----------------
 
 * Vehicles
   * Scene

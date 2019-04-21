@@ -12,6 +12,7 @@ from panda3d.core import Vec3
 from panda3d.core import VBase4
 from panda3d.core import BitMask32
 from panda3d.core import DirectionalLight
+from panda3d.core import Spotlight
 from panda3d.core import GeomVertexReader
 from panda3d.core import KeyboardButton
 from panda3d.bullet import BulletWorld
@@ -28,6 +29,8 @@ panda3d.core.load_prc_file(
 )
 
 
+VEHICLE = 'fz_body'
+TERRAIN = 'fz_terrain'
 SPAWN_POINTS = 'fz_spawn_point'
 SPAWN_POINT_CONNECTOR = 'fz_spawn_point_connector'
 REPULSOR = 'fz_repulsor'
@@ -36,6 +39,9 @@ SKYSPHERE = 'fz_skysphere'
 TERRAIN_COLLIDER = 'fz_collision'
 FORCE = 'force'
 ACTIVATION_DISTANCE = 'activation_distance'
+FRICTION = 'friction'
+MASS = 'mass'
+GRAVITY = 'gravity'
 CM_TERRAIN = BitMask32.bit(0)
 
 
@@ -44,14 +50,12 @@ class GameApp(ShowBase):
         ShowBase.__init__(self)
         pman.shim.init(self)
         self.accept('escape', sys.exit)
+        # self.render.setShaderAuto()
         self.set_frame_rate_meter(True)
 
-        self.physics_world = BulletWorld()
-        self.physics_world.setGravity(Vec3(0, 0, -9.81))
-        self.bullet_debug()
-
         self.environment = Environment(self, map)
-        spawn_points = self.environment.get_spawn_points()
+        self.bullet_debug()
+        self.accept("b", self.toggle_bullet_debug)
 
         self.vehicles = []
         vehicle_1 = Vehicle(self, "assets/cars/Ricardeaut_Magnesium.bam")
@@ -59,6 +63,7 @@ class GameApp(ShowBase):
         vehicle_2 = Vehicle(self, "assets/cars/Cadarache_DiamondMII.bam")
         self.vehicles.append(vehicle_2)
 
+        spawn_points = self.environment.get_spawn_points()
         for vehicle, spawn_point in zip(self.vehicles, spawn_points):
             vehicle.place(spawn_point)
 
@@ -81,7 +86,7 @@ class GameApp(ShowBase):
         self.run_repulsors()
         self.run_gyroscopes()
         self.run_thrusters()
-        self.update_physics()
+        self.environment.update_physics()
         self.player_camera.update()
         return task.cont
 
@@ -102,33 +107,40 @@ class GameApp(ShowBase):
         for vehicle in self.vehicles:
             vehicle.apply_thrusters()
 
-    def update_physics(self):
-        dt = globalClock.getDt()
-        self.physics_world.doPhysics(dt)
-
     def bullet_debug(self):
         debugNode = BulletDebugNode('Debug')
         debugNode.showWireframe(True)
         debugNode.showConstraints(True)
         debugNode.showBoundingBoxes(False)
         debugNode.showNormals(False)
-        debugNP = self.render.attachNewNode(debugNode)
-        debugNP.show()
+        self.debugNP = self.render.attachNewNode(debugNode)
+        self.environment.physics_world.setDebugNode(debugNode)
 
-        self.physics_world.setDebugNode(debugNP.node())
+    def toggle_bullet_debug(self):
+        if self.debugNP.is_hidden():
+            self.debugNP.show()
+        else:
+            self.debugNP.hide()
 
 
 class Environment:
     def __init__(self, app, map_file):
         self.app = app
 
+        self.physics_world = BulletWorld()
+
         node = BulletRigidBodyNode('Ground')
         self.np = self.app.render.attach_new_node(node)
         self.np.setPos(0, 0, 0)
-        self.app.physics_world.attachRigidBody(node)
+        self.physics_world.attachRigidBody(node)
 
         self.model = loader.load_model(map_file)
         self.model.reparent_to(self.np)
+
+        gravity_node = self.model.find('**/={}'.format(GRAVITY))
+        gravity_str = gravity_node.get_tag(GRAVITY)
+        gravity = Vec3(0, 0, -float(gravity_str))
+        self.physics_world.setGravity(gravity)
 
         sky = self.model.find(SKYSPHERE)
         sky.reparent_to(base.cam)
@@ -151,9 +163,20 @@ class Environment:
                 shape = BulletTriangleMeshShape(mesh, dynamic=False)
                 terrain_node = BulletRigidBodyNode('terrain')
                 terrain_node.addShape(shape)
+                friction_node = collision_solid.find('**/={}'.format(FRICTION))
+                friction_str = friction_node.get_tag('friction')
+                friction = float(friction_str)
+                terrain_node.set_friction(friction)
                 terrain_np = geom_node.attach_new_node(terrain_node)
                 terrain_np.setCollideMask(CM_TERRAIN)
-                self.app.physics_world.attachRigidBody(terrain_node)
+                self.physics_world.attachRigidBody(terrain_node)
+
+    def add_physics_node(self, node):
+        self.physics_world.attachRigidBody(node)
+
+    def update_physics(self):
+        dt = globalClock.getDt()
+        self.physics_world.doPhysics(dt)
 
     def get_spawn_points(self):
         spawn_nodes = [
@@ -179,11 +202,18 @@ class Vehicle:
         self.model = app.loader.load_model(model_file)
 
         self.physics_node = BulletRigidBodyNode('vehicle')
-        self.physics_node.setLinearDamping(0.1)
-        #self.physics_node.setAngularDamping(0.5)
+        friction_node = self.model.find('**/={}'.format(FRICTION))
+        friction_str = friction_node.get_tag('friction')
+        friction = float(friction_str)
+        self.physics_node.set_friction(friction)
+        # FIXME: This will be replaced by air drag.
+        self.physics_node.setLinearDamping(0.2)
         self.physics_node.setLinearSleepThreshold(0)
         self.physics_node.setAngularSleepThreshold(0)
-        self.physics_node.setMass(100.0)
+        mass_node = self.model.find('**/={}'.format(MASS))
+        mass_str = mass_node.get_tag('mass')
+        mass = float(mass_str)
+        self.physics_node.setMass(mass)
 
         shape = BulletConvexHullShape()
         for geom_node in self.model.find_all_matches("**/+GeomNode"):
@@ -211,6 +241,16 @@ class Vehicle:
         self.rot_target = Vec3(0, 0, 0)
         self.thrust = 0
 
+        # self.light = self.app.render.attachNewNode(Spotlight("Spot"))
+        # self.light.node().setScene(base.render)
+        # self.light.node().setShadowCaster(True)
+        # self.light.node().showFrustum()
+        # self.light.node().getLens().setFov(40)
+        # self.light.node().getLens().setNearFar(10, 100)
+        # render.setLight(self.light)
+        # self.light.set_pos(self.model.get_pos() + Vec3(0, 0, 40))
+        # self.light.set_p(90)
+
     def np(self):
         return self.vehicle
 
@@ -219,7 +259,7 @@ class Vehicle:
         connector = self.model.find("**/"+SPAWN_POINT_CONNECTOR)
         self.vehicle.set_hpr(-connector.get_hpr(spawn_point))
         self.vehicle.set_pos(-connector.get_pos(spawn_point))
-        self.app.physics_world.attachRigidBody(self.physics_node)
+        self.app.environment.add_physics_node(self.physics_node)
 
     def toggle_repulsors(self):
         self.repulsors_active = not self.repulsors_active
@@ -250,7 +290,8 @@ class Vehicle:
                 repulsor,
                 Vec3(0, 0, -max_distance),
             )
-            feeler = self.app.physics_world.ray_test_closest(
+            # FIXME: `self.app.environment.physics_world` is ugly.
+            feeler = self.app.environment.physics_world.ray_test_closest(
                 repulsor_pos,
                 repulsor_pos + repulsor_dir,
                 CM_TERRAIN,
@@ -298,7 +339,12 @@ class Vehicle:
             current_rot = self.physics_node.get_angular_velocity()
             unwanted_rot = current_rot - self.rot_target
             dt = globalClock.dt
-            self.physics_node.apply_torque_impulse(-unwanted_rot * dt * 1500)
+            max_torque = 1000
+            target_torque = -unwanted_rot * dt * 15000
+            capped_torque = target_torque
+            if capped_torque > max_torque:
+                capped_torque = capped_torque / capped_torque.length() * max_torque
+            self.physics_node.apply_torque_impulse(capped_torque)
 
     def shock(self):
         self.physics_node.apply_impulse(
@@ -306,7 +352,7 @@ class Vehicle:
             Vec3(random(), random(), random()) * 10,
         )
         self.physics_node.apply_torque_impulse(
-            (Vec3(random(), random(), random()) - Vec3(0.5, 0.5, 0.5)) * 1000,
+            (Vec3(random(), random(), random()) - Vec3(0.5, 0.5, 0.5)) * 10000,
         )
 
 
@@ -333,9 +379,10 @@ class CameraController:
         self.vehicle = vehicle
 
     def update(self):
-        horiz_dist = 15
-        cam_offset = Vec3(0, 0, 5)
-        focus_offset = Vec3(0, 0, 2)
+        # Camera
+        horiz_dist = 20
+        cam_offset = Vec3(0, 0, 4)
+        focus_offset = Vec3(0, 0, 3)
         vehicle_pos = self.vehicle.np().get_pos(self.app.render)
         if CAM_MODES[self.camera_mode] == CAM_MODE_FOLLOW:
             vehicle_back = self.app.render.get_relative_vector(
@@ -359,6 +406,11 @@ class CameraController:
         focus = vehicle_pos + focus_offset
         base.cam.set_pos(cam_pos)
         base.cam.look_at(focus)
+
+        # Speed
+        mps = self.vehicle.physics_node.get_linear_velocity().length()
+        kmh = mps * 60 * 60 / 1000
+        #print('{:4.1f}'.format(kmh))
 
 
 class VehicleController:
