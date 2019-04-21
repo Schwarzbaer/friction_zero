@@ -184,15 +184,17 @@ class Environment:
         return sorted_spawn_points
 
 
-TARGET_ORIENTATION = 'target_orientation'
-TARGET_ROTATION = 'target_rotation'
-REPULSOR_ACTIVATION = 'repulsor_activation'
-THRUST = 'thrust'
 CURRENT_ORIENTATION = 'current_orientation'
 CURRENT_MOVEMENT = 'current_movement'
 CURRENT_ROTATION = 'current_rotation'
+TARGET_ORIENTATION = 'target_orientation'
+TARGET_ROTATION = 'target_rotation'
+REPULSOR_ACTIVATION = 'repulsor_activation'
 REPULSOR_RAY_ACTIVE = 'repulsor_ray_active'
 REPULSOR_RAY_FRAC = 'repulsor_ray_frac'
+GYRO_ROTATION = 'gyro_rotation'
+THRUST = 'thrust'
+THRUSTER_ACTIVATION = 'thruster_activation'
 
 
 class Vehicle:
@@ -320,9 +322,20 @@ class Vehicle:
         }
 
     def ecu(self):
+        repulsor_activation = [self.inputs[REPULSOR_ACTIVATION]
+                               for _ in self.repulsor_nodes]
+
+        current_rot = self.sensors[CURRENT_ROTATION]
+        wanted_rot = self.inputs[TARGET_ROTATION]
+        unwanted_rot = current_rot - wanted_rot
+
+        thruster_activation = [self.inputs[THRUST]
+                               for _ in self.thruster_nodes]
+
         self.commands = {
-            REPULSOR_ACTIVATION: [self.inputs[REPULSOR_ACTIVATION]
-                                  for _ in self.repulsor_nodes]
+            REPULSOR_ACTIVATION: repulsor_activation,
+            GYRO_ROTATION: -unwanted_rot,
+            THRUSTER_ACTIVATION: thruster_activation,
         }
 
     def apply_repulsors(self):
@@ -351,24 +364,27 @@ class Vehicle:
                 self.physics_node.apply_impulse(impulse * dt, repulsor_pos)
 
     def apply_gyroscope(self):
-        current_rot = self.physics_node.get_angular_velocity()
-        unwanted_rot = current_rot - self.inputs[TARGET_ROTATION]
-        dt = globalClock.dt
-        max_torque = 1000
-        target_torque = -unwanted_rot * dt * 15000
+        gyro_rotation = self.commands[GYRO_ROTATION]
+        target_torque = gyro_rotation * 15000
+        max_torque = 10000
         capped_torque = target_torque
         if capped_torque > max_torque:
             capped_torque = capped_torque / capped_torque.length() * max_torque
-        self.physics_node.apply_torque_impulse(capped_torque)
+        dt = globalClock.dt
+        self.physics_node.apply_torque_impulse(capped_torque * dt)
 
     def apply_thrusters(self):
         dt = globalClock.dt
-        for thruster in self.thruster_nodes:
-            max_force = thruster.get_python_tag(FORCE)
-            real_force = max_force * self.inputs[THRUST]
-            thruster_pos = thruster.get_pos(self.vehicle)
+        thruster_data = zip(
+            self.thruster_nodes,
+            self.commands[THRUSTER_ACTIVATION],
+        )
+        for node, thrust in thruster_data:
+            max_force = node.get_python_tag(FORCE)
+            real_force = max_force * thrust
+            thruster_pos = node.get_pos(self.vehicle)
             thrust_direction = self.app.render.get_relative_vector(
-                thruster,
+                node,
                 Vec3(0, 0, 1)
             )
             self.physics_node.apply_impulse(
