@@ -369,6 +369,8 @@ class Vehicle:
 
     def ecu_gyro_stabilization(self):
         inertia = 1000.0  # FIXME: infer mass from model
+        tau = 0.2  # Seconds until target orientation is reached
+
         if self.inputs[ACTIVE_STABILIZATION]:
             self.target_node.set_hpr(
                 self.app.render,
@@ -388,8 +390,6 @@ class Vehicle:
             )
 
             # Now comes the math.
-            tau = 0.2  # Seconds until target orientation is reached
-
             orientation = self.vehicle.get_quat(self.app.render)
             target_orientation = self.target_node.get_quat(self.app.render)
             delta_orientation = target_orientation * invert(orientation)
@@ -417,7 +417,7 @@ class Vehicle:
             # Passive stabilization, so this is the pure commanded impulse
             target_angular_velocity = self.app.render.get_relative_vector(
                 self.vehicle,
-                self.inputs[TARGET_ORIENTATION] * 0.1,
+                self.inputs[TARGET_ORIENTATION] * tau / pi,
             )
 
         # But we also have to cancel out the current velocity for that.
