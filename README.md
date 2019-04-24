@@ -10,27 +10,34 @@ TODO
 ### Code
 
 * Shadows
-* Refactoring: Move vehicle control logic into an ECU method
-* Avionics (should come after ECU)
+* Avionics
   * Gyroscopic stabilization
-    * Angular damping works just fine, now proper logic for control and
-      environment-sensitive stabilization has to be implemented.
-  * Replacement of linear damping on repulsors
-* Artist-defined gyro torque clamp
-* Terrain collision mesh: If no explicit mesh is present, use the visual one.
+    * Determine local "up" from repulsor ray fractions
+  * Basic bone control of repulsors
+* Animations
+  * Repulsor animation
+* Gamepad support
+  * Left stick controls bone animation.
+    * Neutral is straight down
+    * Up/Down is backward/forward tilt
+    * left/right for spiral setup
+      * If <button> is pressed, parallel sideways strafe tilt
+  * Right stick for camera offset
+  * L1 for thrust
+  * D-pad for gyro?
 * Air drag and aerodynamics
   * Drag scales with the square of the speed
   * Artist-defined air density
   * Air brakes
 * Course gates
+  * Check which gate has been passed this frame
+  * Race rules accounting
+  * Timekeeping
 * GUI
   * Speed
-* Gamepad support
-  * D-pad for gyro?
 * Camera controls and automatics
   * Camera distance should be related to vehicle's linear speed.
   * Camera should respect the ground / objects.
-* Animations
 * Repulsoring other vehicles
 * Clamp timestep in physics simulation
 * CCD
@@ -53,9 +60,17 @@ TODO
   * track
 
 
+### Tools
+
+* Map / vehicle verification
+* File for map / vehicle values: TOML? YAML?
+  * Write file from model data
+  * Read file during construction
+
+
 ### Other
 
-* Add license
+* Add license: BSD and CC0?
 
 
 ### Post-Prototype
