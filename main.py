@@ -6,6 +6,7 @@ from math import isnan
 from random import random
 
 from direct.showbase.ShowBase import ShowBase
+from direct.actor.Actor import Actor
 import panda3d
 import pman.shim
 
@@ -206,7 +207,16 @@ class Vehicle:
     def __init__(self, app, model_file):
         self.app = app
 
-        self.model = app.loader.load_model(model_file)
+        self.model = Actor(model_file)
+        for bone in self.model.find_all_matches('**/fz_repulsor_bone:*'):
+            _, _, suffix = bone.name.partition(':')
+            self.model.expose_joint(
+                self.model.find('**/fz_repulsor:{}'.format(suffix)),
+                "modelRoot",
+                "repulsor_bone:{}"-format(suffix),
+            )
+        self.model.play('gems')
+        self.model.loop('gems')
 
         self.physics_node = BulletRigidBodyNode('vehicle')
         friction_node = self.model.find('**/={}'.format(FRICTION))
@@ -214,7 +224,7 @@ class Vehicle:
         friction = float(friction_str)
         self.physics_node.set_friction(friction)
         # FIXME: This will be replaced by air drag.
-        self.physics_node.setLinearDamping(0)
+        self.physics_node.setLinearDamping(0.05)
         self.physics_node.setLinearSleepThreshold(0)
         self.physics_node.setAngularSleepThreshold(0)
         mass_node = self.model.find('**/={}'.format(MASS))
