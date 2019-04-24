@@ -201,7 +201,7 @@ REPULSOR_RAY_FRAC = 'repulsor_ray_frac'
 GYRO_ROTATION = 'gyro_rotation'
 THRUST = 'thrust'
 THRUSTER_ACTIVATION = 'thruster_activation'
-
+ACTIVE_STABILIZATION = 'active_stabilization'
 
 class Vehicle:
     def __init__(self, app, model_file):
@@ -354,38 +354,72 @@ class Vehicle:
         repulsor_activation = [self.inputs[REPULSOR_ACTIVATION]
                                for _ in self.repulsor_nodes]
 
-        # Gyroscope
-        self.target_node.set_hpr(self.app.render, self.vehicle.get_h(), 0, 0)
-        self.target_node.set_hpr(
-            self.target_node,
-            self.inputs[TARGET_ORIENTATION],
-        )
+        # Gyroscope:
+        gyro_rotation = self.ecu_gyro_stabilization()
 
-        tau = 0.2
-        inertia = 1000.0
+        # Thrusters
+        thruster_activation = [self.inputs[THRUST]
+                               for _ in self.thruster_nodes]
 
-        orientation = self.vehicle.get_quat(self.app.render)
-        target_orientation = self.target_node.get_quat(self.app.render)
-        delta_orientation = target_orientation * invert(orientation)
-        self.delta_node.set_quat(invert(delta_orientation))
+        self.commands = {
+            REPULSOR_ACTIVATION: repulsor_activation,
+            GYRO_ROTATION: gyro_rotation,
+            THRUSTER_ACTIVATION: thruster_activation,
+        }
 
-        delta_angle = delta_orientation.get_angle_rad()
-        if abs(delta_angle) < (pi/360*0.1) or isnan(delta_angle):
-            delta_angle = 0
-            axis_of_torque = VBase3(0, 0, 0)
-        else:
-            axis_of_torque = delta_orientation.get_axis()
-            axis_of_torque.normalize()
-            axis_of_torque = self.app.render.get_relative_vector(
-                self.vehicle,
-                axis_of_torque,
+    def ecu_gyro_stabilization(self):
+        inertia = 1000.0  # FIXME: infer mass from model
+        if self.inputs[ACTIVE_STABILIZATION]:
+            self.target_node.set_hpr(
+                self.app.render,
+                self.vehicle.get_h(),
+                0,
+                0,
             )
-        if delta_angle > pi:
-            delta_angle -= 2*pi
+            xyz_driver_modification = self.inputs[TARGET_ORIENTATION]
+            hpr_driver_modification = VBase3(
+                xyz_driver_modification.z,
+                xyz_driver_modification.x,
+                xyz_driver_modification.y,
+            )
+            self.target_node.set_hpr(
+                self.target_node,
+                hpr_driver_modification,
+            )
 
-        # If the mass was standing still, this would be the velocity that has to
-        # be reached to achieve the targeted orientation in tau seconds.
-        target_angular_velocity = axis_of_torque * delta_angle / tau
+            # Now comes the math.
+            tau = 0.2  # Seconds until target orientation is reached
+
+            orientation = self.vehicle.get_quat(self.app.render)
+            target_orientation = self.target_node.get_quat(self.app.render)
+            delta_orientation = target_orientation * invert(orientation)
+            self.delta_node.set_quat(invert(delta_orientation))
+
+            delta_angle = delta_orientation.get_angle_rad()
+            if abs(delta_angle) < (pi/360*0.1) or isnan(delta_angle):
+                delta_angle = 0
+                axis_of_torque = VBase3(0, 0, 0)
+            else:
+                axis_of_torque = delta_orientation.get_axis()
+                axis_of_torque.normalize()
+                axis_of_torque = self.app.render.get_relative_vector(
+                    self.vehicle,
+                    axis_of_torque,
+                )
+            if delta_angle > pi:
+                delta_angle -= 2*pi
+
+            # If the mass was standing still, this would be the velocity that
+            # has to be reached to achieve the targeted orientation in tau
+            # seconds.
+            target_angular_velocity = axis_of_torque * delta_angle / tau
+        else:
+            # Passive stabilization, so this is the pure commanded impulse
+            target_angular_velocity = self.app.render.get_relative_vector(
+                self.vehicle,
+                self.inputs[TARGET_ORIENTATION] * 0.1,
+            )
+
         # But we also have to cancel out the current velocity for that.
         angular_velocity = self.physics_node.get_angular_velocity()
         countering_velocity = -angular_velocity
@@ -398,25 +432,7 @@ class Vehicle:
         # Now just sum those up, and we have the impulse that needs to be
         # applied to steer towards target.
         impulse = target_impulse + countering_impulse
-
-        # Clamp the impulse to what the "motor" can produce.
-        max_impulse = 0.8 * 1000
-        if impulse.length() > max_impulse:
-            clamped_impulse = impulse / impulse.length() * max_impulse
-        else:
-            clamped_impulse = impulse
-
-        gyro_rotation = clamped_impulse
-
-        # Thrusters
-        thruster_activation = [self.inputs[THRUST]
-                               for _ in self.thruster_nodes]
-
-        self.commands = {
-            REPULSOR_ACTIVATION: repulsor_activation,
-            GYRO_ROTATION: gyro_rotation,
-            THRUSTER_ACTIVATION: thruster_activation,
-        }
+        return impulse
 
     def apply_repulsors(self):
         dt = globalClock.dt
@@ -444,8 +460,15 @@ class Vehicle:
                 self.physics_node.apply_impulse(impulse * dt, repulsor_pos)
 
     def apply_gyroscope(self):
-        gyro_rotation = self.commands[GYRO_ROTATION]
-        self.physics_node.apply_torque_impulse(gyro_rotation)
+        impulse = self.commands[GYRO_ROTATION]
+        # Clamp the impulse to what the "motor" can produce.
+        max_impulse = 0.8 * 1000
+        if impulse.length() > max_impulse:
+            clamped_impulse = impulse / impulse.length() * max_impulse
+        else:
+            clamped_impulse = impulse
+
+        self.physics_node.apply_torque_impulse(impulse)
 
     def apply_thrusters(self):
         dt = globalClock.dt
@@ -537,9 +560,7 @@ class VehicleController:
         self.vehicle = vehicle
         self.app.accept("n", self.next_vehicle)
         self.app.accept("r", self.toggle_repulsors)
-        self.app.accept("g", self.toggle_gyroscope)
         self.repulsors_active = False
-        self.gyroscope_active = True
         self.app.accept('x', self.shock, [10000, 0, 0])
         self.app.accept('y', self.shock, [0, 10000, 0])
         self.app.accept('z', self.shock, [0, 0, 10000])
@@ -548,11 +569,16 @@ class VehicleController:
         self.app.accept('shift-z', self.shock, [0, 0, -10000])
 
     def gather_inputs(self):
+        stabilizer_button = KeyboardButton.ascii_key(b'g')
+        stabilizer_active = self.app.mouseWatcherNode.is_button_down(
+            stabilizer_button,
+        )
+
         target_orientation = VBase3(0, 0, 0)
         if self.app.mouseWatcherNode.is_button_down(KeyboardButton.left()):
-            target_orientation.x+= 90
+            target_orientation.z+= 30
         if self.app.mouseWatcherNode.is_button_down(KeyboardButton.right()):
-            target_orientation.x -= 90
+            target_orientation.z -= 30
 
         repulsor_activation = 0
         if self.repulsors_active:
@@ -567,6 +593,7 @@ class VehicleController:
                 TARGET_ORIENTATION: target_orientation,
                 REPULSOR_ACTIVATION: repulsor_activation,
                 THRUST: thrust,
+                ACTIVE_STABILIZATION: stabilizer_active,
             }
         )
 
@@ -578,9 +605,6 @@ class VehicleController:
 
     def toggle_repulsors(self):
         self.repulsors_active = not self.repulsors_active
-
-    def toggle_gyroscope(self):
-        self.gyroscope_active = not self.gyroscope_active
 
     def shock(self, x=0, y=0, z=0):
         self.vehicle.shock(x, y, z)
