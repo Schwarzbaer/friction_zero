@@ -5,6 +5,22 @@ from panda3d.core import DirectionalLight
 from panda3d.core import KeyboardButton
 
 
+def approach(a, b, i):
+	if a < b:
+		a += i
+		if a > b:
+			a = b
+	if a > b:
+		a -= i
+		if a < b:
+			a = b
+
+def approachVec(vecA, vecB, i):
+	for v, vec in enumerate(vecA):
+		vecA[v] = approach(vec, vecB[v], i)
+
+
+
 s = ShowBase()
 s.cam.set_pos(0, -5, 5)
 s.cam.look_at(0, 0, 0)
@@ -28,12 +44,7 @@ def control(action):
         else:
             dst.x = dst.y = dst.z = 0
             s = 2
-        if hpr.x < dst.x: hpr.x += s
-        elif hpr.x > dst.x: hpr.x -= s
-        if hpr.y < dst.y: hpr.y += s
-        elif hpr.y > dst.y: hpr.y -= s
-        if hpr.z < dst.z: hpr.z += s
-        elif hpr.z > dst.z: hpr.z -= s
+
         repulsor.setHpr(hpr)
 
 def update(task):
