@@ -202,21 +202,22 @@ GYRO_ROTATION = 'gyro_rotation'
 THRUST = 'thrust'
 THRUSTER_ACTIVATION = 'thruster_activation'
 ACTIVE_STABILIZATION = 'active_stabilization'
+ACCELERATE = 'accelerate'
+TURN = 'turn'
+TURN_LEFT = 'turn_left'
+TURN_RIGHT = 'turn_right'
+STRAFE = 'strafe'
+HOVER = 'hover'
+X = '_x'
+Y = '_y'
+REPULSOR_TURNING_ANGLE = 'repulsor_turning_angle'
+REPULSOR_TARGET_ORIENTATIONS = 'repulsor_target_orientation'
 
 class Vehicle:
     def __init__(self, app, model_file):
         self.app = app
 
-        self.model = Actor(model_file)
-        for bone in self.model.find_all_matches('**/fz_repulsor_bone:*'):
-            _, _, suffix = bone.name.partition(':')
-            self.model.expose_joint(
-                self.model.find('**/fz_repulsor:{}'.format(suffix)),
-                "modelRoot",
-                "repulsor_bone:{}"-format(suffix),
-            )
-        self.model.play('gems')
-        self.model.loop('gems')
+        self.model = self.app.loader.load_model(model_file)
 
         self.physics_node = BulletRigidBodyNode('vehicle')
         friction_node = self.model.find('**/={}'.format(FRICTION))
@@ -224,12 +225,13 @@ class Vehicle:
         friction = float(friction_str)
         self.physics_node.set_friction(friction)
         # FIXME: This will be replaced by air drag.
-        self.physics_node.setLinearDamping(0.05)
+        self.physics_node.setLinearDamping(0.1)
         self.physics_node.setLinearSleepThreshold(0)
         self.physics_node.setAngularSleepThreshold(0)
         mass_node = self.model.find('**/={}'.format(MASS))
         mass_str = mass_node.get_tag('mass')
         mass = float(mass_str)
+        self.inertia = mass
         self.physics_node.setMass(mass)
 
         shape = BulletConvexHullShape()
@@ -247,10 +249,11 @@ class Vehicle:
 
         # Navigational aids
         self.target_node = self.app.loader.load_model('models/zup-axis')
+        # Might make a nice GUI interface
         self.target_node.reparent_to(self.model)
         self.target_node.set_scale(1)
         self.target_node.set_render_mode_wireframe()
-        #self.target_node.hide()
+        self.target_node.hide()
 
         self.delta_node = self.app.loader.load_model('models/smiley')
         self.delta_node.set_pos(1,10,1)
@@ -299,12 +302,31 @@ class Vehicle:
         self.inputs = inputs
 
     def add_repulsor(self, repulsor):
-        force = float(repulsor.get_tag(FORCE))
-        activation_distance = float(repulsor.get_tag(ACTIVATION_DISTANCE))
-        repulsor_np = repulsor.attach_new_node('repulsor')
-        repulsor_np.set_python_tag(FORCE, force)
-        repulsor_np.set_python_tag(ACTIVATION_DISTANCE, activation_distance)
+        repulsor_np = repulsor
         self.repulsor_nodes.append(repulsor_np)
+
+        # Transcribe tags
+        force = float(repulsor.get_tag(FORCE))
+        repulsor_np.set_python_tag(FORCE, force)
+        activation_distance = float(repulsor.get_tag(ACTIVATION_DISTANCE))
+        repulsor_np.set_python_tag(ACTIVATION_DISTANCE, activation_distance)
+
+        animation_tags = [ACCELERATE, TURN_LEFT, TURN_RIGHT, STRAFE, HOVER]
+        for tag in animation_tags:
+            tag_x = repulsor.get_tag(tag+X)
+            if tag_x == '':
+                tag_x = 0.0
+            else:
+                tag_x = float(tag_x)
+            tag_y = repulsor.get_tag(tag+Y)
+            if tag_y == '':
+                tag_y = 0.0
+            else:
+                tag_y = float(tag_y)
+            angle = VBase3(tag_x, tag_y, 0)
+            repulsor_np.set_python_tag(tag, angle)
+            # FIXME: Make it artist-definable
+            repulsor_np.set_python_tag(REPULSOR_TURNING_ANGLE, 90)
 
     def add_thruster(self, thruster):
         force = float(thruster.get_tag(FORCE))
@@ -354,6 +376,39 @@ class Vehicle:
         repulsor_activation = [self.inputs[REPULSOR_ACTIVATION]
                                for _ in self.repulsor_nodes]
 
+        # Calculate effective repulsor motion blend values
+        accelerate = self.inputs[ACCELERATE]
+        turn = self.inputs[TURN]
+        strafe = self.inputs[STRAFE]
+        hover = self.inputs[HOVER]
+        length = sum([abs(accelerate), abs(turn), abs(strafe), hover])
+        if length > 1:
+            accelerate /= length
+            turn /= length
+            strafe /= length
+            hover /= length
+        # Split the turn signal into animation blend factors
+        if turn > 0.0:
+            turn_left = 0.0
+            turn_right = turn
+        else:
+            turn_left = -turn
+            turn_right = 0.0
+        # Blend the repulsor angle
+        repulsor_target_angles = []
+        for repulsor in self.repulsor_nodes:
+            from pprint import pprint
+            # print(repulsor.get_python_tags())
+            acc_angle = -(repulsor.get_python_tag(ACCELERATE)) * accelerate
+            #print(accelerate, repulsor.get_python_tag(ACCELERATE))
+            turn_left_angle = repulsor.get_python_tag(TURN_LEFT) * turn_left
+            turn_right_angle = repulsor.get_python_tag(TURN_RIGHT) * turn_right
+            strafe_angle = repulsor.get_python_tag(STRAFE) * strafe
+            hover_angle = repulsor.get_python_tag(HOVER) * hover
+            angle = acc_angle + turn_left_angle + turn_right_angle + \
+                    strafe_angle + hover_angle
+            repulsor_target_angles.append(angle)
+
         # Gyroscope:
         gyro_rotation = self.ecu_gyro_stabilization()
 
@@ -363,6 +418,7 @@ class Vehicle:
 
         self.commands = {
             REPULSOR_ACTIVATION: repulsor_activation,
+            REPULSOR_TARGET_ORIENTATIONS: repulsor_target_angles,
             GYRO_ROTATION: gyro_rotation,
             THRUSTER_ACTIVATION: thruster_activation,
         }
@@ -441,23 +497,33 @@ class Vehicle:
             self.sensors[REPULSOR_RAY_ACTIVE],
             self.sensors[REPULSOR_RAY_FRAC],
             self.commands[REPULSOR_ACTIVATION],
+            self.commands[REPULSOR_TARGET_ORIENTATIONS]
         )
-        for node, active, frac, activation in repulsor_data:
-            if active:
+        for node, active, frac, activation, angle in repulsor_data:
+            # Repulse in current orientation
+            if activation:
                 # Repulsor power at zero distance
                 base_strength = node.get_python_tag(FORCE)
+                base_strength = 4000 # FIXME: Broken model
                 # Effective fraction of repulsors force
                 transfer_frac = cos(0.5*pi * frac)
                 # Effective repulsor force
                 strength = base_strength * activation * transfer_frac
                 # Resulting impulse
-                impulse = self.vehicle.get_relative_vector(
+                impulse = self.app.render.get_relative_vector(
                     node,
                     Vec3(0, 0, strength),
                 )
                 # Apply
                 repulsor_pos = node.get_pos(self.vehicle)
+                print(repulsor_pos, angle)
                 self.physics_node.apply_impulse(impulse * dt, repulsor_pos)
+            # Reorient
+            node.set_hpr(self.vehicle,
+                angle.z,
+                angle.x,
+                angle.y,
+            )
 
     def apply_gyroscope(self):
         impulse = self.commands[GYRO_ROTATION]
@@ -575,25 +641,51 @@ class VehicleController:
         )
 
         target_orientation = VBase3(0, 0, 0)
-        if self.app.mouseWatcherNode.is_button_down(KeyboardButton.left()):
-            target_orientation.z+= 30
-        if self.app.mouseWatcherNode.is_button_down(KeyboardButton.right()):
-            target_orientation.z -= 30
+        #if self.app.mouseWatcherNode.is_button_down(KeyboardButton.left()):
+        #    target_orientation.z+= 30
+        #if self.app.mouseWatcherNode.is_button_down(KeyboardButton.right()):
+        #    target_orientation.z -= 30
 
         repulsor_activation = 0
         if self.repulsors_active:
             repulsor_activation = 1
 
-        thrust = 0
+        repulsor_forward = 0.0
+        repulsor_turn = 0.0
+        repulsor_strafe = 0.0
+        repulsor_hover = 0.0
         if self.app.mouseWatcherNode.is_button_down(KeyboardButton.up()):
+            repulsor_forward += 1.0
+        if self.app.mouseWatcherNode.is_button_down(KeyboardButton.down()):
+            repulsor_forward -= 1.0
+        if self.app.mouseWatcherNode.is_button_down(KeyboardButton.left()):
+            repulsor_turn -= 1
+        if self.app.mouseWatcherNode.is_button_down(KeyboardButton.right()):
+            repulsor_turn += 1
+        if self.app.mouseWatcherNode.is_button_down(KeyboardButton.ascii_key(b'a')):
+            repulsor_strafe -= 1
+        if self.app.mouseWatcherNode.is_button_down(KeyboardButton.ascii_key(b'd')):
+            repulsor_strafe += 1
+        if self.app.mouseWatcherNode.is_button_down(KeyboardButton.ascii_key(b's')):
+            repulsor_hover += 1
+
+        thrust = 0
+        if self.app.mouseWatcherNode.is_button_down(KeyboardButton.space()):
             thrust = 1
 
         self.vehicle.set_inputs(
             {
-                TARGET_ORIENTATION: target_orientation,
+                # Repulsors
                 REPULSOR_ACTIVATION: repulsor_activation,
-                THRUST: thrust,
+                ACCELERATE: repulsor_forward,
+                TURN: repulsor_turn,
+                STRAFE: repulsor_strafe,
+                HOVER: repulsor_hover,
+                # Gyro
                 ACTIVE_STABILIZATION: stabilizer_active,
+                TARGET_ORIENTATION: target_orientation,
+                # Thrust
+                THRUST: thrust,
             }
         )
 
