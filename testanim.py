@@ -29,16 +29,15 @@ def pingPong(animation, d, min=0, mid=10, max=20):
     frame = a.getCurrentFrame(animation)
     rate = a.getPlayRate(animation)
     if d == 1:
-        if frame < max: a.setPlayRate( 1, animation)
-        else:           a.setPlayRate( 0, animation)
+        if frame < max:   a.setPlayRate( 1, animation)
+        else:             a.setPlayRate( 0, animation)
     elif d == -1:
-        if frame > min: a.setPlayRate(-1, animation)
-        else:           a.setPlayRate( 0, animation)
+        if frame > min:   a.setPlayRate(-1, animation)
+        else:             a.setPlayRate( 0, animation)
     else:
-        if frame > mid:  a.setPlayRate(-1, animation)
-        elif frame < mid:a.setPlayRate( 1, animation)
-        else: a.setPlayRate(0, animation)
-
+        if frame > mid:   a.setPlayRate(-1, animation)
+        elif frame < mid: a.setPlayRate( 1, animation)
+        else:             a.setPlayRate( 0, animation)
 
 def update(task):
     if s.mouseWatcherNode.is_button_down(KeyboardButton.up()):
@@ -48,9 +47,9 @@ def update(task):
     else:
         pingPong("accelerate", 0)
 
-    if s.mouseWatcherNode.is_button_down(KeyboardButton.left()):
+    if s.mouseWatcherNode.is_button_down(KeyboardButton.right()):
         pingPong("turn", 1)
-    elif s.mouseWatcherNode.is_button_down(KeyboardButton.right()):
+    elif s.mouseWatcherNode.is_button_down(KeyboardButton.left()):
         pingPong("turn", -1)
     else:
         pingPong("turn", 0)
@@ -63,10 +62,10 @@ def update(task):
         pingPong("strafe", 0)
 
     if s.mouseWatcherNode.is_button_down(KeyboardButton.ascii_key(b's')):
-        hover += 1
-    #animate(forward, turn, strafe, hover)
-    #if s.mouseWatcherNode.is_button_down(KeyboardButton.space()):
-    #    control("hover")
+        pingPong("hover", 1, 0,0,20)
+    else:
+        pingPong("hover", 0, 0,0,20)
+        
     return task.cont
 
 s.taskMgr.add(update)
