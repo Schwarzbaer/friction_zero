@@ -16,6 +16,7 @@ TODO
     * Angular damping works just fine, now proper logic for control and
       environment-sensitive stabilization has to be implemented.
   * Replacement of linear damping on repulsors
+* Artist-defined gyro torque clamp
 * Terrain collision mesh: If no explicit mesh is present, use the visual one.
 * Air drag and aerodynamics
   * Drag scales with the square of the speed
@@ -79,8 +80,6 @@ Models checklist
   * fz_repulsor:N
     * activation_distance	(5)
     * force			(3000)
-    * ctrl_ACTION 	(forward,backward,left,right,hover)
-
   * fz_thruster:N
     * force			(20000)
   * fz_spawn_point_connector
