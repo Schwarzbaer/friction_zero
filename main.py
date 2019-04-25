@@ -64,7 +64,10 @@ class GameApp(ShowBase):
         self.accept("b", self.toggle_bullet_debug)
 
         self.vehicles = []
-        vehicle_1 = Vehicle(self, "assets/cars/Ricardeaut_Magnesium.bam")
+        vehicle_1 = Vehicle(
+            self,
+            "assets/cars/Ricardeaut_Magnesium_tagAnimation.bam",
+        )
         self.vehicles.append(vehicle_1)
         #vehicle_2 = Vehicle(self, "assets/cars/Cadarache_DiamondMII.bam")
         #self.vehicles.append(vehicle_2)
@@ -620,9 +623,9 @@ class CameraController:
 
     def update(self):
         # Camera
-        horiz_dist = 2
-        cam_offset = Vec3(0, 0, 40)
-        focus_offset = Vec3(0, 0, 0)
+        horiz_dist = 20
+        cam_offset = Vec3(0, 0, 5)
+        focus_offset = Vec3(0, 0, 2)
         vehicle_pos = self.vehicle.np().get_pos(self.app.render)
         if CAM_MODES[self.camera_mode] == CAM_MODE_FOLLOW:
             vehicle_back = self.app.render.get_relative_vector(
