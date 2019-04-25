@@ -16,6 +16,7 @@ TODO
   * Basic bone control of repulsors
 * Animations
   * Repulsor animation
+  * Cap turn rate
 * Gamepad support
   * Left stick controls bone animation.
     * Neutral is straight down
