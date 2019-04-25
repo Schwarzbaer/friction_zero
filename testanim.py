@@ -1,7 +1,7 @@
 from direct.showbase.ShowBase import ShowBase
 from direct.actor.Actor import Actor
 
-from panda3d.core import DirectionalLight
+from panda3d.core import DirectionalLight, KeyboardButton
 
 s = ShowBase()
 s.cam.setPos(0, -5, 5)
@@ -18,7 +18,58 @@ for r, repulsor in enumerate(repulsors):
     repulsor.setP(-90)
     joint = a.exposeJoint(None,"modelRoot","repulsor_bone:"+str(r))
     repulsor.reparentTo(joint)
-a.loop('gems')
+
+a.enableBlend()
+animations = ["gems", "accelerate", "turn", "strafe", "hover"]
+for animation in animations:
+    a.setControlEffect(animation, 1)
+    a.play(animation)
+
+def pingPong(animation, d, min=0, mid=10, max=20):
+    frame = a.getCurrentFrame(animation)
+    rate = a.getPlayRate(animation)
+    if d == 1:
+        if frame < max: a.setPlayRate( 1, animation)
+        else:           a.setPlayRate( 0, animation)
+    elif d == -1:
+        if frame > min: a.setPlayRate(-1, animation)
+        else:           a.setPlayRate( 0, animation)
+    else:
+        if frame > mid:  a.setPlayRate(-1, animation)
+        elif frame < mid:a.setPlayRate( 1, animation)
+        else: a.setPlayRate(0, animation)
+
+
+def update(task):
+    if s.mouseWatcherNode.is_button_down(KeyboardButton.up()):
+        pingPong("accelerate", 1)
+    elif s.mouseWatcherNode.is_button_down(KeyboardButton.down()):
+        pingPong("accelerate", -1)
+    else:
+        pingPong("accelerate", 0)
+
+    if s.mouseWatcherNode.is_button_down(KeyboardButton.left()):
+        pingPong("turn", 1)
+    elif s.mouseWatcherNode.is_button_down(KeyboardButton.right()):
+        pingPong("turn", -1)
+    else:
+        pingPong("turn", 0)
+
+    if s.mouseWatcherNode.is_button_down(KeyboardButton.ascii_key(b'a')):
+        pingPong("strafe", 1)
+    elif s.mouseWatcherNode.is_button_down(KeyboardButton.ascii_key(b'd')):
+        pingPong("strafe", -1)
+    else:
+        pingPong("strafe", 0)
+
+    if s.mouseWatcherNode.is_button_down(KeyboardButton.ascii_key(b's')):
+        hover += 1
+    #animate(forward, turn, strafe, hover)
+    #if s.mouseWatcherNode.is_button_down(KeyboardButton.space()):
+    #    control("hover")
+    return task.cont
+
+s.taskMgr.add(update)
 
 l = DirectionalLight("light")
 ln = render.attachNewNode(l)
