@@ -233,7 +233,6 @@ class Vehicle:
         mass = float(mass_str)
         self.inertia = mass
         self.physics_node.setMass(mass)
-
         shape = BulletConvexHullShape()
         for geom_node in self.model.find_all_matches("**/+GeomNode"):
             for geom in geom_node.node().get_geoms():
@@ -328,6 +327,15 @@ class Vehicle:
             # FIXME: Make it artist-definable
             repulsor_np.set_python_tag(REPULSOR_TURNING_ANGLE, 90)
 
+        #m1 = self.app.loader.load_model("models/smiley")
+        #m1.set_scale(0.2)
+        #m1.reparent_to(self.app.render)
+        #repulsor.set_python_tag('ray_start', m1)
+        m2 = self.app.loader.load_model("models/smiley")
+        m2.set_scale(0.2)
+        m2.reparent_to(self.app.render)
+        repulsor.set_python_tag('ray_end', m2)
+
     def add_thruster(self, thruster):
         force = float(thruster.get_tag(FORCE))
         thruster.set_python_tag(FORCE, force)
@@ -356,12 +364,15 @@ class Vehicle:
                 repulsor_pos + repulsor_dir,
                 CM_TERRAIN,
             )
+            #repulsor.get_python_tag('ray_start').set_pos(repulsor_pos)
             if feeler.hasHit():
                 repulsor_ray_active.append(True)
-                repulsor_ray_frac.append(feeler.get_hit_fraction())
+                ray_frac = feeler.get_hit_fraction()
+                repulsor_ray_frac.append(ray_frac)
             else:
                 repulsor_ray_active.append(False)
-                repulsor_ray_frac.append(1.0)
+                ray_frac = 1.0
+                repulsor_ray_frac.append(ray_frac)
 
         self.sensors = {
             CURRENT_ORIENTATION: self.vehicle.get_hpr(self.app.render),
@@ -397,10 +408,7 @@ class Vehicle:
         # Blend the repulsor angle
         repulsor_target_angles = []
         for repulsor in self.repulsor_nodes:
-            from pprint import pprint
-            # print(repulsor.get_python_tags())
             acc_angle = -(repulsor.get_python_tag(ACCELERATE)) * accelerate
-            #print(accelerate, repulsor.get_python_tag(ACCELERATE))
             turn_left_angle = repulsor.get_python_tag(TURN_LEFT) * turn_left
             turn_right_angle = repulsor.get_python_tag(TURN_RIGHT) * turn_right
             strafe_angle = repulsor.get_python_tag(STRAFE) * strafe
@@ -424,7 +432,6 @@ class Vehicle:
         }
 
     def ecu_gyro_stabilization(self):
-        inertia = 1000.0  # FIXME: infer mass from model
         tau = 0.2  # Seconds until target orientation is reached
 
         if self.inputs[ACTIVE_STABILIZATION]:
@@ -482,8 +489,8 @@ class Vehicle:
 
         # An impulse of 1 causes an angular velocity of 2.5 rad on a unit mass,
         # so we have to adjust accordingly.
-        target_impulse = target_angular_velocity / 2.5 * inertia
-        countering_impulse = countering_velocity / 2.5 * inertia
+        target_impulse = target_angular_velocity / 2.5 * self.inertia
+        countering_impulse = countering_velocity / 2.5 * self.inertia
 
         # Now just sum those up, and we have the impulse that needs to be
         # applied to steer towards target.
@@ -510,16 +517,42 @@ class Vehicle:
                 # Effective repulsor force
                 strength = base_strength * activation * transfer_frac
                 # Resulting impulse
-                impulse = self.app.render.get_relative_vector(
+                impulse_dir = Vec3(0, 0, 1)
+                impulse_dir_world = self.app.render.get_relative_vector(
                     node,
-                    Vec3(0, 0, strength),
+                    impulse_dir,
                 )
+                impulse = impulse_dir_world * strength
                 # Apply
                 repulsor_pos = node.get_pos(self.vehicle)
-                print(repulsor_pos, angle)
-                self.physics_node.apply_impulse(impulse * dt, repulsor_pos)
+                self.physics_node.apply_impulse(
+                    impulse * dt,
+                    repulsor_pos,
+                )
+
+                # Contact visualization node
+                max_distance = node.get_python_tag(ACTIVATION_DISTANCE)
+                contact_distance = -impulse_dir_world * max_distance * frac
+                contact_node = node.get_python_tag('ray_end')
+                print("repulsor @ {: 2.2f}, {: 2.2f}: "
+                      "{: 2.2f}x {: 2.2f}y {: 2.2f}z".format(
+                          repulsor_pos.get_x(),
+                          repulsor_pos.get_y(),
+                          impulse_dir_world.get_x(),
+                          impulse_dir_world.get_y(),
+                          impulse_dir_world.get_z(),
+                      )
+                )
+                contact_node.set_pos(
+                    node.get_pos(self.app.render) + contact_distance,
+                )
+                #contact_node.set_hpr(node, 0, -90, 0) # Look towards repulsor
+                contact_node.set_hpr(0, -90, 0) # Look up
+                contact_node.show()
+            else:
+                node.get_python_tag('ray_end').hide()
             # Reorient
-            node.set_hpr(self.vehicle,
+            node.set_hpr(
                 angle.z,
                 angle.x,
                 angle.y,
@@ -587,9 +620,9 @@ class CameraController:
 
     def update(self):
         # Camera
-        horiz_dist = 20
-        cam_offset = Vec3(0, 0, 4)
-        focus_offset = Vec3(0, 0, 3)
+        horiz_dist = 2
+        cam_offset = Vec3(0, 0, 40)
+        focus_offset = Vec3(0, 0, 0)
         vehicle_pos = self.vehicle.np().get_pos(self.app.render)
         if CAM_MODES[self.camera_mode] == CAM_MODE_FOLLOW:
             vehicle_back = self.app.render.get_relative_vector(
