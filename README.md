@@ -30,9 +30,6 @@ TODO
   * Repulsor activity
   * Background music
   * Crashes
-* Skybox
-  * In a separate render bin
-  * Compass effect
 * GUI
   * Basic setup: In a separate render bin
   * Speed
