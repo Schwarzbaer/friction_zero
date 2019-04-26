@@ -144,7 +144,12 @@ class Environment:
 
         gravity_node = self.model.find('**/={}'.format(GRAVITY))
         gravity_str = gravity_node.get_tag(GRAVITY)
-        gravity = Vec3(0, 0, -float(gravity_str))
+        # FIXME: This quietly eats what should be an error, and tested for by a
+        # model linter
+        if gravity_str == '':
+            gravity = Vec3(0, 0, -9.81)
+        else:
+            gravity = Vec3(0, 0, -float(gravity_str))
         self.physics_world.setGravity(gravity)
 
         sky = self.model.find(SKYSPHERE)
@@ -181,7 +186,13 @@ class Environment:
 
     def update_physics(self):
         dt = globalClock.getDt()
-        self.physics_world.doPhysics(dt)
+        # FIXME: Pull from settings
+        min_frame_rate = 30
+        max_frame_time = 1.0 / frame_rate
+        if dt <= max_frame_time:
+            self.physics_world.doPhysics(dt)
+        else:
+            self.physics_world.doPhysics(max_frame_time)
 
     def get_spawn_points(self):
         spawn_nodes = [
@@ -813,7 +824,7 @@ class VehicleController:
 
 def main():
     if len(sys.argv) > 1:
-        map = "assets/maps/"+sys.argv[1]
+        map = "maps/"+sys.argv[1]
         app = GameApp(map)
     else:
         app = GameApp()
