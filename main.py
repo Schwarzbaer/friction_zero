@@ -21,6 +21,7 @@ from panda3d.core import DirectionalLight
 from panda3d.core import Spotlight
 from panda3d.core import GeomVertexReader
 from panda3d.core import KeyboardButton
+from panda3d.core import InputDevice
 from panda3d.bullet import BulletWorld
 from panda3d.bullet import BulletRigidBodyNode
 from panda3d.bullet import BulletBoxShape
@@ -673,17 +674,56 @@ class VehicleController:
         self.app.accept('shift-y', self.shock, [0, -10000, 0])
         self.app.accept('shift-z', self.shock, [0, 0, -10000])
 
+        self.gamepad = None
+        devices = self.app.devices.getDevices(InputDevice.DeviceClass.gamepad)
+        if devices:
+            self.connect(devices[0])
+        self.app.accept("connect-device", self.connect)
+        self.app.accept("disconnect-device", self.disconnect)
+
+    def connect(self, device):
+        """Event handler that is called when a device is discovered."""
+
+        # We're only interested if this is a gamepad and we don't have a
+        # gamepad yet.
+        if device.device_class == InputDevice.DeviceClass.gamepad and not self.gamepad:
+            self.gamepad = device
+            self.app.attachInputDevice(device, prefix="gamepad")
+
+    def disconnect(self, device):
+        """Event handler that is called when a device is removed."""
+
+        if self.gamepad != device:
+            # We don't care since it's not our gamepad.
+            return
+
+        self.app.detachInputDevice(device)
+        self.gamepad = None
+
+        # Do we have any other gamepads?  Attach the first other gamepad.
+        devices = self.devices.getDevices(InputDevice.DeviceClass.gamepad)
+        if devices:
+            self.connect(devices[0])
+
     def gather_inputs(self):
         stabilizer_button = KeyboardButton.ascii_key(b'g')
         stabilizer_active = self.app.mouseWatcherNode.is_button_down(
             stabilizer_button,
         )
+        if self.gamepad:
+            stabilizer_active = self.gamepad.findButton("rshoulder").pressed
 
         target_orientation = VBase3(0, 0, 0)
         if self.app.mouseWatcherNode.is_button_down(KeyboardButton.left()):
-            target_orientation.z+= 30
+            target_orientation.z += 90
         if self.app.mouseWatcherNode.is_button_down(KeyboardButton.right()):
-            target_orientation.z -= 30
+            target_orientation.z -= 90
+        if self.gamepad:
+            axis = self.gamepad.findAxis(InputDevice.Axis.left_x)
+            strafe = self.gamepad.find_button("rtrigger").pressed
+            if not strafe:
+                # FIXME: 0.2 = tau
+                target_orientation.z = -axis.value * 90 * 0.2
 
         repulsor_activation = 0
         if self.repulsors_active:
@@ -707,10 +747,27 @@ class VehicleController:
             repulsor_strafe += 1
         if self.app.mouseWatcherNode.is_button_down(KeyboardButton.ascii_key(b's')):
             repulsor_hover += 1
+        if self.gamepad:
+            x_axis = self.gamepad.findAxis(InputDevice.Axis.left_x).value
+            y_axis = self.gamepad.findAxis(InputDevice.Axis.left_y).value
+            strafe = self.gamepad.find_button("rtrigger").pressed
+            repulsor_forward = y_axis
+            if strafe:
+                repulsor_turn = 0.0
+                repulsor_strafe = x_axis
+            else:
+                repulsor_turn = x_axis
+                repulsor_strafe = 0.0
+            if self.gamepad.find_button("face_a").pressed:
+                repulsor_hover = 1.0
 
         thrust = 0
         if self.app.mouseWatcherNode.is_button_down(KeyboardButton.space()):
             thrust = 1
+        if self.gamepad:
+            button = self.gamepad.find_button("lshoulder")
+            if button.pressed:
+                thrust = 1
 
         self.vehicle.set_inputs(
             {
