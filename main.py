@@ -67,9 +67,9 @@ class GameApp(ShowBase):
         self.vehicles = []
         vehicle_files = [
             'assets/cars/Ricardeaut_Magnesium_tagAnimation.bam',
-            'assets/cars/Cadarache_DiamondMII.bam',
+            #'assets/cars/Cadarache_DiamondMII.bam',
             # 'assets/cars/Doby_Phalix.bam',
-            'assets/cars/Texopec_Nako.bam',
+            #'assets/cars/Texopec_Nako.bam',
         ]
 
         for vehicle_file in vehicle_files:
@@ -522,6 +522,7 @@ class Vehicle:
             self.commands[REPULSOR_ACTIVATION],
             self.commands[REPULSOR_TARGET_ORIENTATIONS]
         )
+        print(len([ra for ra in self.sensors[REPULSOR_RAY_ACTIVE] if ra]))
         for node, active, frac, activation, angle in repulsor_data:
             # Repulse in current orientation
             if activation:
