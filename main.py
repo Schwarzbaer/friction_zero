@@ -8,7 +8,7 @@ from random import random
 from direct.showbase.ShowBase import ShowBase
 from direct.actor.Actor import Actor
 import panda3d
-import pman.shim
+#import pman.shim
 
 from panda3d.core import NodePath
 from panda3d.core import Vec3
@@ -30,9 +30,9 @@ from panda3d.bullet import BulletConvexHullShape
 from panda3d.bullet import BulletPlaneShape
 from panda3d.bullet import BulletDebugNode
 
-panda3d.core.load_prc_file(
-    panda3d.core.Filename.expand_from('$MAIN_DIR/settings.prc')
-)
+#panda3d.core.load_prc_file(
+#    panda3d.core.Filename.expand_from('$MAIN_DIR/settings.prc')
+#)
 
 
 VEHICLE = 'fz_body'
@@ -54,7 +54,7 @@ CM_TERRAIN = BitMask32.bit(0)
 class GameApp(ShowBase):
     def __init__(self, map="assets/maps/hills.bam"):
         ShowBase.__init__(self)
-        pman.shim.init(self)
+        #pman.shim.init(self)
         self.accept('escape', sys.exit)
         #self.render.setShaderAuto()
         self.set_frame_rate_meter(True)
@@ -530,22 +530,25 @@ class Vehicle:
                 repulsor_pos = node.get_pos(self.vehicle)
                 self.physics_node.apply_impulse(
                     impulse * dt,
-                    repulsor_pos,
+                    self.app.render.get_relative_vector(
+                        self.vehicle,
+                        repulsor_pos,
+                    ),
                 )
 
                 # Contact visualization node
                 max_distance = node.get_python_tag(ACTIVATION_DISTANCE)
                 contact_distance = -impulse_dir_world * max_distance * frac
                 contact_node = node.get_python_tag('ray_end')
-                print("repulsor @ {: 2.2f}, {: 2.2f}: "
-                      "{: 2.2f}x {: 2.2f}y {: 2.2f}z".format(
-                          repulsor_pos.get_x(),
-                          repulsor_pos.get_y(),
-                          impulse_dir_world.get_x(),
-                          impulse_dir_world.get_y(),
-                          impulse_dir_world.get_z(),
-                      )
-                )
+                # print("repulsor @ {: 2.2f}, {: 2.2f}: "
+                #       "{: 2.2f}x {: 2.2f}y {: 2.2f}z".format(
+                #           repulsor_pos.get_x(),
+                #           repulsor_pos.get_y(),
+                #           impulse_dir_world.get_x(),
+                #           impulse_dir_world.get_y(),
+                #           impulse_dir_world.get_z(),
+                #       )
+                # )
                 contact_node.set_pos(
                     node.get_pos(self.app.render) + contact_distance,
                 )
