@@ -188,7 +188,7 @@ class Environment:
         dt = globalClock.getDt()
         # FIXME: Pull from settings
         min_frame_rate = 30
-        max_frame_time = 1.0 / frame_rate
+        max_frame_time = 1.0 / min_frame_rate
         if dt <= max_frame_time:
             self.physics_world.doPhysics(dt)
         else:

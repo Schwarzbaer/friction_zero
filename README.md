@@ -9,7 +9,9 @@ TODO
 
 ### Code
 
-* Shadows
+* Bug
+  * Add a HUD element for repulsor activation
+  * Why are there repulsor contacts reported during flight?
 * Animations
   * Cap repulsor turn rate
 * ECU
@@ -29,13 +31,20 @@ TODO
   * Background music
   * Crashes
 * GUI
+  * Basic setup: In a separate render bin
   * Speed
+  * Elevation: Fighter jet like height-over-ground indication
+  * Linear speed
+  * Repulsor activation levels
+  * Thruster activation
 * Limits on thruster
   * Fuel
   * Overheating
 * Camera controls and automatics
   * Camera distance should be related to vehicle's linear speed.
   * Camera should respect the ground / objects.
+  * Cinematics
+* Shadows
 * Repulsoring other vehicles
 * Clamp timestep in physics simulation
   * Move value min_frame_rate into settings file
@@ -43,6 +52,8 @@ TODO
 * Countdown to start
 * Recording races
   * Racing against ghosts
+* Control sets
+  * Keyboard and gamepad input overwrite each other currently
 
 
 ### Art
@@ -66,6 +77,7 @@ TODO
 
 ### Tools
 
+* Normalize pman build / asset workflow
 * Map / vehicle verification
 * File for map / vehicle values: TOML? YAML?
   * Write file from model data
@@ -75,6 +87,7 @@ TODO
 ### Other
 
 * Add license: BSD and CC0?
+* Add CREDITS
 
 
 ### Post-Prototype
@@ -86,10 +99,44 @@ TODO
   * Vehicle selection screen
     * Vehicle material color-picker
     * Choose repulsor model
-* AI
+* Ingame screens from trackside AI cameras
+* Surfaces: Different materials can be repulsed differently well
 * Points (bonus time?) for tricks
 * Quantum lock: Become locked to a track like a superconductor in a magnetic
   field
+* Minimap
+* Repulsor pads on maps
+* Optional gates
+* AI
+  * Cruise mode / Autopilot
+    * Follow a given direction or given path
+    * ...and correct if pushed from it
+  * Racing
+  * Civilian
+  * Escaper
+    * Try to stay away from a given set of points
+    * Try to get away from a given set of vehicles
+  * Pursuer
+    * Stay close to a given vehicle
+* Game mode: Series (requires racing AI)
+  * Formula R: Rally-style tracks
+  * Formula 0: Race and city tracks
+  * Formula C: Cross-country longhaul drive
+  * Formula Q: Quantum lock tracks (requires quantum lock)
+  * Formula X: One of each, with or without changing cars between races
+* Game mode: Taxi driver / Transporter (requires civilian AI)
+  * Pick up and drop off guests / cargo
+  * Optimize for time and / or passenger comfort
+* Game mode: Escape and Pursuit (requires escaper and pursuer AI)
+  * The escaper tries to stay a distance away from the pursuer
+  * The pursuer tries to not let that happen until a timer runs out
+* Multiplayer
+* Damage model
+  * Artwork for aesthetic damage
+  * Systems (repulsors, gyros, thrusters) suffer performance loss (low-powered
+    or offline) for a time (or permanently)
+* Game mode: Demolition Derby (requires damage model. May require weapons.)
+  * Last one standing
 
 
 Models checklist
