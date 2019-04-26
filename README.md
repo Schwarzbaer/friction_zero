@@ -24,13 +24,21 @@ TODO
   * Check which gate has been passed this frame
   * Race rules accounting
   * Timekeeping
+* Sound
+  * Repulsor activity
+  * Background music
+  * Crashes
 * GUI
   * Speed
+* Limits on thruster
+  * Fuel
+  * Overheating
 * Camera controls and automatics
   * Camera distance should be related to vehicle's linear speed.
   * Camera should respect the ground / objects.
 * Repulsoring other vehicles
 * Clamp timestep in physics simulation
+  * Move value min_frame_rate into settings file
 * CCD
 * Countdown to start
 * Recording races
@@ -40,6 +48,7 @@ TODO
 ### Art
 
 * Design two other vehicles
+* Airbrake animations
 * Effect for the point where the repulsor ray hits the ground
 * When movement is mostly implemented, make racetrack
   * Start with a looping road.
