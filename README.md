@@ -13,7 +13,7 @@ TODO
   * Add a HUD element for repulsor activation
   * Why are there repulsor contacts reported during flight?
 * Animations
-  * Cap repulsor turn rate
+  * Air brake
 * ECU
   * Gyroscopic stabilization
     * Determine local "up" from repulsor ray fractions
