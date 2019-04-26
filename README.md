@@ -10,22 +10,12 @@ TODO
 ### Code
 
 * Shadows
-* Avionics
+* Animations
+  * Cap repulsor turn rate
+* ECU
   * Gyroscopic stabilization
     * Determine local "up" from repulsor ray fractions
-  * Basic bone control of repulsors
-* Animations
-  * Repulsor animation
-  * Cap turn rate
-* Gamepad support
-  * Left stick controls bone animation.
-    * Neutral is straight down
-    * Up/Down is backward/forward tilt
-    * left/right for spiral setup
-      * If <button> is pressed, parallel sideways strafe tilt
-  * Right stick for camera offset
-  * L1 for thrust
-  * D-pad for gyro?
+  * Repulsors should act like dampening springs
 * Air drag and aerodynamics
   * Drag scales with the square of the speed
   * Artist-defined air density
@@ -43,15 +33,19 @@ TODO
 * Clamp timestep in physics simulation
 * CCD
 * Countdown to start
+* Recording races
+  * Racing against ghosts
 
 
 ### Art
 
 * Design two other vehicles
+* Effect for the point where the repulsor ray hits the ground
 * When movement is mostly implemented, make racetrack
   * Start with a looping road.
   * Add start/finish, gates, spawn points
   * Add surroundings
+* Lab / Tricks map
 * Sounds:
   * engine (playbackrate to speed?)
   * vehicleXvehicle impact
@@ -84,6 +78,9 @@ TODO
     * Vehicle material color-picker
     * Choose repulsor model
 * AI
+* Points (bonus time?) for tricks
+* Quantum lock: Become locked to a track like a superconductor in a magnetic
+  field
 
 
 Models checklist
