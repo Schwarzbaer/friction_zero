@@ -17,7 +17,7 @@ s.cam.set_pos(0, -5, 5)
 s.cam.look_at(0, 0, 0)
 
 
-a = s.loader.loadModel('assets/cars/Ricardeaut_Magnesium_tagAnimation.bam')
+a = s.loader.loadModel('assets/cars/Ricardeaut_Magnesium.bam')
 a.reparent_to(s.render)
 
 
