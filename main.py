@@ -113,19 +113,19 @@ class GameApp(ShowBase):
         self.player_controller.set_vehicle(new_vehicle)
 
     def bullet_debug(self):
-        debugNode = BulletDebugNode('Debug')
-        debugNode.showWireframe(True)
-        debugNode.showConstraints(True)
-        debugNode.showBoundingBoxes(False)
-        debugNode.showNormals(False)
-        self.debugNP = self.render.attachNewNode(debugNode)
-        self.environment.physics_world.setDebugNode(debugNode)
+        debug_node = BulletDebugNode('Debug')
+        debug_node.show_wireframe(True)
+        debug_node.show_constraints(True)
+        debug_node.show_bounding_boxes(False)
+        debug_node.show_normals(False)
+        self.debug_np = self.render.attach_new_node(debug_node)
+        self.environment.physics_world.set_debug_node(debug_node)
 
     def toggle_bullet_debug(self):
-        if self.debugNP.is_hidden():
-            self.debugNP.show()
+        if self.debug_np.is_hidden():
+            self.debug_np.show()
         else:
-            self.debugNP.hide()
+            self.debug_np.hide()
 
 
 class Environment:
@@ -157,7 +157,7 @@ class Environment:
         sky.set_bin('background', 0)
         sky.set_depth_write(False)
         sky.set_compass()
-        sky.setLightOff()
+        sky.set_light_off()
 
         # Bullet collision mesh
         collision_solids = self.model.find_all_matches(
@@ -169,30 +169,30 @@ class Environment:
             for geom_node in collision_solid.find_all_matches('**/+GeomNode'):
                 mesh = BulletTriangleMesh()
                 # FIXME: Is this universally correct?
-                mesh.addGeom(geom_node.node().get_geom(0))
+                mesh.add_geom(geom_node.node().get_geom(0))
                 shape = BulletTriangleMeshShape(mesh, dynamic=False)
                 terrain_node = BulletRigidBodyNode('terrain')
-                terrain_node.addShape(shape)
+                terrain_node.add_shape(shape)
                 friction_node = collision_solid.find('**/={}'.format(FRICTION))
                 friction_str = friction_node.get_tag('friction')
                 friction = float(friction_str)
                 terrain_node.set_friction(friction)
                 terrain_np = geom_node.attach_new_node(terrain_node)
-                terrain_np.setCollideMask(CM_TERRAIN)
-                self.physics_world.attachRigidBody(terrain_node)
+                terrain_np.set_collide_mask(CM_TERRAIN)
+                self.physics_world.attach_rigid_body(terrain_node)
 
     def add_physics_node(self, node):
-        self.physics_world.attachRigidBody(node)
+        self.physics_world.attach_rigid_body(node)
 
     def update_physics(self):
-        dt = globalClock.getDt()
+        dt = globalClock.dt
         # FIXME: Pull from settings
         min_frame_rate = 30
         max_frame_time = 1.0 / min_frame_rate
         if dt <= max_frame_time:
-            self.physics_world.doPhysics(dt)
+            self.physics_world.do_physics(dt)
         else:
-            self.physics_world.doPhysics(max_frame_time)
+            self.physics_world.do_physics(max_frame_time)
 
     def get_spawn_points(self):
         spawn_nodes = [
@@ -248,9 +248,9 @@ class Vehicle:
         friction = float(friction_str)
         self.physics_node.set_friction(friction)
         # FIXME: This will be replaced by air drag.
-        self.physics_node.setLinearDamping(0.1)
-        self.physics_node.setLinearSleepThreshold(0)
-        self.physics_node.setAngularSleepThreshold(0)
+        self.physics_node.set_linear_damping(0.1)
+        self.physics_node.set_linear_sleep_threshold(0)
+        self.physics_node.set_angular_sleep_threshold(0)
         mass_node = self.model.find('**/={}'.format(MASS))
         mass_str = mass_node.get_tag('mass')
         mass = float(mass_str)
@@ -264,7 +264,7 @@ class Vehicle:
                     v_geom = vertices.getData3f()
                     v_model = self.model.get_relative_point(geom_node, v_geom)
                     shape.add_point(v_model)
-        self.physics_node.addShape(shape)
+        self.physics_node.add_shape(shape)
         self.vehicle = NodePath(self.physics_node)
 
         self.model.reparent_to(self.vehicle)
@@ -307,16 +307,6 @@ class Vehicle:
         self.sensors = {}
         self.commands = {}
 
-        # self.light = self.app.render.attachNewNode(Spotlight("Spot"))
-        # self.light.node().setScene(base.render)
-        # self.light.node().setShadowCaster(True)
-        # self.light.node().showFrustum()
-        # self.light.node().getLens().setFov(40)
-        # self.light.node().getLens().setNearFar(10, 100)
-        # render.setLight(self.light)
-        # self.light.set_pos(self.model.get_pos() + Vec3(0, 0, 40))
-        # self.light.set_p(90)
-
     def np(self):
         return self.vehicle
 
@@ -331,14 +321,13 @@ class Vehicle:
         self.inputs = inputs
 
     def add_repulsor(self, repulsor):
-        repulsor_np = repulsor
-        self.repulsor_nodes.append(repulsor_np)
+        self.repulsor_nodes.append(repulsor)
 
         # Transcribe tags
         force = float(repulsor.get_tag(FORCE))
-        repulsor_np.set_python_tag(FORCE, force)
+        repulsor.set_python_tag(FORCE, force)
         activation_distance = float(repulsor.get_tag(ACTIVATION_DISTANCE))
-        repulsor_np.set_python_tag(ACTIVATION_DISTANCE, activation_distance)
+        repulsor.set_python_tag(ACTIVATION_DISTANCE, activation_distance)
 
         animation_tags = [ACCELERATE, TURN_LEFT, TURN_RIGHT, STRAFE, HOVER]
         for tag in animation_tags:
@@ -353,19 +342,15 @@ class Vehicle:
             else:
                 tag_y = float(tag_y)
             angle = VBase3(tag_x, tag_y, 0)
-            repulsor_np.set_python_tag(tag, angle)
-            # FIXME: Make it artist-definable
-        repulsor_np.set_python_tag(REPULSOR_TURNING_ANGLE, 540)
+            repulsor.set_python_tag(tag, angle)
+        # FIXME: Make it artist-definable
+        repulsor.set_python_tag(REPULSOR_TURNING_ANGLE, 540)
         repulsor.set_python_tag(REPULSOR_OLD_ORIENTATION, Vec3(0, 0, 0))
 
-        #m1 = self.app.loader.load_model("models/smiley")
-        #m1.set_scale(0.2)
-        #m1.reparent_to(self.app.render)
-        #repulsor.set_python_tag('ray_start', m1)
-        m2 = self.app.loader.load_model("models/smiley")
-        m2.set_scale(0.2)
-        m2.reparent_to(self.app.render)
-        repulsor.set_python_tag('ray_end', m2)
+        ground_contact = self.app.loader.load_model("models/smiley")
+        ground_contact.set_scale(0.2)
+        ground_contact.reparent_to(self.app.render)
+        repulsor.set_python_tag('ray_end', ground_contact)
 
     def add_thruster(self, thruster):
         force = float(thruster.get_tag(FORCE))
@@ -396,7 +381,7 @@ class Vehicle:
                 CM_TERRAIN,
             )
             #repulsor.get_python_tag('ray_start').set_pos(repulsor_pos)
-            if feeler.hasHit():
+            if feeler.has_hit():
                 repulsor_ray_active.append(True)
                 ray_frac = feeler.get_hit_fraction()
                 repulsor_ray_frac.append(ray_frac)
@@ -611,6 +596,7 @@ class Vehicle:
         for node, thrust in thruster_data:
             max_force = node.get_python_tag(FORCE)
             real_force = max_force * thrust
+            # FIXME: See repulsors above for the shortcoming that this suffers
             thruster_pos = node.get_pos(self.vehicle)
             thrust_direction = self.app.render.get_relative_vector(
                 node,
@@ -704,7 +690,7 @@ class VehicleController:
         self.app.accept('shift-z', self.shock, [0, 0, -10000])
 
         self.gamepad = None
-        devices = self.app.devices.getDevices(InputDevice.DeviceClass.gamepad)
+        devices = self.app.devices.get_devices(InputDevice.DeviceClass.gamepad)
         if devices:
             self.connect(devices[0])
         self.app.accept("connect-device", self.connect)
@@ -715,9 +701,9 @@ class VehicleController:
 
         # We're only interested if this is a gamepad and we don't have a
         # gamepad yet.
-        if device.device_class == InputDevice.DeviceClass.gamepad and not self.gamepad:
+        if device.device_class == InputDevice.DeviceClass.gamepad and self.gamepad is None:
             self.gamepad = device
-            self.app.attachInputDevice(device, prefix="gamepad")
+            self.app.attach_input_device(device, prefix="gamepad")
 
     def disconnect(self, device):
         """Event handler that is called when a device is removed."""
@@ -726,11 +712,11 @@ class VehicleController:
             # We don't care since it's not our gamepad.
             return
 
-        self.app.detachInputDevice(device)
+        self.app.detach_input_device(device)
         self.gamepad = None
 
         # Do we have any other gamepads?  Attach the first other gamepad.
-        devices = self.app.devices.getDevices(InputDevice.DeviceClass.gamepad)
+        devices = self.app.devices.get_devices(InputDevice.DeviceClass.gamepad)
         if devices:
             self.connect(devices[0])
 
@@ -740,7 +726,7 @@ class VehicleController:
             stabilizer_button,
         )
         if self.gamepad:
-            stabilizer_active = self.gamepad.findButton("rshoulder").pressed
+            stabilizer_active = self.gamepad.find_button("rshoulder").pressed
 
         target_orientation = VBase3(0, 0, 0)
         if self.app.mouseWatcherNode.is_button_down(KeyboardButton.left()):
@@ -748,7 +734,7 @@ class VehicleController:
         if self.app.mouseWatcherNode.is_button_down(KeyboardButton.right()):
             target_orientation.z -= 90 * 0.35
         if self.gamepad:
-            axis = self.gamepad.findAxis(InputDevice.Axis.left_x)
+            axis = self.gamepad.find_axis(InputDevice.Axis.left_x)
             strafe = self.gamepad.find_button("rtrigger").pressed
             if not strafe:
                 # FIXME: 0.2 = tau. But shouldn't it be 1/tau? And 90 is too
