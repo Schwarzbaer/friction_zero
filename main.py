@@ -165,13 +165,10 @@ class Environment:
             '{}*'.format(TERRAIN_COLLIDER)
         )
 
-        if len(collision_solids) == 0:
-                collision_solids = self.model.find_all_matches("**/*")
-        else:
-            collision_solids.hide()
+        #collision_solids.hide()
 
         for collision_solid in collision_solids:
-            collision_solid.flatten_strong()
+            # FIXME: collision_solid.flatten_strong()
             for geom_node in collision_solid.find_all_matches('**/+GeomNode'):
                 mesh = BulletTriangleMesh()
                 for geom in geom_node.node().get_geoms():

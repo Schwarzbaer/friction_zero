@@ -1,16 +1,16 @@
 [run]
+main_file = "main.py"
 auto_build = false
 auto_save = true
-main_file = "main.py"
-
-[build]
-ignore_patterns = [ "*.blend1", "*.blend2",]
-asset_dir = "assets/"
-export_dir = "assets/"
-converters = [ "native2bam", "blend2bam",]
 
 [general]
-renderer = "none"
 name = "Game"
+renderer = "none"
 material_mode = "legacy"
 physics_engine = "builtin"
+
+[build]
+asset_dir = "assets/"
+export_dir = "assets/"
+ignore_patterns = [ "*.blend1", "*.blend2",]
+converters = [ "native2bam", "blend2bam",]
