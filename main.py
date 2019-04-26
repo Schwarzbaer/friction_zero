@@ -65,13 +65,19 @@ class GameApp(ShowBase):
         self.accept("b", self.toggle_bullet_debug)
 
         self.vehicles = []
-        vehicle_1 = Vehicle(
-            self,
-            "assets/cars/Ricardeaut_Magnesium_tagAnimation.bam",
-        )
-        self.vehicles.append(vehicle_1)
-        #vehicle_2 = Vehicle(self, "assets/cars/Cadarache_DiamondMII.bam")
-        #self.vehicles.append(vehicle_2)
+        vehicle_files = [
+            'assets/cars/Ricardeaut_Magnesium_tagAnimation.bam',
+            'assets/cars/Cadarache_DiamondMII.bam',
+            # 'assets/cars/Doby_Phalix.bam',
+            'assets/cars/Texopec_Nako.bam',
+        ]
+
+        for vehicle_file in vehicle_files:
+            vehicle = Vehicle(
+                self,
+                vehicle_file,
+            )
+            self.vehicles.append(vehicle)
 
         spawn_points = self.environment.get_spawn_points()
         for vehicle, spawn_point in zip(self.vehicles, spawn_points):
@@ -273,10 +279,17 @@ class Vehicle:
             self.add_thruster(thruster)
 
         self.inputs = {
+            # Repulsors
+            REPULSOR_ACTIVATION: 0.0,
+            ACCELERATE: 0.0,
+            TURN: 0.0,
+            STRAFE: 0.0,
+            HOVER: 0.0,
+            # Gyro
+            ACTIVE_STABILIZATION: False,
             TARGET_ORIENTATION: Vec3(0, 0, 0),
-            TARGET_ROTATION: Vec3(0, 0, 0),
-            REPULSOR_ACTIVATION: 0,
-            THRUST: 0,
+            # Thrust
+            THRUST: 0.0,
         }
         self.sensors = {}
         self.commands = {}
@@ -515,7 +528,7 @@ class Vehicle:
             if activation:
                 # Repulsor power at zero distance
                 base_strength = node.get_python_tag(FORCE)
-                base_strength = 4000 # FIXME: Broken model
+                base_strength = 4000 # FIXME: Broken model.
                 # Effective fraction of repulsors force
                 transfer_frac = cos(0.5*pi * frac)
                 # Effective repulsor force
@@ -529,6 +542,10 @@ class Vehicle:
                 impulse = impulse_dir_world * strength
                 # Apply
                 repulsor_pos = node.get_pos(self.vehicle)
+                # FIXME! The position at which an impulse is applied seems to be
+                # centered around node it is applied to, but offset in the world
+                # orientation. So, right distance, wrong angle. This is likely a
+                # bug in Panda3D's Bullet wrapper. Or an idiosyncracy of Bullet.
                 self.physics_node.apply_impulse(
                     impulse * dt,
                     self.app.render.get_relative_vector(
@@ -541,15 +558,6 @@ class Vehicle:
                 max_distance = node.get_python_tag(ACTIVATION_DISTANCE)
                 contact_distance = -impulse_dir_world * max_distance * frac
                 contact_node = node.get_python_tag('ray_end')
-                # print("repulsor @ {: 2.2f}, {: 2.2f}: "
-                #       "{: 2.2f}x {: 2.2f}y {: 2.2f}z".format(
-                #           repulsor_pos.get_x(),
-                #           repulsor_pos.get_y(),
-                #           impulse_dir_world.get_x(),
-                #           impulse_dir_world.get_y(),
-                #           impulse_dir_world.get_z(),
-                #       )
-                # )
                 contact_node.set_pos(
                     node.get_pos(self.app.render) + contact_distance,
                 )
@@ -618,6 +626,7 @@ class CameraController:
 
         self.camera_mode = 0
         self.app.accept("c", self.switch_camera_mode)
+        self.app.accept("gamepad-face_x", self.switch_camera_mode)
 
     def switch_camera_mode(self):
         self.camera_mode = (self.camera_mode + 1) % len(CAM_MODES)
@@ -664,8 +673,10 @@ class VehicleController:
     def __init__(self, app, vehicle):
         self.app = app
         self.vehicle = vehicle
-        self.app.accept("n", self.next_vehicle)
-        self.app.accept("r", self.toggle_repulsors)
+        self.app.accept('n', self.next_vehicle)
+        self.app.accept('gamepad-face_y', self.next_vehicle)
+        self.app.accept('r', self.toggle_repulsors)
+        self.app.accept('gamepad-face_a', self.toggle_repulsors)
         self.repulsors_active = False
         self.app.accept('x', self.shock, [10000, 0, 0])
         self.app.accept('y', self.shock, [0, 10000, 0])
@@ -701,7 +712,7 @@ class VehicleController:
         self.gamepad = None
 
         # Do we have any other gamepads?  Attach the first other gamepad.
-        devices = self.devices.getDevices(InputDevice.DeviceClass.gamepad)
+        devices = self.app.devices.getDevices(InputDevice.DeviceClass.gamepad)
         if devices:
             self.connect(devices[0])
 
@@ -715,15 +726,17 @@ class VehicleController:
 
         target_orientation = VBase3(0, 0, 0)
         if self.app.mouseWatcherNode.is_button_down(KeyboardButton.left()):
-            target_orientation.z += 90
+            target_orientation.z += 90 * 0.35
         if self.app.mouseWatcherNode.is_button_down(KeyboardButton.right()):
-            target_orientation.z -= 90
+            target_orientation.z -= 90 * 0.35
         if self.gamepad:
             axis = self.gamepad.findAxis(InputDevice.Axis.left_x)
             strafe = self.gamepad.find_button("rtrigger").pressed
             if not strafe:
-                # FIXME: 0.2 = tau
-                target_orientation.z = -axis.value * 90 * 0.2
+                # FIXME: 0.2 = tau. But shouldn't it be 1/tau? And 90 is too
+                # high then, the target would wrap around? Does it matter
+                # though?
+                target_orientation.z = -axis.value * 90 * 0.35
 
         repulsor_activation = 0
         if self.repulsors_active:
@@ -758,7 +771,7 @@ class VehicleController:
             else:
                 repulsor_turn = x_axis
                 repulsor_strafe = 0.0
-            if self.gamepad.find_button("face_a").pressed:
+            if self.gamepad.find_button("face_b").pressed:
                 repulsor_hover = 1.0
 
         thrust = 0
