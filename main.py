@@ -680,10 +680,10 @@ class VehicleController:
         )
 
         target_orientation = VBase3(0, 0, 0)
-        #if self.app.mouseWatcherNode.is_button_down(KeyboardButton.left()):
-        #    target_orientation.z+= 30
-        #if self.app.mouseWatcherNode.is_button_down(KeyboardButton.right()):
-        #    target_orientation.z -= 30
+        if self.app.mouseWatcherNode.is_button_down(KeyboardButton.left()):
+            target_orientation.z+= 30
+        if self.app.mouseWatcherNode.is_button_down(KeyboardButton.right()):
+            target_orientation.z -= 30
 
         repulsor_activation = 0
         if self.repulsors_active:
