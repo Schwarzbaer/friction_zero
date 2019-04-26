@@ -233,12 +233,14 @@ X = '_x'
 Y = '_y'
 REPULSOR_TURNING_ANGLE = 'repulsor_turning_angle'
 REPULSOR_TARGET_ORIENTATIONS = 'repulsor_target_orientation'
+REPULSOR_OLD_ORIENTATION = 'repulsor_old_orientation'
 
 class Vehicle:
     def __init__(self, app, model_file):
         self.app = app
 
         self.model = self.app.loader.load_model(model_file)
+        #self.model = Actor(model_file)
 
         self.physics_node = BulletRigidBodyNode('vehicle')
         friction_node = self.model.find('**/={}'.format(FRICTION))
@@ -353,7 +355,8 @@ class Vehicle:
             angle = VBase3(tag_x, tag_y, 0)
             repulsor_np.set_python_tag(tag, angle)
             # FIXME: Make it artist-definable
-            repulsor_np.set_python_tag(REPULSOR_TURNING_ANGLE, 90)
+        repulsor_np.set_python_tag(REPULSOR_TURNING_ANGLE, 540)
+        repulsor.set_python_tag(REPULSOR_OLD_ORIENTATION, Vec3(0, 0, 0))
 
         #m1 = self.app.loader.load_model("models/smiley")
         #m1.set_scale(0.2)
@@ -578,11 +581,15 @@ class Vehicle:
             else:
                 node.get_python_tag('ray_end').hide()
             # Reorient
-            node.set_hpr(
-                angle.z,
-                angle.x,
-                angle.y,
-            )
+            old_hpr = node.get_python_tag(REPULSOR_OLD_ORIENTATION)
+            want_hpr = VBase3(angle.z, angle.x, angle.y)
+            delta_hpr = want_hpr - old_hpr
+            max_angle = node.get_python_tag(REPULSOR_TURNING_ANGLE) * dt
+            if delta_hpr.length() > max_angle:
+                delta_hpr = delta_hpr / delta_hpr.length() * max_angle
+            new_hpr = old_hpr + delta_hpr
+            node.set_hpr(new_hpr)
+            node.set_python_tag(REPULSOR_OLD_ORIENTATION, new_hpr)
 
     def apply_gyroscope(self):
         impulse = self.commands[GYRO_ROTATION]
