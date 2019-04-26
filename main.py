@@ -8,7 +8,7 @@ from random import random
 from direct.showbase.ShowBase import ShowBase
 from direct.actor.Actor import Actor
 import panda3d
-#import pman.shim
+import pman.shim
 
 from panda3d.core import NodePath
 from panda3d.core import Vec3
@@ -31,9 +31,9 @@ from panda3d.bullet import BulletConvexHullShape
 from panda3d.bullet import BulletPlaneShape
 from panda3d.bullet import BulletDebugNode
 
-#panda3d.core.load_prc_file(
-#    panda3d.core.Filename.expand_from('$MAIN_DIR/settings.prc')
-#)
+panda3d.core.load_prc_file(
+    panda3d.core.Filename.expand_from('$MAIN_DIR/settings.prc')
+)
 
 
 VEHICLE = 'fz_body'
@@ -55,7 +55,7 @@ CM_TERRAIN = BitMask32.bit(0)
 class GameApp(ShowBase):
     def __init__(self, map="assets/maps/hills.bam"):
         ShowBase.__init__(self)
-        #pman.shim.init(self)
+        pman.shim.init(self)
         self.accept('escape', sys.exit)
         #self.render.setShaderAuto()
         self.set_frame_rate_meter(True)
