@@ -31,6 +31,26 @@ from panda3d.bullet import BulletConvexHullShape
 from panda3d.bullet import BulletPlaneShape
 from panda3d.bullet import BulletDebugNode
 
+from keybindings import DeviceListener
+from keybindings import GE_TOGGLE_REPULSOR
+from keybindings import GE_FORWARD
+from keybindings import GE_BACKWARD
+from keybindings import GE_TURN
+from keybindings import GE_TURN_LEFT
+from keybindings import GE_TURN_RIGHT
+from keybindings import GE_STRAFE
+from keybindings import GE_STRAFE_LEFT
+from keybindings import GE_STRAFE_RIGHT
+from keybindings import GE_HOVER
+from keybindings import GE_STABILIZE
+from keybindings import GE_GYRO_PITCH
+from keybindings import GE_GYRO_ROLL
+from keybindings import GE_THRUST
+from keybindings import GE_AIRBRAKE
+from keybindings import GE_CAMERA_MODE
+from keybindings import GE_NEXT_VEHICLE
+
+
 panda3d.core.load_prc_file(
     panda3d.core.Filename.expand_from('$MAIN_DIR/settings.prc')
 )
@@ -92,9 +112,11 @@ class GameApp(ShowBase):
             self.vehicles[self.player_vehicle_idx],
         )
 
+        self.controller_listener = DeviceListener()
         self.player_controller = VehicleController(
             self,
             self.vehicles[self.player_vehicle_idx],
+            self.controller_listener,
         )
 
         base.task_mgr.add(self.game_loop, "game_loop", sort=5)
@@ -115,19 +137,19 @@ class GameApp(ShowBase):
         self.player_controller.set_vehicle(new_vehicle)
 
     def bullet_debug(self):
-        debugNode = BulletDebugNode('Debug')
-        debugNode.showWireframe(True)
-        debugNode.showConstraints(True)
-        debugNode.showBoundingBoxes(False)
-        debugNode.showNormals(False)
-        self.debugNP = self.render.attachNewNode(debugNode)
-        self.environment.physics_world.setDebugNode(debugNode)
+        debug_node = BulletDebugNode('Debug')
+        debug_node.show_wireframe(True)
+        debug_node.show_constraints(True)
+        debug_node.show_bounding_boxes(False)
+        debug_node.show_normals(False)
+        self.debug_np = self.render.attach_new_node(debug_node)
+        self.environment.physics_world.set_debug_node(debug_node)
 
     def toggle_bullet_debug(self):
-        if self.debugNP.is_hidden():
-            self.debugNP.show()
+        if self.debug_np.is_hidden():
+            self.debug_np.show()
         else:
-            self.debugNP.hide()
+            self.debug_np.hide()
 
 
 class Environment:
@@ -159,7 +181,7 @@ class Environment:
         sky.set_bin('background', 0)
         sky.set_depth_write(False)
         sky.set_compass()
-        sky.setLightOff()
+        sky.set_light_off()
 
         # Bullet collision mesh
         collision_solids = self.model.find_all_matches(
@@ -175,7 +197,7 @@ class Environment:
                     mesh.addGeom(geom)
                 shape = BulletTriangleMeshShape(mesh, dynamic=False)
                 terrain_node = BulletRigidBodyNode('terrain')
-                terrain_node.addShape(shape)
+                terrain_node.add_shape(shape)
                 friction_node = collision_solid.find('**/={}'.format(FRICTION))
                 friction_str = friction_node.get_tag('friction')
                 if len(friction_str) == 0:
@@ -184,21 +206,21 @@ class Environment:
                     friction = float(friction_str)
                 terrain_node.set_friction(friction)
                 terrain_np = geom_node.attach_new_node(terrain_node)
-                terrain_np.setCollideMask(CM_TERRAIN)
-                self.physics_world.attachRigidBody(terrain_node)
+                terrain_np.set_collide_mask(CM_TERRAIN)
+                self.physics_world.attach_rigid_body(terrain_node)
 
     def add_physics_node(self, node):
-        self.physics_world.attachRigidBody(node)
+        self.physics_world.attach_rigid_body(node)
 
     def update_physics(self):
-        dt = globalClock.getDt()
+        dt = globalClock.dt
         # FIXME: Pull from settings
         min_frame_rate = 30
         max_frame_time = 1.0 / min_frame_rate
         if dt <= max_frame_time:
-            self.physics_world.doPhysics(dt)
+            self.physics_world.do_physics(dt)
         else:
-            self.physics_world.doPhysics(max_frame_time)
+            self.physics_world.do_physics(max_frame_time)
 
     def get_spawn_points(self):
         spawn_nodes = [
@@ -254,9 +276,9 @@ class Vehicle:
         friction = float(friction_str)
         self.physics_node.set_friction(friction)
         # FIXME: This will be replaced by air drag.
-        self.physics_node.setLinearDamping(0.1)
-        self.physics_node.setLinearSleepThreshold(0)
-        self.physics_node.setAngularSleepThreshold(0)
+        self.physics_node.set_linear_damping(0.1)
+        self.physics_node.set_linear_sleep_threshold(0)
+        self.physics_node.set_angular_sleep_threshold(0)
         mass_node = self.model.find('**/={}'.format(MASS))
         mass_str = mass_node.get_tag('mass')
         mass = float(mass_str)
@@ -270,7 +292,7 @@ class Vehicle:
                     v_geom = vertices.getData3f()
                     v_model = self.model.get_relative_point(geom_node, v_geom)
                     shape.add_point(v_model)
-        self.physics_node.addShape(shape)
+        self.physics_node.add_shape(shape)
         self.vehicle = NodePath(self.physics_node)
 
         self.model.reparent_to(self.vehicle)
@@ -313,16 +335,6 @@ class Vehicle:
         self.sensors = {}
         self.commands = {}
 
-        # self.light = self.app.render.attachNewNode(Spotlight("Spot"))
-        # self.light.node().setScene(base.render)
-        # self.light.node().setShadowCaster(True)
-        # self.light.node().showFrustum()
-        # self.light.node().getLens().setFov(40)
-        # self.light.node().getLens().setNearFar(10, 100)
-        # render.setLight(self.light)
-        # self.light.set_pos(self.model.get_pos() + Vec3(0, 0, 40))
-        # self.light.set_p(90)
-
     def np(self):
         return self.vehicle
 
@@ -337,14 +349,13 @@ class Vehicle:
         self.inputs = inputs
 
     def add_repulsor(self, repulsor):
-        repulsor_np = repulsor
-        self.repulsor_nodes.append(repulsor_np)
+        self.repulsor_nodes.append(repulsor)
 
         # Transcribe tags
         force = float(repulsor.get_tag(FORCE))
-        repulsor_np.set_python_tag(FORCE, force)
+        repulsor.set_python_tag(FORCE, force)
         activation_distance = float(repulsor.get_tag(ACTIVATION_DISTANCE))
-        repulsor_np.set_python_tag(ACTIVATION_DISTANCE, activation_distance)
+        repulsor.set_python_tag(ACTIVATION_DISTANCE, activation_distance)
 
         animation_tags = [ACCELERATE, TURN_LEFT, TURN_RIGHT, STRAFE, HOVER]
         for tag in animation_tags:
@@ -359,19 +370,15 @@ class Vehicle:
             else:
                 tag_y = float(tag_y)
             angle = VBase3(tag_x, tag_y, 0)
-            repulsor_np.set_python_tag(tag, angle)
-            # FIXME: Make it artist-definable
-        repulsor_np.set_python_tag(REPULSOR_TURNING_ANGLE, 540)
+            repulsor.set_python_tag(tag, angle)
+        # FIXME: Make it artist-definable
+        repulsor.set_python_tag(REPULSOR_TURNING_ANGLE, 540)
         repulsor.set_python_tag(REPULSOR_OLD_ORIENTATION, Vec3(0, 0, 0))
 
-        #m1 = self.app.loader.load_model("models/smiley")
-        #m1.set_scale(0.2)
-        #m1.reparent_to(self.app.render)
-        #repulsor.set_python_tag('ray_start', m1)
-        m2 = self.app.loader.load_model("models/smiley")
-        m2.set_scale(0.2)
-        m2.reparent_to(self.app.render)
-        repulsor.set_python_tag('ray_end', m2)
+        ground_contact = self.app.loader.load_model("models/smiley")
+        ground_contact.set_scale(0.2)
+        ground_contact.reparent_to(self.app.render)
+        repulsor.set_python_tag('ray_end', ground_contact)
 
     def add_thruster(self, thruster):
         force = float(thruster.get_tag(FORCE))
@@ -402,7 +409,7 @@ class Vehicle:
                 CM_TERRAIN,
             )
             #repulsor.get_python_tag('ray_start').set_pos(repulsor_pos)
-            if feeler.hasHit():
+            if feeler.has_hit():
                 repulsor_ray_active.append(True)
                 ray_frac = feeler.get_hit_fraction()
                 repulsor_ray_frac.append(ray_frac)
@@ -548,7 +555,7 @@ class Vehicle:
             if activation:
                 # Repulsor power at zero distance
                 base_strength = node.get_python_tag(FORCE)
-                base_strength = 4000 # FIXME: Broken model.
+                base_strength = 4000
                 # Effective fraction of repulsors force
                 transfer_frac = cos(0.5*pi * frac)
                 transfer_frac = cos(0.5*pi * ((frac*frac)))
@@ -618,6 +625,7 @@ class Vehicle:
         for node, thrust in thruster_data:
             max_force = node.get_python_tag(FORCE)
             real_force = max_force * thrust
+            # FIXME: See repulsors above for the shortcoming that this suffers
             thruster_pos = node.get_pos(self.vehicle)
             thrust_direction = self.app.render.get_relative_vector(
                 node,
@@ -634,6 +642,8 @@ class Vehicle:
             Vec3(random(), random(), random()) * 10,
         )
         self.physics_node.apply_torque_impulse(Vec3(x, y, z))
+
+
 
 
 CAM_MODE_FOLLOW = 1
@@ -695,9 +705,10 @@ class CameraController:
 
 
 class VehicleController:
-    def __init__(self, app, vehicle):
+    def __init__(self, app, vehicle, controller):
         self.app = app
         self.vehicle = vehicle
+        self.controller = controller
         self.app.accept('n', self.next_vehicle)
         self.app.accept('gamepad-face_y', self.next_vehicle)
         self.app.accept('r', self.toggle_repulsors)
@@ -710,101 +721,81 @@ class VehicleController:
         self.app.accept('shift-y', self.shock, [0, -10000, 0])
         self.app.accept('shift-z', self.shock, [0, 0, -10000])
 
-        self.gamepad = None
-        devices = self.app.devices.getDevices(InputDevice.DeviceClass.gamepad)
-        if devices:
-            self.connect(devices[0])
-        self.app.accept("connect-device", self.connect)
-        self.app.accept("disconnect-device", self.disconnect)
-
-    def connect(self, device):
-        """Event handler that is called when a device is discovered."""
-
-        # We're only interested if this is a gamepad and we don't have a
-        # gamepad yet.
-        if device.device_class == InputDevice.DeviceClass.gamepad and not self.gamepad:
-            self.gamepad = device
-            self.app.attachInputDevice(device, prefix="gamepad")
-
-    def disconnect(self, device):
-        """Event handler that is called when a device is removed."""
-
-        if self.gamepad != device:
-            # We don't care since it's not our gamepad.
-            return
-
-        self.app.detachInputDevice(device)
-        self.gamepad = None
-
-        # Do we have any other gamepads?  Attach the first other gamepad.
-        devices = self.app.devices.getDevices(InputDevice.DeviceClass.gamepad)
-        if devices:
-            self.connect(devices[0])
-
     def gather_inputs(self):
-        stabilizer_button = KeyboardButton.ascii_key(b'g')
-        stabilizer_active = self.app.mouseWatcherNode.is_button_down(
-            stabilizer_button,
-        )
-        if self.gamepad:
-            stabilizer_active = self.gamepad.findButton("rshoulder").pressed
+        if self.controller.method == InputDevice.DeviceClass.keyboard:
+            if self.repulsors_active:
+                repulsor_activation = 1
+            else:
+                repulsor_activation = 0
 
-        target_orientation = VBase3(0, 0, 0)
-        if self.app.mouseWatcherNode.is_button_down(KeyboardButton.left()):
-            target_orientation.z += 90 * 0.35
-        if self.app.mouseWatcherNode.is_button_down(KeyboardButton.right()):
-            target_orientation.z -= 90 * 0.35
-        if self.gamepad:
-            axis = self.gamepad.findAxis(InputDevice.Axis.left_x)
-            strafe = self.gamepad.find_button("rtrigger").pressed
-            if not strafe:
-                # FIXME: 0.2 = tau. But shouldn't it be 1/tau? And 90 is too
-                # high then, the target would wrap around? Does it matter
-                # though?
-                target_orientation.z = -axis.value * 90 * 0.35
+            repulsor_forward = 0.0
+            repulsor_turn = 0.0
+            repulsor_strafe = 0.0
+            repulsor_hover = 0.0
 
-        repulsor_activation = 0
-        if self.repulsors_active:
-            repulsor_activation = 1
+            if self.controller.is_pressed(GE_FORWARD):
+                repulsor_forward += 1.0
+            if self.controller.is_pressed(GE_BACKWARD):
+                repulsor_forward -= 1.0
+            if self.controller.is_pressed(GE_TURN_LEFT):
+                repulsor_turn -= 1
+            if self.controller.is_pressed(GE_TURN_RIGHT):
+                repulsor_turn += 1
+            if self.controller.is_pressed(GE_STRAFE_LEFT):
+                repulsor_strafe -= 1
+            if self.controller.is_pressed(GE_STRAFE_RIGHT):
+                repulsor_strafe += 1
+            if self.controller.is_pressed(GE_HOVER):
+                repulsor_hover += 1
 
-        repulsor_forward = 0.0
-        repulsor_turn = 0.0
-        repulsor_strafe = 0.0
-        repulsor_hover = 0.0
-        if self.app.mouseWatcherNode.is_button_down(KeyboardButton.up()):
-            repulsor_forward += 1.0
-        if self.app.mouseWatcherNode.is_button_down(KeyboardButton.down()):
-            repulsor_forward -= 1.0
-        if self.app.mouseWatcherNode.is_button_down(KeyboardButton.left()):
-            repulsor_turn -= 1
-        if self.app.mouseWatcherNode.is_button_down(KeyboardButton.right()):
-            repulsor_turn += 1
-        if self.app.mouseWatcherNode.is_button_down(KeyboardButton.ascii_key(b'a')):
-            repulsor_strafe -= 1
-        if self.app.mouseWatcherNode.is_button_down(KeyboardButton.ascii_key(b'd')):
-            repulsor_strafe += 1
-        if self.app.mouseWatcherNode.is_button_down(KeyboardButton.ascii_key(b's')):
-            repulsor_hover += 1
-        if self.gamepad:
-            x_axis = self.gamepad.findAxis(InputDevice.Axis.left_x).value
-            y_axis = self.gamepad.findAxis(InputDevice.Axis.left_y).value
-            strafe = self.gamepad.find_button("rtrigger").pressed
-            repulsor_forward = y_axis
+            stabilizer_active = self.controller.is_pressed(GE_STABILIZE)
+            target_orientation = VBase3(0, 0, 0)
+            if self.controller.is_pressed(GE_TURN_LEFT):
+                target_orientation.z += 90 * 0.35
+            if self.controller.is_pressed(GE_TURN_RIGHT):
+                target_orientation.z -= 90 * 0.35
+
+            thrust = 0
+            if self.controller.is_pressed(GE_THRUST):
+                thrust = 1
+
+        if self.controller.method == InputDevice.DeviceClass.gamepad:
+            if self.repulsors_active:
+                repulsor_activation = 1
+            else:
+                repulsor_activation = 0
+
+            repulsor_forward = self.controller.axis_value(GE_FORWARD)
+            repulsor_turn = 0.0
+            repulsor_strafe = 0.0
+            repulsor_hover = 0.0
+
+            turn_axis = self.controller.axis_value(GE_TURN)
+            strafe = self.controller.is_pressed(GE_STRAFE)
             if strafe:
                 repulsor_turn = 0.0
-                repulsor_strafe = x_axis
+                repulsor_strafe = turn_axis
             else:
-                repulsor_turn = x_axis
+                repulsor_turn = turn_axis
                 repulsor_strafe = 0.0
-            if self.gamepad.find_button("face_b").pressed:
+            if self.controller.is_pressed(GE_HOVER):
                 repulsor_hover = 1.0
 
-        thrust = 0
-        if self.app.mouseWatcherNode.is_button_down(KeyboardButton.space()):
-            thrust = 1
-        if self.gamepad:
-            button = self.gamepad.find_button("lshoulder")
-            if button.pressed:
+            stabilizer_active = self.controller.is_pressed(GE_STABILIZE)
+            target_orientation = VBase3(0, 0, 0)
+            if not strafe:
+                # FIXME: 0.35 = tau. But shouldn't it be 1/tau? And 90 is too
+                # high then, the target would wrap around? Does it matter
+                # though?
+                target_orientation.z -= turn_axis * 90 * 0.35
+            if not stabilizer_active:
+                gyro_pitch = (self.controller.axis_value(GE_GYRO_PITCH) - 0.5) * 2
+                target_orientation.x += gyro_pitch * 90 * 0.35
+                gyro_roll = (self.controller.axis_value(GE_GYRO_ROLL) - 0.5) * 2
+                target_orientation.y += gyro_roll * 90 * 0.35
+
+            thrust = 0
+            if self.controller.is_pressed(GE_THRUST):
                 thrust = 1
 
         self.vehicle.set_inputs(

@@ -1,0 +1,26 @@
+keyboard_toggle_repulsor r
+keyboard_forward         arrow_up
+keyboard_backward        arrow_down
+keyboard_turn_left       arrow_left
+keyboard_turn_right      arrow_right
+keyboard_strafe_left     a
+keyboard_strafe_right    d
+keyboard_hover           s
+keyboard_stabilize       lshift
+keyboard_thrust          space
+keyboard_airbrake        w
+keyboard_camera_mode     c
+keyboard_next_vehicle    n
+
+gamepad_repulsor_on      face_a
+gamepad_forward          left_y
+gamepad_turn             left_x
+gamepad_strafe           rtrigger
+gamepad_hover            face_b
+gamepad_stabilize        rstick
+gamepad_gyro_pitch       left_trigger
+gamepad_gyro_roll        right_trigger
+gamepad_thrust           lshoulder
+gamepad_airbrake         ltrigger
+gamepad_camera_mode      face_b
+gamepad_next_vehicle     face_y
