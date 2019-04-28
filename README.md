@@ -143,7 +143,7 @@ TODO
     or offline) for a time (or permanently)
 * Game mode: Demolition Derby (requires damage model. May require weapons.)
   * Last one standing
-
+* City map: Start with a few blocks and expand.
 
 Models checklist
 ----------------
