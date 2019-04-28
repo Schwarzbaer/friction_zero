@@ -5,20 +5,20 @@ from panda3d.core import load_prc_file
 from panda3d.core import Filename
 from panda3d.core import InputDevice
 from panda3d.core import ConfigVariableString
+from panda3d.core import KeyboardButton
 
 from direct.showbase.ShowBase import ShowBase
 from direct.showbase.DirectObject import DirectObject
 
 
-# FIXME: Replace with pman's expand_from $MAIN_DIR
-load_prc_file(
-    Filename('keybindings.prc')
+panda3d.core.load_prc_file(
+    panda3d.core.Filename.expand_from('$MAIN_DIR/keybindings.prc')
 )
 
 
 class Methods(Enum):
-    GAMEPAD = InputDevice.DeviceClass.gamepad
     FLIGHTSTICK = InputDevice.DeviceClass.flight_stick
+    GAMEPAD = InputDevice.DeviceClass.gamepad
     KEYBOARD = InputDevice.DeviceClass.keyboard
 
 
@@ -26,6 +26,7 @@ priorities = {cls.value: priority for priority, cls in enumerate(Methods)}
 
 
 event_prefixes = {
+    InputDevice.DeviceClass.keyboard: '',
     InputDevice.DeviceClass.gamepad: 'gamepad',
     InputDevice.DeviceClass.flight_stick: 'flight_stick',
 }
@@ -64,7 +65,7 @@ gamepad_bindings = {
     GE_TOGGLE_REPULSOR: ConfigVariableString('gamepad_repulsor_on', 'face_a'),
     GE_FORWARD: ConfigVariableString('gamepad_forward', 'left_y'),
     GE_TURN: ConfigVariableString('gamepad_turn', 'left_x'),
-    GE_STRAFE: ConfigVariableString('gamepad_strafe', 'lstick'),
+    GE_STRAFE: ConfigVariableString('gamepad_strafe', 'rtrigger'),
     GE_HOVER: ConfigVariableString('gamepad_hover', 'face_b'),
     GE_STABILIZE: ConfigVariableString('gamepad_stabilize', 'rshoulder'),
     GE_THRUST: ConfigVariableString('gamepad_thrust', 'lshoulder'),
@@ -131,7 +132,7 @@ class DeviceListener(DirectObject):
             # higher-prioritized class than the current controller. If it's the
             # same or lower-prioritized one, we want to keep the current one.
             if device is None:
-                new_device_class = InputDevice.device_class.keyboard
+                new_device_class = InputDevice.DeviceClass.keyboard
             else:
                 new_device_class = device.device_class
             if self.controller is None:
@@ -144,33 +145,47 @@ class DeviceListener(DirectObject):
                     base.detach_input_device(self.controller)
                 # Attach new controller
                 self.controller = device
-                event_prefix = event_prefixes[device.device_class]
+                event_prefix = event_prefixes[new_device_class]
                 base.attach_input_device(device, prefix=event_prefix)
-                self.map_bindings(device.device_class)
+                self.map_bindings(new_device_class)
         else:
             # It's the keybard
             print("Assuming keyboard")
+            self.map_bindings(InputDevice.DeviceClass.keyboard)
 
     def map_bindings(self, device_class):
-        # TODO: Ignore old bindings
+        # Ignore old bindings
         for game_event, control_event in self.bindings.items():
             self.ignore(control_event)
+        self.bindings = {}
         # Listen for new bindings
         bindings = device_bindings[device_class]
         event_prefix = event_prefixes[device_class]
         for game_event, control_event in bindings.items():
-            control_event_name = event_prefix + '-' + control_event.value
-            self.accept(control_event_name, self.map_control_event, [game_event])
-            self.bindings[game_event] = control_event_name
+            full_event_name = event_prefix + '-' + control_event.value
+            self.accept(full_event_name, self.map_control_event, [game_event])
+            self.bindings[game_event] = control_event
+            print("{} = {}".format(game_event, control_event))
 
     def map_control_event(self, event):
-        print(event)
         base.messenger.send(event)
 
+    def is_pressed(self, game_event):
+        button_name = self.bindings[game_event].value
+        if self.controller is None:
+            # We're working on a keyboard
+            if len(button_name) == 1:
+                button = KeyboardButton.ascii_key(button_name.encode('UTF-8'))
+            else:
+                # FIXME: This can't be the Panda way.
+                button = getattr(KeyboardButton, button_name)()
+            return base.mouseWatcherNode.is_button_down(button)
+        else:
+            return self.controller.find_button(button_name).pressed
 
-if __name__ == '__main__':
-    app = ShowBase()
-    app.accept('escape', sys.exit)
-    # base.messenger.toggle_verbose()
-    dl = DeviceListener()
-    app.run()
+    def axis_value(self, game_event):
+        axis_name = self.bindings[game_event].value
+        # FIXME: Can't be the Panda way, either!
+        axis_id = getattr(InputDevice.Axis, axis_name)
+        value = self.controller.find_axis(axis_id).value
+        return value
