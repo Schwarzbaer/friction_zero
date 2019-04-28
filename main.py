@@ -555,6 +555,7 @@ class Vehicle:
             if activation:
                 # Repulsor power at zero distance
                 base_strength = node.get_python_tag(FORCE)
+                base_strength = 4000
                 # Effective fraction of repulsors force
                 transfer_frac = cos(0.5*pi * frac)
                 # Effective repulsor force
