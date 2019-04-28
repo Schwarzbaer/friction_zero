@@ -49,9 +49,11 @@ TODO
 * Clamp timestep in physics simulation
   * Move value min_frame_rate into settings file
 * CCD
+* Game Mode: Free Driving
 * Countdown to start
+* Game Mode: Timed solo race
 * Recording races
-  * Racing against ghosts
+* Game Mode: Racing against ghosts (recorded races)
 
 
 ### Art
@@ -106,6 +108,10 @@ TODO
 * Ingame screens from trackside AI cameras
 * Surfaces: Different materials can be repulsed differently well
 * Points (bonus time?) for tricks
+* Game mode Tricks: Get as many tricks points as possible in a limited time
+* Game mode Rally: Timed race with time deducted for tricks
+* Game mode Treasure Hunt: Find items hidden on a map
+  * Radar may indicate distance and/or direction when close
 * Quantum lock: Become locked to a track like a superconductor in a magnetic
   field
 * Minimap

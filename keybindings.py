@@ -6,6 +6,7 @@ from panda3d.core import Filename
 from panda3d.core import InputDevice
 from panda3d.core import ConfigVariableString
 from panda3d.core import KeyboardButton
+from panda3d.core import ButtonRegistry
 
 from direct.showbase.ShowBase import ShowBase
 from direct.showbase.DirectObject import DirectObject
@@ -32,6 +33,8 @@ event_prefixes = {
 }
 
 
+UNBOUND = 'none'
+GE_SWITCH_DRIVING_MODE = 'switch_driving_mode'
 GE_TOGGLE_REPULSOR = 'toggle_repulsor'
 GE_FORWARD = 'forward'
 GE_BACKWARD = 'backward'
@@ -43,6 +46,7 @@ GE_STRAFE_LEFT = 'strafe_left'
 GE_STRAFE_RIGHT = 'strafe_right'
 GE_HOVER = 'hover'
 GE_STABILIZE = 'stabilize'
+GE_GYRO_YAW = 'gyro_yaw'
 GE_GYRO_PITCH = 'gyro_pitch'
 GE_GYRO_ROLL = 'gyro_roll'
 GE_THRUST = 'thrust'
@@ -69,18 +73,19 @@ keyboard_bindings = {
 
 
 gamepad_bindings = {
-    GE_TOGGLE_REPULSOR: ConfigVariableString('gamepad_repulsor_on', 'face_a'),
+    GE_TOGGLE_REPULSOR: ConfigVariableString('gamepad_repulsor_on', 'face_b'),
     GE_FORWARD: ConfigVariableString('gamepad_forward', 'left_y'),
     GE_TURN: ConfigVariableString('gamepad_turn', 'left_x'),
-    GE_GYRO_PITCH: ConfigVariableString('gamepad_gyro_pitch', 'left_trigger'),
-    GE_GYRO_ROLL: ConfigVariableString('gamepad_gyro_roll', 'right_trigger'),
+    GE_GYRO_ROLL: ConfigVariableString('gamepad_gyro_roll', 'right_x'),
+    GE_GYRO_PITCH: ConfigVariableString('gamepad_gyro_pitch', 'right_y'),
     GE_STRAFE: ConfigVariableString('gamepad_strafe', 'rtrigger'),
-    GE_HOVER: ConfigVariableString('gamepad_hover', 'face_b'),
+    GE_HOVER: ConfigVariableString('gamepad_hover', 'none'),
+    GE_SWITCH_DRIVING_MODE: ConfigVariableString('gamepad_switch_driving_mode', 'face_a'),
     GE_STABILIZE: ConfigVariableString('gamepad_stabilize', 'rshoulder'),
     GE_THRUST: ConfigVariableString('gamepad_thrust', 'lshoulder'),
     GE_AIRBRAKE: ConfigVariableString('gamepad_airbrake', 'ltrigger'),
-    GE_CAMERA_MODE: ConfigVariableString('gamepad_camera_mode', 'face_b'),
-    GE_NEXT_VEHICLE: ConfigVariableString('gamepad_next_vehicle', 'face_y'),
+    GE_CAMERA_MODE: ConfigVariableString('gamepad_camera_mode', 'face_y'),
+    GE_NEXT_VEHICLE: ConfigVariableString('gamepad_next_vehicle', 'face_x'),
 }
 
 
@@ -166,14 +171,16 @@ class DeviceListener(DirectObject):
     def map_bindings(self, device_class):
         # Ignore old bindings
         for game_event, control_event in self.bindings.items():
-            self.ignore(control_event)
+            if control_event != UNBOUND:
+                self.ignore(control_event)
         self.bindings = {}
         # Listen for new bindings
         bindings = device_bindings[device_class]
         event_prefix = event_prefixes[device_class]
         for game_event, control_event in bindings.items():
-            full_event_name = event_prefix + '-' + control_event.value
-            self.accept(full_event_name, self.map_control_event, [game_event])
+            if control_event != UNBOUND:
+                full_event_name = event_prefix + '-' + control_event.value
+                self.accept(full_event_name, self.map_control_event, [game_event])
             self.bindings[game_event] = control_event
             print("{} = {}".format(game_event, control_event))
         self.method = device_class
@@ -183,25 +190,25 @@ class DeviceListener(DirectObject):
 
     def is_pressed(self, game_event):
         button_name = self.bindings[game_event].value
-        # FIXME: Cursor key events have their key name prefixed with 'arrow-',
-        # So we strip it here. Maybe we should add it in the event mapping bit
-        # instead?
-        if button_name.startswith('arrow_'):
-            button_name = button_name[6:]
+        if button_name == UNBOUND:
+            return False
         if self.controller is None:
             # We're working on a keyboard
-            if len(button_name) == 1:
-                button = KeyboardButton.ascii_key(button_name.encode('UTF-8'))
-            else:
-                # FIXME: This can't be the Panda way.
-                button = getattr(KeyboardButton, button_name)()
+            button = ButtonRegistry.ptr().find_button(button_name)
+            print(button_name, button)
+            #if len(button_name) == 1:
+            #    button = KeyboardButton.ascii_key(button_name.encode('UTF-8'))
+            #else:
+            #    # FIXME: This can't be the Panda way.
+            #    button = getattr(KeyboardButton, button_name)()
             return base.mouseWatcherNode.is_button_down(button)
         else:
-            return self.controller.find_button(button_name).pressed
+            button = self.controller.find_button(button_name)
+            return button.pressed
 
     def axis_value(self, game_event):
         axis_name = self.bindings[game_event].value
-        # FIXME: Can't be the Panda way, either!
-        axis_id = getattr(InputDevice.Axis, axis_name)
-        value = self.controller.find_axis(axis_id).value
-        return value
+        if axis_name == UNBOUND:
+            return 0.0
+        axis = self.controller.find_axis(InputDevice.Axis[axis_name])
+        return axis.value

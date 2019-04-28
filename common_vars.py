@@ -1,0 +1,2 @@
+FRICTION = 'friction'
+DEFAULT_FRICTION_VALUE = 1.25
