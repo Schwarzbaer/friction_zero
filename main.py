@@ -71,9 +71,10 @@ MASS = 'mass'
 GRAVITY = 'gravity'
 CM_TERRAIN = BitMask32.bit(0)
 
+DEFAULT_FRICTION_VALUE = 1.25
 
 class GameApp(ShowBase):
-    def __init__(self, map="assets/maps/hills.bam"):
+    def __init__(self, map="assets/maps/lab.bam"):
         ShowBase.__init__(self)
         pman.shim.init(self)
         self.accept('escape', sys.exit)
@@ -86,7 +87,7 @@ class GameApp(ShowBase):
 
         self.vehicles = []
         vehicle_files = [
-            'assets/cars/Ricardeaut_Magnesium_tagAnimation.bam',
+            'assets/cars/Ricardeaut_Magnesium.bam',
             'assets/cars/Cadarache_DiamondMII.bam',
             # 'assets/cars/Doby_Phalix.bam',
             'assets/cars/Texopec_Nako.bam',
@@ -185,19 +186,24 @@ class Environment:
         collision_solids = self.model.find_all_matches(
             '{}*'.format(TERRAIN_COLLIDER)
         )
-        collision_solids.hide()
+
+        #collision_solids.hide()
+
         for collision_solid in collision_solids:
-            collision_solid.flatten_strong()
+            # FIXME: collision_solid.flatten_strong()
             for geom_node in collision_solid.find_all_matches('**/+GeomNode'):
                 mesh = BulletTriangleMesh()
-                # FIXME: Is this universally correct?
-                mesh.add_geom(geom_node.node().get_geom(0))
+                for geom in geom_node.node().get_geoms():
+                    mesh.addGeom(geom)
                 shape = BulletTriangleMeshShape(mesh, dynamic=False)
                 terrain_node = BulletRigidBodyNode('terrain')
                 terrain_node.add_shape(shape)
                 friction_node = collision_solid.find('**/={}'.format(FRICTION))
                 friction_str = friction_node.get_tag('friction')
-                friction = float(friction_str)
+                if len(friction_str) == 0:
+                    friction = DEFAULT_FRICTION_VALUE
+                else:
+                    friction = float(friction_str)
                 terrain_node.set_friction(friction)
                 terrain_np = geom_node.attach_new_node(terrain_node)
                 terrain_np.set_collide_mask(CM_TERRAIN)
