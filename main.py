@@ -67,6 +67,7 @@ class GameApp(ShowBase):
 
         self.vehicles = []
         vehicle_files = [
+            'assets/cars/Psyoni_Culture.bam',
             'assets/cars/Ricardeaut_Magnesium.bam',
             'assets/cars/Cadarache_DiamondMII.bam',
             # 'assets/cars/Doby_Phalix.bam',
@@ -166,7 +167,6 @@ class Environment:
         )
 
         #collision_solids.hide()
-
         for collision_solid in collision_solids:
             # FIXME: collision_solid.flatten_strong()
             for geom_node in collision_solid.find_all_matches('**/+GeomNode'):
@@ -551,6 +551,7 @@ class Vehicle:
                 base_strength = 4000 # FIXME: Broken model.
                 # Effective fraction of repulsors force
                 transfer_frac = cos(0.5*pi * frac)
+                transfer_frac = cos(0.5*pi * ((frac*frac)))
                 # Effective repulsor force
                 strength = base_strength * activation * transfer_frac
                 # Resulting impulse

@@ -54,6 +54,7 @@ TODO
   * Racing against ghosts
 * Control sets
   * Keyboard and gamepad input overwrite each other currently
+* Pause (enableMouse() to make prettier screenshots)
 
 
 ### Art
