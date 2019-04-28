@@ -15,8 +15,8 @@ keyboard_next_vehicle        n
 gamepad_toggle_repulsor      face_b
 gamepad_forward              left_y
 gamepad_turn                 left_x
-gamepad_strafe               rshoulder
-gamepad_hover                none
+gamepad_strafe               lstick
+gamepad_hover                rshoulder
 gamepad_switch_driving_mode  face_a
 gamepad_stabilize            rstick
 gamepad_gyro_yaw             none

@@ -99,7 +99,6 @@ class VehicleController:
             repulsor_forward = self.controller.axis_value(GE_FORWARD)
             repulsor_strafe = 0.0
             repulsor_hover = 0.0
-            stabilizer_active = self.controller.is_pressed(GE_STABILIZE)
             target_orientation = VBase3(0, 0, 0)
 
             if self.driving_mode == DM_STUNT:
@@ -113,6 +112,7 @@ class VehicleController:
                     repulsor_turn = self.controller.axis_value(GE_TURN)
                     repulsor_strafe = 0.0
                 # Gyro control
+                stabilizer_active = self.controller.is_pressed(GE_STABILIZE)
                 # In stunt mode, the gyro gives a yaw steering assist to
                 # repulsor steering, as those will often lose ground
                 # contact,
@@ -138,14 +138,16 @@ class VehicleController:
                     repulsor_turn = self.controller.axis_value(GE_TURN)
                     repulsor_strafe = 0.0
                 # Gyro control
+                # By default, stabilization is active.
+                stabilizer_active = not self.controller.is_pressed(GE_STABILIZE)
                 # Instead of rolling, the horizontal gyro control is
                 # to change the heading.
                 # FIXME: Axes are swapped and flipped, see above.
                 gyro_yaw = self.controller.axis_value(GE_GYRO_PITCH)
                 target_orientation.z += gyro_yaw * 90 * 0.35
-                if not stabilizer_active:
-                    gyro_pitch = self.controller.axis_value(GE_GYRO_ROLL)
-                    target_orientation.x += gyro_pitch * 90 * 0.35
+                #if not stabilizer_active:
+                gyro_pitch = self.controller.axis_value(GE_GYRO_ROLL)
+                target_orientation.x += gyro_pitch * 90 * 0.35
 
             if self.controller.is_pressed(GE_HOVER):
                 repulsor_hover = 1.0
