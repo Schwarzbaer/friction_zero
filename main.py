@@ -769,7 +769,7 @@ class VehicleController:
                 repulsor_turn = 0.0
                 repulsor_strafe = turn_axis
             else:
-                repulsor_turn = -turn_axis
+                repulsor_turn = turn_axis
                 repulsor_strafe = 0.0
             if self.controller.is_pressed(GE_HOVER):
                 repulsor_hover = 1.0
@@ -780,11 +780,12 @@ class VehicleController:
                 # FIXME: 0.35 = tau. But shouldn't it be 1/tau? And 90 is too
                 # high then, the target would wrap around? Does it matter
                 # though?
-                target_orientation.z = turn_axis * 90 * 0.35
-            gyro_pitch = (self.controller.axis_value(GE_GYRO_PITCH) - 0.5) * 2
-            target_orientation.x += gyro_pitch * 90 * 0.35
-            gyro_roll = (self.controller.axis_value(GE_GYRO_ROLL) - 0.5) * 2
-            target_orientation.y += gyro_roll * 90 * 0.35
+                target_orientation.z -= turn_axis * 90 * 0.35
+            if not stabilizer_active:
+                gyro_pitch = (self.controller.axis_value(GE_GYRO_PITCH) - 0.5) * 2
+                target_orientation.x += gyro_pitch * 90 * 0.35
+                gyro_roll = (self.controller.axis_value(GE_GYRO_ROLL) - 0.5) * 2
+                target_orientation.y += gyro_roll * 90 * 0.35
 
             thrust = 0
             if self.controller.is_pressed(GE_THRUST):

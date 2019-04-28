@@ -17,7 +17,7 @@ gamepad_forward          left_y
 gamepad_turn             left_x
 gamepad_strafe           rtrigger
 gamepad_hover            face_b
-gamepad_stabilize        rshoulder
+gamepad_stabilize        rstick
 gamepad_gyro_pitch       left_trigger
 gamepad_gyro_roll        right_trigger
 gamepad_thrust           lshoulder
