@@ -11,8 +11,8 @@ from direct.showbase.ShowBase import ShowBase
 from direct.showbase.DirectObject import DirectObject
 
 
-panda3d.core.load_prc_file(
-    panda3d.core.Filename.expand_from('$MAIN_DIR/keybindings.prc')
+load_prc_file(
+    Filename.expand_from('$MAIN_DIR/keybindings.prc')
 )
 
 
@@ -34,12 +34,17 @@ event_prefixes = {
 
 GE_TOGGLE_REPULSOR = 'toggle_repulsor'
 GE_FORWARD = 'forward'
+GE_BACKWARD = 'backward'
 GE_TURN = 'turn'
+GE_TURN_LEFT = 'turn_left'
+GE_TURN_RIGHT = 'turn_right'
 GE_STRAFE = 'strafe'
 GE_STRAFE_LEFT = 'strafe_left'
 GE_STRAFE_RIGHT = 'strafe_right'
 GE_HOVER = 'hover'
 GE_STABILIZE = 'stabilize'
+GE_GYRO_PITCH = 'gyro_pitch'
+GE_GYRO_ROLL = 'gyro_roll'
 GE_THRUST = 'thrust'
 GE_AIRBRAKE = 'airbrake'
 GE_CAMERA_MODE = 'camera_mode'
@@ -48,16 +53,18 @@ GE_NEXT_VEHICLE = 'next_vehicle'
 
 keyboard_bindings = {
     GE_TOGGLE_REPULSOR: ConfigVariableString('keyboard_toggle_repulsor', 'r'),
-    GE_FORWARD: ConfigVariableString('keyboard_forward', 'left_y'),
-    GE_TURN: ConfigVariableString('keyboard_turn', 'left_x'),
+    GE_FORWARD: ConfigVariableString('keyboard_forward', 'arrow_up'),
+    GE_BACKWARD: ConfigVariableString('keyboard_backward', 'arrow_down'),
+    GE_TURN_LEFT: ConfigVariableString('keyboard_turn_left', 'arrow_left'),
+    GE_TURN_RIGHT: ConfigVariableString('keyboard_turn_right', 'arrow_right'),
     GE_STRAFE_LEFT: ConfigVariableString('keyboard_strafe_left', 'a'),
     GE_STRAFE_RIGHT: ConfigVariableString('keyboard_strafe_right', 'd'),
     GE_HOVER: ConfigVariableString('keyboard_hover', 's'),
-    GE_STABILIZE: ConfigVariableString('keyboard_stabilize', 'g'),
+    GE_STABILIZE: ConfigVariableString('keyboard_stabilize', 'lshift'),
     GE_THRUST: ConfigVariableString('keyboard_thrust', 'space'),
     GE_AIRBRAKE: ConfigVariableString('keyboard_airbrake', 'w'),
-    GE_CAMERA_MODE: ConfigVariableString('keyboard_camera_mode', 'rstick'),
-    GE_NEXT_VEHICLE: ConfigVariableString('keyboard_next_vehicle', 'face_y'),
+    GE_CAMERA_MODE: ConfigVariableString('keyboard_camera_mode', 'c'),
+    GE_NEXT_VEHICLE: ConfigVariableString('keyboard_next_vehicle', 'n'),
 }
 
 
@@ -65,6 +72,8 @@ gamepad_bindings = {
     GE_TOGGLE_REPULSOR: ConfigVariableString('gamepad_repulsor_on', 'face_a'),
     GE_FORWARD: ConfigVariableString('gamepad_forward', 'left_y'),
     GE_TURN: ConfigVariableString('gamepad_turn', 'left_x'),
+    GE_GYRO_PITCH: ConfigVariableString('gamepad_gyro_pitch', 'left_trigger'),
+    GE_GYRO_ROLL: ConfigVariableString('gamepad_gyro_roll', 'right_trigger'),
     GE_STRAFE: ConfigVariableString('gamepad_strafe', 'rtrigger'),
     GE_HOVER: ConfigVariableString('gamepad_hover', 'face_b'),
     GE_STABILIZE: ConfigVariableString('gamepad_stabilize', 'rshoulder'),
@@ -88,6 +97,7 @@ device_bindings = {
 class DeviceListener(DirectObject):
     def __init__(self):
         self.controller = None
+        self.method = None
         self.bindings = {}
         self.elect_control_method()
         self.accept("connect-device", self.connect)
@@ -166,12 +176,18 @@ class DeviceListener(DirectObject):
             self.accept(full_event_name, self.map_control_event, [game_event])
             self.bindings[game_event] = control_event
             print("{} = {}".format(game_event, control_event))
+        self.method = device_class
 
     def map_control_event(self, event):
         base.messenger.send(event)
 
     def is_pressed(self, game_event):
         button_name = self.bindings[game_event].value
+        # FIXME: Cursor key events have their key name prefixed with 'arrow-',
+        # So we strip it here. Maybe we should add it in the event mapping bit
+        # instead?
+        if button_name.startswith('arrow_'):
+            button_name = button_name[6:]
         if self.controller is None:
             # We're working on a keyboard
             if len(button_name) == 1:

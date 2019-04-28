@@ -31,6 +31,26 @@ from panda3d.bullet import BulletConvexHullShape
 from panda3d.bullet import BulletPlaneShape
 from panda3d.bullet import BulletDebugNode
 
+from keybindings import DeviceListener
+from keybindings import GE_TOGGLE_REPULSOR
+from keybindings import GE_FORWARD
+from keybindings import GE_BACKWARD
+from keybindings import GE_TURN
+from keybindings import GE_TURN_LEFT
+from keybindings import GE_TURN_RIGHT
+from keybindings import GE_STRAFE
+from keybindings import GE_STRAFE_LEFT
+from keybindings import GE_STRAFE_RIGHT
+from keybindings import GE_HOVER
+from keybindings import GE_STABILIZE
+from keybindings import GE_GYRO_PITCH
+from keybindings import GE_GYRO_ROLL
+from keybindings import GE_THRUST
+from keybindings import GE_AIRBRAKE
+from keybindings import GE_CAMERA_MODE
+from keybindings import GE_NEXT_VEHICLE
+
+
 panda3d.core.load_prc_file(
     panda3d.core.Filename.expand_from('$MAIN_DIR/settings.prc')
 )
@@ -90,9 +110,11 @@ class GameApp(ShowBase):
             self.vehicles[self.player_vehicle_idx],
         )
 
+        self.controller_listener = DeviceListener()
         self.player_controller = VehicleController(
             self,
             self.vehicles[self.player_vehicle_idx],
+            self.controller_listener,
         )
 
         base.task_mgr.add(self.game_loop, "game_loop", sort=5)
@@ -615,6 +637,8 @@ class Vehicle:
         self.physics_node.apply_torque_impulse(Vec3(x, y, z))
 
 
+
+
 CAM_MODE_FOLLOW = 1
 CAM_MODE_DIRECTION = 2
 CAM_MODE_MIXED = 3
@@ -674,9 +698,10 @@ class CameraController:
 
 
 class VehicleController:
-    def __init__(self, app, vehicle):
+    def __init__(self, app, vehicle, controller):
         self.app = app
         self.vehicle = vehicle
+        self.controller = controller
         self.app.accept('n', self.next_vehicle)
         self.app.accept('gamepad-face_y', self.next_vehicle)
         self.app.accept('r', self.toggle_repulsors)
@@ -689,101 +714,80 @@ class VehicleController:
         self.app.accept('shift-y', self.shock, [0, -10000, 0])
         self.app.accept('shift-z', self.shock, [0, 0, -10000])
 
-        self.gamepad = None
-        devices = self.app.devices.get_devices(InputDevice.DeviceClass.gamepad)
-        if devices:
-            self.connect(devices[0])
-        self.app.accept("connect-device", self.connect)
-        self.app.accept("disconnect-device", self.disconnect)
-
-    def connect(self, device):
-        """Event handler that is called when a device is discovered."""
-
-        # We're only interested if this is a gamepad and we don't have a
-        # gamepad yet.
-        if device.device_class == InputDevice.DeviceClass.gamepad and self.gamepad is None:
-            self.gamepad = device
-            self.app.attach_input_device(device, prefix="gamepad")
-
-    def disconnect(self, device):
-        """Event handler that is called when a device is removed."""
-
-        if self.gamepad != device:
-            # We don't care since it's not our gamepad.
-            return
-
-        self.app.detach_input_device(device)
-        self.gamepad = None
-
-        # Do we have any other gamepads?  Attach the first other gamepad.
-        devices = self.app.devices.get_devices(InputDevice.DeviceClass.gamepad)
-        if devices:
-            self.connect(devices[0])
-
     def gather_inputs(self):
-        stabilizer_button = KeyboardButton.ascii_key(b'g')
-        stabilizer_active = self.app.mouseWatcherNode.is_button_down(
-            stabilizer_button,
-        )
-        if self.gamepad:
-            stabilizer_active = self.gamepad.find_button("rshoulder").pressed
+        if self.controller.method == InputDevice.DeviceClass.keyboard:
+            if self.repulsors_active:
+                repulsor_activation = 1
+            else:
+                repulsor_activation = 0
 
-        target_orientation = VBase3(0, 0, 0)
-        if self.app.mouseWatcherNode.is_button_down(KeyboardButton.left()):
-            target_orientation.z += 90 * 0.35
-        if self.app.mouseWatcherNode.is_button_down(KeyboardButton.right()):
-            target_orientation.z -= 90 * 0.35
-        if self.gamepad:
-            axis = self.gamepad.find_axis(InputDevice.Axis.left_x)
-            strafe = self.gamepad.find_button("rtrigger").pressed
-            if not strafe:
-                # FIXME: 0.2 = tau. But shouldn't it be 1/tau? And 90 is too
-                # high then, the target would wrap around? Does it matter
-                # though?
-                target_orientation.z = -axis.value * 90 * 0.35
+            repulsor_forward = 0.0
+            repulsor_turn = 0.0
+            repulsor_strafe = 0.0
+            repulsor_hover = 0.0
 
-        repulsor_activation = 0
-        if self.repulsors_active:
-            repulsor_activation = 1
+            if self.controller.is_pressed(GE_FORWARD):
+                repulsor_forward += 1.0
+            if self.controller.is_pressed(GE_BACKWARD):
+                repulsor_forward -= 1.0
+            if self.controller.is_pressed(GE_TURN_LEFT):
+                repulsor_turn -= 1
+            if self.controller.is_pressed(GE_TURN_RIGHT):
+                repulsor_turn += 1
+            if self.controller.is_pressed(GE_STRAFE_LEFT):
+                repulsor_strafe -= 1
+            if self.controller.is_pressed(GE_STRAFE_RIGHT):
+                repulsor_strafe += 1
+            if self.controller.is_pressed(GE_HOVER):
+                repulsor_hover += 1
 
-        repulsor_forward = 0.0
-        repulsor_turn = 0.0
-        repulsor_strafe = 0.0
-        repulsor_hover = 0.0
-        if self.app.mouseWatcherNode.is_button_down(KeyboardButton.up()):
-            repulsor_forward += 1.0
-        if self.app.mouseWatcherNode.is_button_down(KeyboardButton.down()):
-            repulsor_forward -= 1.0
-        if self.app.mouseWatcherNode.is_button_down(KeyboardButton.left()):
-            repulsor_turn -= 1
-        if self.app.mouseWatcherNode.is_button_down(KeyboardButton.right()):
-            repulsor_turn += 1
-        if self.app.mouseWatcherNode.is_button_down(KeyboardButton.ascii_key(b'a')):
-            repulsor_strafe -= 1
-        if self.app.mouseWatcherNode.is_button_down(KeyboardButton.ascii_key(b'd')):
-            repulsor_strafe += 1
-        if self.app.mouseWatcherNode.is_button_down(KeyboardButton.ascii_key(b's')):
-            repulsor_hover += 1
-        if self.gamepad:
-            x_axis = self.gamepad.findAxis(InputDevice.Axis.left_x).value
-            y_axis = self.gamepad.findAxis(InputDevice.Axis.left_y).value
-            strafe = self.gamepad.find_button("rtrigger").pressed
-            repulsor_forward = y_axis
+            stabilizer_active = self.controller.is_pressed(GE_STABILIZE)
+            target_orientation = VBase3(0, 0, 0)
+            if self.controller.is_pressed(GE_TURN_LEFT):
+                target_orientation.z += 90 * 0.35
+            if self.controller.is_pressed(GE_TURN_RIGHT):
+                target_orientation.z -= 90 * 0.35
+
+            thrust = 0
+            if self.controller.is_pressed(GE_THRUST):
+                thrust = 1
+
+        if self.controller.method == InputDevice.DeviceClass.gamepad:
+            if self.repulsors_active:
+                repulsor_activation = 1
+            else:
+                repulsor_activation = 0
+
+            repulsor_forward = self.controller.axis_value(GE_FORWARD)
+            repulsor_turn = 0.0
+            repulsor_strafe = 0.0
+            repulsor_hover = 0.0
+
+            turn_axis = self.controller.axis_value(GE_TURN)
+            strafe = self.controller.is_pressed(GE_STRAFE)
             if strafe:
                 repulsor_turn = 0.0
-                repulsor_strafe = x_axis
+                repulsor_strafe = turn_axis
             else:
-                repulsor_turn = x_axis
+                repulsor_turn = -turn_axis
                 repulsor_strafe = 0.0
-            if self.gamepad.find_button("face_b").pressed:
+            if self.controller.is_pressed(GE_HOVER):
                 repulsor_hover = 1.0
 
-        thrust = 0
-        if self.app.mouseWatcherNode.is_button_down(KeyboardButton.space()):
-            thrust = 1
-        if self.gamepad:
-            button = self.gamepad.find_button("lshoulder")
-            if button.pressed:
+            stabilizer_active = self.controller.is_pressed(GE_STABILIZE)
+            target_orientation = VBase3(0, 0, 0)
+            if not strafe:
+                # FIXME: 0.35 = tau. But shouldn't it be 1/tau? And 90 is too
+                # high then, the target would wrap around? Does it matter
+                # though?
+                target_orientation.z = turn_axis * 90 * 0.35
+            gyro_pitch = (self.controller.axis_value(GE_GYRO_PITCH) - 0.5) * 2
+            target_orientation.x += gyro_pitch * 90 * 0.35
+            gyro_roll = (self.controller.axis_value(GE_GYRO_ROLL) - 0.5) * 2
+            target_orientation.y += gyro_roll * 90 * 0.35
+
+            thrust = 0
+            if self.controller.is_pressed(GE_THRUST):
                 thrust = 1
 
         self.vehicle.set_inputs(

@@ -52,8 +52,6 @@ TODO
 * Countdown to start
 * Recording races
   * Racing against ghosts
-* Control sets
-  * Keyboard and gamepad input overwrite each other currently
 
 
 ### Art
@@ -65,7 +63,10 @@ TODO
   * Start with a looping road.
   * Add start/finish, gates, spawn points
   * Add surroundings
-* Lab / Tricks map
+* Lab map: Like plane, but with stunt elements to the right, left, and back of
+  starting position.
+* Tricks map: Like the lab map, but prettier. A skatepark for hovercars.
+* Driving school: A tutorial map.
 * Sounds:
   * engine (playbackrate to speed?)
   * vehicleXvehicle impact
@@ -92,6 +93,9 @@ TODO
 
 ### Post-Prototype
 
+* Keybindings
+  * Allow for multiple players
+  * Allow for multiple devices (per player?)
 * Menu
   * Main menu
   * Options
@@ -131,6 +135,8 @@ TODO
   * The escaper tries to stay a distance away from the pursuer
   * The pursuer tries to not let that happen until a timer runs out
 * Multiplayer
+  * Split-screen
+  * Networked
 * Damage model
   * Artwork for aesthetic damage
   * Systems (repulsors, gyros, thrusters) suffer performance loss (low-powered
