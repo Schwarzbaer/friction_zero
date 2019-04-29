@@ -56,7 +56,7 @@ class Vehicle:
     def __init__(self, app, model_file):
         self.app = app
 
-	self.model = Actor(model_file)
+        self.model = Actor(model_file)
         puppet = self.app.loader.load_model(model_file)
         puppet.reparentTo(self.model)
 
