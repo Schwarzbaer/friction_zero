@@ -9,6 +9,7 @@ from panda3d.core import GeomVertexReader
 from panda3d.core import invert
 from panda3d.bullet import BulletRigidBodyNode
 from panda3d.bullet import BulletConvexHullShape
+from direct.actor.Actor import Actor
 
 from common_vars import FRICTION
 from common_vars import DEFAULT_FRICTION_VALUE
@@ -55,8 +56,9 @@ class Vehicle:
     def __init__(self, app, model_file):
         self.app = app
 
-        self.model = self.app.loader.load_model(model_file)
-        #self.model = Actor(model_file)
+	self.model = Actor(model_file)
+        puppet = self.app.loader.load_model(model_file)
+        puppet.reparentTo(self.model)
 
         self.physics_node = BulletRigidBodyNode('vehicle')
         friction_node = self.model.find('**/={}'.format(FRICTION))
