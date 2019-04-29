@@ -10,6 +10,7 @@ s.cam.lookAt(0, 0, 0)
 a = Actor('assets/cars/Ricardeaut_Magnesium.bam')
 a.reparentTo(s.render)
 puppet = s.loader.loadModel('assets/cars/Ricardeaut_Magnesium.bam')
+puppet.find("armature").hide()
 puppet.reparentTo(a)
 
 repulsors = a.findAllMatches('**/fz_repulsor*')
@@ -21,7 +22,7 @@ for r, repulsor in enumerate(repulsors):
     repulsor.reparentTo(joint)
 
 a.enableBlend()
-animations = ["gems", "accelerate", "turn", "strafe", "hover"]
+animations = ["gems", "accelerate", "turn", "strafe", "hover", "airbrake"]
 for animation in animations:
     a.setControlEffect(animation, 1)
     a.play(animation)
@@ -67,6 +68,8 @@ def update(task):
         pingPong("hover", 1, 0,0,20)
     else:
         pingPong("hover", 0, 0,0,20)
+
+    s.accept('q', a.play, ['airbrake'])
 
     return task.cont
 
