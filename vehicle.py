@@ -56,7 +56,7 @@ class Vehicle:
     def __init__(self, app, model_file):
         self.app = app
 
-	self.model = Actor(model_file)
+        self.model = Actor(model_file)
         puppet = self.app.loader.load_model(model_file)
         puppet.reparentTo(self.model)
 
@@ -352,7 +352,6 @@ class Vehicle:
             if active and activation:
                 # Repulsor power at zero distance
                 base_strength = node.get_python_tag(FORCE)
-                base_strength = 12000
                 # Effective fraction of repulsors force
                 transfer_frac = cos(0.5*pi * frac)
                 # Effective repulsor force
