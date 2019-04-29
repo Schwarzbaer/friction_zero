@@ -1,4 +1,3 @@
-from panda3d.core import BitMask32
 from panda3d.core import Vec3
 
 from panda3d.bullet import BulletWorld
@@ -8,6 +7,8 @@ from panda3d.bullet import BulletTriangleMeshShape
 
 from common_vars import FRICTION
 from common_vars import DEFAULT_FRICTION_VALUE
+from common_vars import CM_TERRAIN
+from common_vars import CM_COLLIDE
 
 
 TERRAIN = 'fz_terrain'
@@ -15,7 +16,6 @@ SPAWN_POINTS = 'fz_spawn_point'
 SKYSPHERE = 'fz_skysphere'
 TERRAIN_COLLIDER = 'fz_collision'
 GRAVITY = 'gravity'
-CM_TERRAIN = BitMask32.bit(1)
 
 
 class Environment:
@@ -73,7 +73,7 @@ class Environment:
                     friction = float(friction_str)
                 terrain_node.set_friction(friction)
                 terrain_np = geom_node.attach_new_node(terrain_node)
-                terrain_np.set_collide_mask(CM_TERRAIN)
+                terrain_np.set_collide_mask(CM_TERRAIN | CM_COLLIDE)
                 self.physics_world.attach_rigid_body(terrain_node)
 
     def add_physics_node(self, node):

@@ -12,8 +12,9 @@ from panda3d.bullet import BulletConvexHullShape
 
 from common_vars import FRICTION
 from common_vars import DEFAULT_FRICTION_VALUE
-
-from environment import CM_TERRAIN
+from common_vars import CM_TERRAIN
+from common_vars import CM_VEHICLE
+from common_vars import CM_COLLIDE
 
 
 SPAWN_POINT_CONNECTOR = 'fz_spawn_point_connector'
@@ -81,6 +82,7 @@ class Vehicle:
                     shape.add_point(v_model)
         self.physics_node.add_shape(shape)
         self.vehicle = NodePath(self.physics_node)
+        self.vehicle.set_collide_mask(CM_VEHICLE | CM_COLLIDE)
 
         self.model.reparent_to(self.vehicle)
 

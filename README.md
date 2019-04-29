@@ -9,9 +9,6 @@ TODO
 
 ### Code
 
-* Bug
-  * Add a HUD element for repulsor activation
-  * Why are there repulsor contacts reported during flight?
 * Animations
   * Air brake
 * ECU
