@@ -57,7 +57,7 @@ class Environment:
         #collision_solids.hide()
 
         for collision_solid in collision_solids:
-            # FIXME: collision_solid.flatten_strong()
+            collision_solid.flatten_strong()
             for geom_node in collision_solid.find_all_matches('**/+GeomNode'):
                 mesh = BulletTriangleMesh()
                 for geom in geom_node.node().get_geoms():

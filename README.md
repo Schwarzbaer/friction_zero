@@ -38,7 +38,7 @@ TODO
   * Fuel
   * Overheating
 * Camera controls and automatics
-  * Camera distance should be related to vehicle's linear speed.
+  * Camera distance and FOV should be related to vehicle's linear speed.
   * Camera should respect the ground / objects.
   * Cinematics
 * Shadows

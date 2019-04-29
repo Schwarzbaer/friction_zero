@@ -37,6 +37,8 @@ class GameApp(ShowBase):
         self.vehicles = []
         vehicle_files = [
             'assets/cars/Ricardeaut_Magnesium.bam',
+            'assets/cars/Ricardeaut_Himony.bam',
+            'assets/cars/Psyoni_Culture.bam',
             'assets/cars/Psyoni_Culture.bam',
             # 'assets/cars/Doby_Phalix.bam',
             'assets/cars/Texopec_Nako.bam',
