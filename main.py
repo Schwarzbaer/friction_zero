@@ -554,10 +554,9 @@ class Vehicle:
             if activation:
                 # Repulsor power at zero distance
                 base_strength = node.get_python_tag(FORCE)
-                base_strength = 4000
                 # Effective fraction of repulsors force
                 transfer_frac = cos(0.5*pi * frac)
-                transfer_frac = cos(0.5*pi * ((frac*frac)))
+                transfer_frac = cos(0.5*pi * ((frac)))
                 # Effective repulsor force
                 strength = base_strength * activation * transfer_frac
                 # Resulting impulse
@@ -788,9 +787,10 @@ class VehicleController:
                 # though?
                 target_orientation.z -= turn_axis * 90 * 0.35
             if not stabilizer_active:
+                #gyro_pitch = (self.controller.axis_value(GE_GYRO_PITCH) - 0.5) * 2
                 gyro_pitch = (self.controller.axis_value(GE_GYRO_PITCH) - 0.5) * 2
                 target_orientation.x += gyro_pitch * 90 * 0.35
-                gyro_roll = (self.controller.axis_value(GE_GYRO_ROLL) - 0.5) * 2
+                gyro_roll = (self.controller.axis_value(GE_GYRO_ROLL)) * 2
                 target_orientation.y += gyro_roll * 90 * 0.35
 
             thrust = 0

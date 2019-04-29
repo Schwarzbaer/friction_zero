@@ -18,8 +18,8 @@ gamepad_turn             left_x
 gamepad_strafe           rtrigger
 gamepad_hover            face_b
 gamepad_stabilize        rstick
-gamepad_gyro_pitch       left_trigger
-gamepad_gyro_roll        right_trigger
+gamepad_gyro_pitch       right_trigger
+gamepad_gyro_roll        right_x
 gamepad_thrust           lshoulder
 gamepad_airbrake         ltrigger
 gamepad_camera_mode      face_b
