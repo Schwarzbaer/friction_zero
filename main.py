@@ -36,8 +36,8 @@ class GameApp(ShowBase):
 
         self.vehicles = []
         vehicle_files = [
+            'assets/cars/Psyoni_Culture.bam',
             'assets/cars/Ricardeaut_Magnesium.bam',
-            'assets/cars/Cadarache_DiamondMII.bam',
             # 'assets/cars/Doby_Phalix.bam',
             'assets/cars/Texopec_Nako.bam',
         ]
@@ -98,7 +98,6 @@ class GameApp(ShowBase):
             self.debug_np.show()
         else:
             self.debug_np.hide()
-
 
 def main():
     if len(sys.argv) > 1:
