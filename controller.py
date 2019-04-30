@@ -14,7 +14,11 @@ from keybindings import GE_HOVER
 from keybindings import GE_SWITCH_DRIVING_MODE
 from keybindings import GE_STABILIZE
 from keybindings import GE_GYRO_PITCH
+from keybindings import GE_GYRO_PITCH_UP
+from keybindings import GE_GYRO_PITCH_DOWN
 from keybindings import GE_GYRO_ROLL
+from keybindings import GE_GYRO_ROLL_LEFT
+from keybindings import GE_GYRO_ROLL_RIGHT
 from keybindings import GE_THRUST
 from keybindings import GE_AIRBRAKE
 from keybindings import GE_CAMERA_MODE
@@ -45,12 +49,12 @@ class VehicleController:
         self.app.accept(GE_TOGGLE_REPULSOR, self.toggle_repulsors)
         self.app.accept(GE_SWITCH_DRIVING_MODE, self.switch_driving_mode)
 
-        self.app.accept('x', self.shock, [10000, 0, 0])
-        self.app.accept('y', self.shock, [0, 10000, 0])
-        self.app.accept('z', self.shock, [0, 0, 10000])
-        self.app.accept('shift-x', self.shock, [-10000, 0, 0])
-        self.app.accept('shift-y', self.shock, [0, -10000, 0])
-        self.app.accept('shift-z', self.shock, [0, 0, -10000])
+        # self.app.accept('x', self.shock, [10000, 0, 0])
+        # self.app.accept('y', self.shock, [0, 10000, 0])
+        # self.app.accept('z', self.shock, [0, 0, 10000])
+        # self.app.accept('shift-x', self.shock, [-10000, 0, 0])
+        # self.app.accept('shift-y', self.shock, [0, -10000, 0])
+        # self.app.accept('shift-z', self.shock, [0, 0, -10000])
 
     def gather_inputs(self):
         if self.controller.method == InputDevice.DeviceClass.keyboard:
@@ -63,34 +67,74 @@ class VehicleController:
             repulsor_turn = 0.0
             repulsor_strafe = 0.0
             repulsor_hover = 0.0
+            target_orientation = VBase3(0, 0, 0)
 
             if self.controller.is_pressed(GE_FORWARD):
                 repulsor_forward += 1.0
             if self.controller.is_pressed(GE_BACKWARD):
                 repulsor_forward -= 1.0
-            if self.controller.is_pressed(GE_TURN_LEFT):
-                repulsor_turn -= 1
-            if self.controller.is_pressed(GE_TURN_RIGHT):
-                repulsor_turn += 1
-            if self.controller.is_pressed(GE_STRAFE_LEFT):
-                repulsor_strafe -= 1
-            if self.controller.is_pressed(GE_STRAFE_RIGHT):
-                repulsor_strafe += 1
-            if self.controller.is_pressed(GE_HOVER):
-                repulsor_hover += 1
 
-            stabilizer_active = self.controller.is_pressed(GE_STABILIZE)
-            target_orientation = VBase3(0, 0, 0)
-            if self.controller.is_pressed(GE_TURN_LEFT):
-                target_orientation.z += 90 * 0.35
-            if self.controller.is_pressed(GE_TURN_RIGHT):
-                target_orientation.z -= 90 * 0.35
+            if self.driving_mode == DM_STUNT:
+                # Repulsor control
+                if self.controller.is_pressed(GE_TURN_LEFT):
+                    repulsor_turn += 1.0
+                if self.controller.is_pressed(GE_TURN_RIGHT):
+                    repulsor_turn -= 1.0
+                # In stunt mode, the gyro gives a yaw steering assist to
+                # repulsor steering, as those will often lose ground
+                # contact,
+                gyro_yaw = 0.0
+                if self.controller.is_pressed(GE_TURN_LEFT):
+                    gyro_yaw += 1.0
+                if self.controller.is_pressed(GE_TURN_RIGHT):
+                    gyro_yaw -= 1.0
+                target_orientation.z += gyro_yaw * 90 * 0.35
+
+                # Gyro control
+                stabilizer_active = self.controller.is_pressed(GE_STABILIZE)
+
+                gyro_pitch = 0.0
+                gyro_roll = 0.0
+                if self.controller.is_pressed(GE_GYRO_PITCH_UP):
+                    gyro_pitch += 1.0
+                if self.controller.is_pressed(GE_GYRO_PITCH_DOWN):
+                    gyro_pitch -= 1.0
+                if self.controller.is_pressed(GE_GYRO_ROLL_LEFT):
+                    gyro_roll -= 1.0
+                if self.controller.is_pressed(GE_GYRO_ROLL_RIGHT):
+                    gyro_roll += 1.0
+                target_orientation.x += gyro_pitch * 90 * 0.35
+                target_orientation.y += gyro_roll * 90 * 0.35
+
+            elif self.driving_mode == DM_CRUISE:
+                # Repulsor control
+                if self.controller.is_pressed(GE_TURN_LEFT):
+                    repulsor_strafe -= 1.0
+                if self.controller.is_pressed(GE_TURN_RIGHT):
+                    repulsor_strafe += 1.0
+                # Gyro control
+                stabilizer_active = not self.controller.is_pressed(GE_STABILIZE)
+                gyro_yaw = 0.0
+                gyro_pitch = 0.0
+                if self.controller.is_pressed(GE_GYRO_ROLL_LEFT):
+                    gyro_yaw += 1.0
+                if self.controller.is_pressed(GE_GYRO_ROLL_RIGHT):
+                    gyro_yaw -= 1.0
+                if self.controller.is_pressed(GE_GYRO_PITCH_UP):
+                    gyro_pitch += 1.0
+                if self.controller.is_pressed(GE_GYRO_PITCH_DOWN):
+                    gyro_pitch -= 1.0
+                target_orientation.x += gyro_pitch * 90 * 0.35
+                target_orientation.z += gyro_yaw * 90 * 0.35
+
+            if self.controller.is_pressed(GE_HOVER):
+                repulsor_hover = 1.0
 
             thrust = 0
             if self.controller.is_pressed(GE_THRUST):
                 thrust = 1
 
-        if self.controller.method == InputDevice.DeviceClass.gamepad:
+        elif self.controller.method == InputDevice.DeviceClass.gamepad:
             if self.repulsors_active:
                 repulsor_activation = 1
             else:
@@ -180,6 +224,7 @@ class VehicleController:
 
     def toggle_repulsors(self):
         self.repulsors_active = not self.repulsors_active
+        print("repulsors toggled")
 
     def switch_driving_mode(self):
         if self.driving_mode == DM_CRUISE:
