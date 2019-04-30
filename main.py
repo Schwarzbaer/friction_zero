@@ -1,6 +1,5 @@
 import os
 import sys
-from random import random
 
 from direct.showbase.ShowBase import ShowBase
 from direct.actor.Actor import Actor
