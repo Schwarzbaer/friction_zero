@@ -160,17 +160,13 @@ class VehicleController:
                 # In stunt mode, the gyro gives a yaw steering assist to
                 # repulsor steering, as those will often lose ground
                 # contact,
-                # FIXME: Axes are swapped and flipped because Jess produces
-                # weird gamepads, so GE_GYRO_PITCH is GE_GYRO_ROLL and vice
-                # versa, and 1.0 means -1.0 and vice versa.
                 gyro_yaw = -self.controller.axis_value(GE_TURN)
                 target_orientation.z -= -gyro_yaw * 90 * 0.35
                 if not stabilizer_active:
-                    # FIXME: Axes are swapped and flipped, see above.
-                    gyro_pitch = self.controller.axis_value(GE_GYRO_ROLL)
-                    target_orientation.x += gyro_pitch * 90 * 0.35
-                    gyro_roll = self.controller.axis_value(GE_GYRO_PITCH)
-                    target_orientation.y += -gyro_roll * 90 * 0.35
+                    gyro_pitch = self.controller.axis_value(GE_GYRO_PITCH)
+                    target_orientation.x -= gyro_pitch * 90 * 0.35
+                    gyro_roll = self.controller.axis_value(GE_GYRO_ROLL)
+                    target_orientation.y += gyro_roll * 90 * 0.35
 
             elif self.driving_mode == DM_CRUISE:
                 if not self.controller.is_pressed(GE_STRAFE):
@@ -186,12 +182,10 @@ class VehicleController:
                 stabilizer_active = not self.controller.is_pressed(GE_STABILIZE)
                 # Instead of rolling, the horizontal gyro control is
                 # to change the heading.
-                # FIXME: Axes are swapped and flipped, see above.
-                gyro_yaw = self.controller.axis_value(GE_GYRO_PITCH)
-                target_orientation.z += gyro_yaw * 90 * 0.35
-                #if not stabilizer_active:
-                gyro_pitch = self.controller.axis_value(GE_GYRO_ROLL)
-                target_orientation.x += gyro_pitch * 90 * 0.35
+                gyro_yaw = self.controller.axis_value(GE_GYRO_ROLL)
+                target_orientation.z -= gyro_yaw * 90 * 0.35
+                gyro_pitch = self.controller.axis_value(GE_GYRO_PITCH)
+                target_orientation.x -= gyro_pitch * 90 * 0.35
 
             if self.controller.is_pressed(GE_HOVER):
                 repulsor_hover = 1.0
