@@ -13,6 +13,7 @@ from keybindings import GE_STRAFE_RIGHT
 from keybindings import GE_HOVER
 from keybindings import GE_SWITCH_DRIVING_MODE
 from keybindings import GE_STABILIZE
+from keybindings import GE_GYRO_YAW
 from keybindings import GE_GYRO_PITCH
 from keybindings import GE_GYRO_PITCH_UP
 from keybindings import GE_GYRO_PITCH_DOWN
@@ -193,6 +194,45 @@ class VehicleController:
             thrust = 0
             if self.controller.is_pressed(GE_THRUST):
                 thrust = 1
+
+        elif self.controller.method == InputDevice.DeviceClass.flight_stick:
+            if self.repulsors_active:
+                repulsor_activation = 1
+            else:
+                repulsor_activation = 0
+
+            repulsor_forward = 0.0
+            repulsor_turn = 0.0
+            repulsor_strafe = 0.0
+            repulsor_hover = 0.0
+            target_orientation = VBase3(0, 0, 0)
+
+            repulsor_forward -= self.controller.axis_value(GE_FORWARD)
+            repulsor_strafe += self.controller.axis_value(GE_STRAFE)
+            gyro_yaw = self.controller.axis_value(GE_TURN)
+            gyro_pitch = 0.0
+            gyro_roll = 0.0
+            if self.controller.is_pressed(GE_GYRO_PITCH_DOWN):
+                gyro_pitch -= 1.0
+            if self.controller.is_pressed(GE_GYRO_PITCH_UP):
+                gyro_pitch += 1.0
+            if self.controller.is_pressed(GE_GYRO_ROLL_LEFT):
+                gyro_roll -= 1.0
+            if self.controller.is_pressed(GE_GYRO_ROLL_RIGHT):
+                gyro_roll += 1.0
+            target_orientation.x += gyro_pitch * 90 * 0.35
+            target_orientation.y += gyro_roll * 90 * 0.35
+            target_orientation.z += gyro_yaw * 90 * 0.35
+
+            if self.driving_mode == DM_STUNT:
+                repulsor_turn -= self.controller.axis_value(GE_TURN)
+                stabilizer_active = self.controller.is_pressed(GE_STABILIZE)
+            elif self.driving_mode == DM_CRUISE:
+                stabilizer_active = not self.controller.is_pressed(GE_STABILIZE)
+
+            thrust = 0.0
+            if self.controller.is_pressed(GE_THRUST):
+                thrust = 1.0
 
         self.vehicle.set_inputs(
             {

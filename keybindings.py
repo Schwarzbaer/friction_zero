@@ -96,7 +96,19 @@ gamepad_bindings = {
 }
 
 
-flight_stick_bindings = {}
+flight_stick_bindings = {
+    GE_TOGGLE_REPULSOR: ConfigVariableString('flight_stick_toggle_repulsor', 'joystick2'),
+    GE_STABILIZE: ConfigVariableString('flight_stick_stabilize', 'joystick4'),
+    GE_FORWARD: ConfigVariableString('flight_stick_forward', 'pitch'),
+    GE_TURN: ConfigVariableString('flight_stick_turn', 'yaw'),
+    GE_STRAFE: ConfigVariableString('flight_stick_strafe', 'roll'),
+    GE_GYRO_PITCH_UP: ConfigVariableString('flight_stick_gyro_pitch_up', 'hat_down'),
+    GE_GYRO_PITCH_DOWN: ConfigVariableString('flight_stick_gyro_pitch_down', 'hat_up'),
+    GE_GYRO_ROLL_LEFT: ConfigVariableString('flight_stick_gyro_roll_left', 'hat_left'),
+    GE_GYRO_ROLL_RIGHT: ConfigVariableString('flight_stick_gyro_roll_right', 'hat_right'),
+    GE_SWITCH_DRIVING_MODE: ConfigVariableString('flight_stick_switch_driving_mode', 'joystick3'),
+    GE_THRUST: ConfigVariableString('flight_stick_thrust', 'trigger'),
+}
 
 
 device_bindings = {
