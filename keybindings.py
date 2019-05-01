@@ -48,7 +48,11 @@ GE_HOVER = 'hover'
 GE_STABILIZE = 'stabilize'
 GE_GYRO_YAW = 'gyro_yaw'
 GE_GYRO_PITCH = 'gyro_pitch'
+GE_GYRO_PITCH_UP = 'gyro_pitch_up'
+GE_GYRO_PITCH_DOWN = 'gyro_pitch_down'
 GE_GYRO_ROLL = 'gyro_roll'
+GE_GYRO_ROLL_LEFT = 'gyro_roll_left'
+GE_GYRO_ROLL_RIGHT = 'gyro_roll_right'
 GE_THRUST = 'thrust'
 GE_AIRBRAKE = 'airbrake'
 GE_CAMERA_MODE = 'camera_mode'
@@ -56,17 +60,20 @@ GE_NEXT_VEHICLE = 'next_vehicle'
 
 
 keyboard_bindings = {
-    GE_TOGGLE_REPULSOR: ConfigVariableString('keyboard_toggle_repulsor', 'r'),
-    GE_FORWARD: ConfigVariableString('keyboard_forward', 'arrow_up'),
-    GE_BACKWARD: ConfigVariableString('keyboard_backward', 'arrow_down'),
-    GE_TURN_LEFT: ConfigVariableString('keyboard_turn_left', 'arrow_left'),
-    GE_TURN_RIGHT: ConfigVariableString('keyboard_turn_right', 'arrow_right'),
-    GE_STRAFE_LEFT: ConfigVariableString('keyboard_strafe_left', 'a'),
-    GE_STRAFE_RIGHT: ConfigVariableString('keyboard_strafe_right', 'd'),
-    GE_HOVER: ConfigVariableString('keyboard_hover', 's'),
+    GE_TOGGLE_REPULSOR: ConfigVariableString('keyboard_toggle_repulsor', 'e'),
+    GE_FORWARD: ConfigVariableString('keyboard_forward', 'w'),
+    GE_BACKWARD: ConfigVariableString('keyboard_backward', 's'),
+    GE_TURN_LEFT: ConfigVariableString('keyboard_turn_left', 'a'),
+    GE_TURN_RIGHT: ConfigVariableString('keyboard_turn_right', 'd'),
+    GE_HOVER: ConfigVariableString('keyboard_hover', 'q'),
+    GE_SWITCH_DRIVING_MODE: ConfigVariableString('keyboard_switch_driving_mode', 'e'),
     GE_STABILIZE: ConfigVariableString('keyboard_stabilize', 'lshift'),
+    GE_GYRO_PITCH_DOWN: ConfigVariableString('keyboard_gyro_pitch_down', 'arrow_up'),
+    GE_GYRO_PITCH_UP: ConfigVariableString('keyboard_gyro_pitch_up', 'arrow_down'),
+    GE_GYRO_ROLL_LEFT: ConfigVariableString('keyboard_gyro_roll_left', 'arrow_left'),
+    GE_GYRO_ROLL_RIGHT: ConfigVariableString('keyboard_gyro_roll_right', 'arrow_right'),
     GE_THRUST: ConfigVariableString('keyboard_thrust', 'space'),
-    GE_AIRBRAKE: ConfigVariableString('keyboard_airbrake', 'w'),
+    GE_AIRBRAKE: ConfigVariableString('keyboard_airbrake', 'tab'),
     GE_CAMERA_MODE: ConfigVariableString('keyboard_camera_mode', 'c'),
     GE_NEXT_VEHICLE: ConfigVariableString('keyboard_next_vehicle', 'n'),
 }
@@ -89,7 +96,19 @@ gamepad_bindings = {
 }
 
 
-flight_stick_bindings = {}
+flight_stick_bindings = {
+    GE_TOGGLE_REPULSOR: ConfigVariableString('flight_stick_toggle_repulsor', 'joystick2'),
+    GE_STABILIZE: ConfigVariableString('flight_stick_stabilize', 'joystick4'),
+    GE_FORWARD: ConfigVariableString('flight_stick_forward', 'pitch'),
+    GE_TURN: ConfigVariableString('flight_stick_turn', 'yaw'),
+    GE_STRAFE: ConfigVariableString('flight_stick_strafe', 'roll'),
+    GE_GYRO_PITCH_UP: ConfigVariableString('flight_stick_gyro_pitch_up', 'hat_down'),
+    GE_GYRO_PITCH_DOWN: ConfigVariableString('flight_stick_gyro_pitch_down', 'hat_up'),
+    GE_GYRO_ROLL_LEFT: ConfigVariableString('flight_stick_gyro_roll_left', 'hat_left'),
+    GE_GYRO_ROLL_RIGHT: ConfigVariableString('flight_stick_gyro_roll_right', 'hat_right'),
+    GE_SWITCH_DRIVING_MODE: ConfigVariableString('flight_stick_switch_driving_mode', 'joystick3'),
+    GE_THRUST: ConfigVariableString('flight_stick_thrust', 'trigger'),
+}
 
 
 device_bindings = {
@@ -179,7 +198,10 @@ class DeviceListener(DirectObject):
         event_prefix = event_prefixes[device_class]
         for game_event, control_event in bindings.items():
             if control_event != UNBOUND:
-                full_event_name = event_prefix + '-' + control_event.value
+                if self.controller is None:
+                    full_event_name = control_event.value
+                else:
+                    full_event_name = event_prefix + '-' + control_event.value
                 self.accept(full_event_name, self.map_control_event, [game_event])
             self.bindings[game_event] = control_event
             print("{} = {}".format(game_event, control_event))

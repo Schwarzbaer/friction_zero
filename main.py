@@ -1,6 +1,5 @@
 import os
 import sys
-from random import random
 
 from direct.showbase.ShowBase import ShowBase
 from direct.actor.Actor import Actor
@@ -36,11 +35,11 @@ class GameApp(ShowBase):
 
         self.vehicles = []
         vehicle_files = [
+            'assets/cars/Ricardeaut_Magnesium.bam',
             'assets/cars/Ricardeaut_Himony.bam',
             'assets/cars/Psyoni_Culture.bam',
-            'assets/cars/Ricardeaut_Magnesium.bam',
-            # 'assets/cars/Doby_Phalix.bam',
             'assets/cars/Texopec_Nako.bam',
+            # 'assets/cars/Doby_Phalix.bam',
         ]
 
         for vehicle_file in vehicle_files:

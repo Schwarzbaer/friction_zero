@@ -1,3 +1,4 @@
+from random import random
 from math import pi
 from math import cos
 from math import isnan
@@ -349,10 +350,9 @@ class Vehicle:
         )
         for node, active, frac, activation, angle in repulsor_data:
             # Repulse in current orientation
-            if activation:
+            if active and activation:
                 # Repulsor power at zero distance
                 base_strength = node.get_python_tag(FORCE)
-                base_strength = 12000
                 # Effective fraction of repulsors force
                 transfer_frac = cos(0.5*pi * frac)
                 # Effective repulsor force

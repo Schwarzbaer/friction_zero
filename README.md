@@ -29,9 +29,8 @@ TODO
   * Crashes
 * GUI
   * Basic setup: In a separate render bin
-  * Speed
   * Elevation: Fighter jet like height-over-ground indication
-  * Linear speed
+  * Speed direction
   * Repulsor activation levels
   * Thruster activation
 * Limits on thruster
@@ -147,6 +146,7 @@ TODO
 * Game mode: Demolition Derby (requires damage model. May require weapons.)
   * Last one standing
 * City map: Start with a few blocks and expand.
+
 
 Models checklist
 ----------------
