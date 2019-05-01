@@ -20,7 +20,7 @@ gamepad_hover                rshoulder
 gamepad_switch_driving_mode  face_a
 gamepad_stabilize            rstick
 gamepad_gyro_yaw             none
-gamepad_gyro_pitch           right_y
+gamepad_gyro_pitch           right_trigger
 gamepad_gyro_roll            right_x
 gamepad_thrust               lshoulder
 gamepad_airbrake             ltrigger
