@@ -21,10 +21,10 @@ for r, repulsor in enumerate(repulsors):
     joint = a.exposeJoint(None,"modelRoot","repulsor_bone:"+str(r))
     repulsor.reparentTo(joint)
 
-a.enableBlend()
+#a.enableBlend()
 animations = ["gems", "accelerate", "turn", "strafe", "hover", "airbrake"]
 for animation in animations:
-    a.setControlEffect(animation, 1)
+    #a.setControlEffect(animation, 1)
     a.play(animation)
 
 def pingPong(animation, d, min=0, mid=10, max=20):
