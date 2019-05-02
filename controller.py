@@ -33,6 +33,7 @@ from vehicle import HOVER
 from vehicle import ACTIVE_STABILIZATION
 from vehicle import TARGET_ORIENTATION
 from vehicle import THRUST
+from vehicle import AIRBRAKE
 
 
 DM_CRUISE = 'dm_cruise'
@@ -135,6 +136,8 @@ class VehicleController:
             if self.controller.is_pressed(GE_THRUST):
                 thrust = 1
 
+            airbrake = self.controller.pressed_or_value(GE_AIRBRAKE)
+
         elif self.controller.method == InputDevice.DeviceClass.gamepad:
             if self.repulsors_active:
                 repulsor_activation = 1
@@ -195,6 +198,8 @@ class VehicleController:
             if self.controller.is_pressed(GE_THRUST):
                 thrust = 1
 
+            airbrake = self.controller.pressed_or_value(GE_AIRBRAKE)
+
         elif self.controller.method == InputDevice.DeviceClass.flight_stick:
             if self.repulsors_active:
                 repulsor_activation = 1
@@ -234,6 +239,8 @@ class VehicleController:
             if self.controller.is_pressed(GE_THRUST):
                 thrust = 1.0
 
+            airbrake = self.controller.pressed_or_value(GE_AIRBRAKE)
+
         self.vehicle.set_inputs(
             {
                 # Repulsors
@@ -247,6 +254,8 @@ class VehicleController:
                 TARGET_ORIENTATION: target_orientation,
                 # Thrust
                 THRUST: thrust,
+                # Airbrake
+                AIRBRAKE: airbrake,
             }
         )
 

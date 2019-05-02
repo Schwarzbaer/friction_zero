@@ -85,12 +85,12 @@ gamepad_bindings = {
     GE_TURN: ConfigVariableString('gamepad_turn', 'left_x'),
     GE_GYRO_ROLL: ConfigVariableString('gamepad_gyro_roll', 'right_x'),
     GE_GYRO_PITCH: ConfigVariableString('gamepad_gyro_pitch', 'right_y'),
-    GE_STRAFE: ConfigVariableString('gamepad_strafe', 'rtrigger'),
+    GE_STRAFE: ConfigVariableString('gamepad_strafe', 'none'),
     GE_HOVER: ConfigVariableString('gamepad_hover', 'none'),
     GE_SWITCH_DRIVING_MODE: ConfigVariableString('gamepad_switch_driving_mode', 'face_a'),
     GE_STABILIZE: ConfigVariableString('gamepad_stabilize', 'rshoulder'),
-    GE_THRUST: ConfigVariableString('gamepad_thrust', 'lshoulder'),
-    GE_AIRBRAKE: ConfigVariableString('gamepad_airbrake', 'ltrigger'),
+    GE_THRUST: ConfigVariableString('gamepad_thrust', 'ltrigger'),
+    GE_AIRBRAKE: ConfigVariableString('gamepad_airbrake', 'rtrigger'),
     GE_CAMERA_MODE: ConfigVariableString('gamepad_camera_mode', 'face_y'),
     GE_NEXT_VEHICLE: ConfigVariableString('gamepad_next_vehicle', 'face_x'),
 }
@@ -108,6 +108,7 @@ flight_stick_bindings = {
     GE_GYRO_ROLL_RIGHT: ConfigVariableString('flight_stick_gyro_roll_right', 'hat_right'),
     GE_SWITCH_DRIVING_MODE: ConfigVariableString('flight_stick_switch_driving_mode', 'joystick3'),
     GE_THRUST: ConfigVariableString('flight_stick_thrust', 'trigger'),
+    GE_AIRBRAKE: ConfigVariableString('flight_stick_airbrake', 'joystick7'),
 }
 
 
@@ -217,12 +218,6 @@ class DeviceListener(DirectObject):
         if self.controller is None:
             # We're working on a keyboard
             button = ButtonRegistry.ptr().find_button(button_name)
-            print(button_name, button)
-            #if len(button_name) == 1:
-            #    button = KeyboardButton.ascii_key(button_name.encode('UTF-8'))
-            #else:
-            #    # FIXME: This can't be the Panda way.
-            #    button = getattr(KeyboardButton, button_name)()
             return base.mouseWatcherNode.is_button_down(button)
         else:
             button = self.controller.find_button(button_name)
@@ -234,3 +229,21 @@ class DeviceListener(DirectObject):
             return 0.0
         axis = self.controller.find_axis(InputDevice.Axis[axis_name])
         return axis.value
+
+    def pressed_or_value(self, game_event):
+        input_name = self.bindings[game_event].value
+        if input_name == UNBOUND:
+            return 0.0
+        if self.controller is None:
+            button = ButtonRegistry.ptr().find_button(input_name)
+            if base.mouseWatcherNode.is_button_down(button):
+                return 1.0
+            else:
+                return 0.0
+        axes_names = [axis.axis.name for axis in self.controller.axes]
+        if input_name in axes_names:
+            axis = self.controller.find_axis(InputDevice.Axis[input_name])
+            return axis.value
+        else:
+            button = self.controller.find_button(input_name)
+            return button.pressed
