@@ -1,4 +1,4 @@
-from panda3d.core import Vec3
+from panda3d.core import Vec3, AmbientLight
 
 from panda3d.bullet import BulletWorld
 from panda3d.bullet import BulletRigidBodyNode
@@ -31,7 +31,6 @@ class Environment:
 
         self.model = loader.load_model(map_file)
         self.model.reparent_to(self.np)
-
         gravity_node = self.model.find('**/={}'.format(GRAVITY))
         gravity_str = gravity_node.get_tag(GRAVITY)
         # FIXME: This quietly eats what should be an error, and tested for by a
@@ -54,7 +53,7 @@ class Environment:
             '{}*'.format(TERRAIN_COLLIDER)
         )
 
-        #collision_solids.hide()
+        self.model.find("**/baked").set_light_off(1)
 
         for collision_solid in collision_solids:
             collision_solid.flatten_strong()
