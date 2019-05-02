@@ -345,24 +345,15 @@ class Vehicle:
             )
             small_eigval_idx, small_eigval = sorted_indexed_eigenvalues[0]
             small_eigvec = VBase3(*eigenvectors[:,small_eigval_idx])
-            if small_eigval < 0:
+            if small_eigvec.z < 0:
                 small_eigvec *= -1
-            #medium_eigval_idx, medium_eigval = sorted_indexed_eigenvalues[1]
-            #medium_eigvec = VBase3(*eigenvectors[:,medium_eigval_idx])
-            ##medium_eigvec *= medium_eigval
-            large_eigval_idx, large_eigval = sorted_indexed_eigenvalues[2]
-            large_eigvec = VBase3(*eigenvectors[:,large_eigval_idx])
-            if large_eigval < 0:
-                large_eigvec *= -1
-            ##large_eigvec *= large_eigval
-            print("{: 2.2f} {: 2.2f} {: 2.2f}".format(*small_eigvec))
+            self.centroid.set_pos(self.vehicle, (0, 0, 0))
+            self.centroid.heads_up(small_eigvec)
+            centroid_forward = Vec3(0,1,0) - small_eigvec * (Vec3(0,1,0).dot(small_eigvec))
+            forward_planar = centroid_forward - small_eigvec * (centroid_forward.dot(small_eigvec))
+            self.centroid.heads_up(forward_planar, small_eigvec)
             self.centroid.show()
             self.centroid.set_pos(self.vehicle, centroid)
-            self.centroid.heads_up(
-                self.vehicle,
-                large_eigvec,
-                small_eigvec,
-            )
             self.centroid.set_scale(
                 3,
                 3,
@@ -377,13 +368,17 @@ class Vehicle:
         tau = 0.2  # Seconds until target orientation is reached
 
         if self.inputs[ACTIVE_STABILIZATION]:
-            # Stabilize to the current heading, but in a horizontal orientation
-            self.target_node.set_hpr(
-                self.app.render,
-                self.vehicle.get_h(),
-                0,
-                0,
-            )
+            if local_up:
+                self.target_node.set_hpr(self.centroid, (0, 0, 0))
+            else:
+                # Stabilize to the current heading, but in a horizontal
+                # orientation
+                self.target_node.set_hpr(
+                    self.app.render,
+                    self.vehicle.get_h(),
+                    0,
+                    0,
+                )
             xyz_driver_modification = self.inputs[TARGET_ORIENTATION]
             hpr_driver_modification = VBase3(
                 xyz_driver_modification.z,
