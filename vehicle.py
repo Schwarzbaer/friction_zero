@@ -2,6 +2,7 @@ from random import random
 from math import pi
 from math import cos
 from math import isnan
+from math import copysign
 
 from panda3d.core import NodePath
 from panda3d.core import VBase3
@@ -10,6 +11,7 @@ from panda3d.core import GeomVertexReader
 from panda3d.core import invert
 from panda3d.bullet import BulletRigidBodyNode
 from panda3d.bullet import BulletConvexHullShape
+
 from direct.actor.Actor import Actor
 
 from common_vars import FRICTION
@@ -51,6 +53,7 @@ HOVER = 'hover'
 X = '_x'
 Y = '_y'
 MASS = 'mass'
+AIRBRAKE = 'airbrake'
 
 
 class Vehicle:
@@ -66,8 +69,6 @@ class Vehicle:
         friction_str = friction_node.get_tag('friction')
         friction = float(friction_str)
         self.physics_node.set_friction(friction)
-        # FIXME: This will be replaced by air drag.
-        self.physics_node.set_linear_damping(0.1)
         self.physics_node.set_linear_sleep_threshold(0)
         self.physics_node.set_angular_sleep_threshold(0)
         mass_node = self.model.find('**/={}'.format(MASS))
@@ -111,6 +112,14 @@ class Vehicle:
         for thruster in self.model.find_all_matches('**/{}*'.format(THRUSTER)):
             self.add_thruster(thruster)
 
+        self.airbrake_state = 0.0
+        self.airbrake_factor = 0.5
+        # FIXME: This will be replaced by air drag.
+        self.physics_node.set_linear_damping(self.airbrake_state)
+        # FIXME: Make artist definable
+        airbrake_duration = 0.2 # seconds
+        self.airbrake_speed = 1 / airbrake_duration
+
         self.inputs = {
             # Repulsors
             REPULSOR_ACTIVATION: 0.0,
@@ -123,6 +132,8 @@ class Vehicle:
             TARGET_ORIENTATION: Vec3(0, 0, 0),
             # Thrust
             THRUST: 0.0,
+            # Airbrake
+            AIRBRAKE: 0.0,
         }
         self.sensors = {}
         self.commands = {}
@@ -183,6 +194,7 @@ class Vehicle:
         self.apply_repulsors()
         self.apply_gyroscope()
         self.apply_thrusters()
+        self.apply_airbrake()
 
     def gather_sensors(self):
         repulsor_ray_active = []
@@ -266,11 +278,15 @@ class Vehicle:
         thruster_activation = [self.inputs[THRUST]
                                for _ in self.thruster_nodes]
 
+        # Airbrake
+        airbrake = self.inputs[AIRBRAKE]
+
         self.commands = {
             REPULSOR_ACTIVATION: repulsor_activation,
             REPULSOR_TARGET_ORIENTATIONS: repulsor_target_angles,
             GYRO_ROTATION: gyro_rotation,
             THRUSTER_ACTIVATION: thruster_activation,
+            AIRBRAKE: airbrake,
         }
 
     def ecu_gyro_stabilization(self):
@@ -431,6 +447,24 @@ class Vehicle:
                 thrust_direction * real_force * dt,
                 thruster_pos,
             )
+
+    def apply_airbrake(self):
+        dt = globalClock.dt
+        target = self.commands[AIRBRAKE]
+        max_movement = self.airbrake_speed * dt
+        # Clamp change to available speed
+        delta = target - self.airbrake_state
+        if abs(delta) > max_movement:
+            self.airbrake_state += copysign(max_movement, delta)
+        else:
+            self.airbrake_state = target
+        if self.airbrake_state > 1.0:
+            self.airbrake_state = 1.0
+        if self.airbrake_state < 0.0:
+            self.airbrake_state = 0.0
+        self.model.pose(AIRBRAKE, self.airbrake_state)
+        # FIXME: This will be replaced by air drag.
+        self.physics_node.set_linear_damping(self.airbrake_state * self.airbrake_factor)
 
     def shock(self, x=0, y=0, z=0):
         self.physics_node.apply_impulse(

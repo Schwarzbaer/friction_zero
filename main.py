@@ -2,7 +2,6 @@ import os
 import sys
 
 from direct.showbase.ShowBase import ShowBase
-from direct.actor.Actor import Actor
 import panda3d
 import pman.shim
 

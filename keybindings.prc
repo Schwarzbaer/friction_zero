@@ -13,7 +13,7 @@ keyboard_gyro_pitch_up           arrow_down
 keyboard_gyro_roll_left          arrow_left
 keyboard_gyro_roll_right         arrow_right
 keyboard_thrust                  space
-keyboard_airbrake                none
+keyboard_airbrake                tab
 keyboard_camera_mode             c
 keyboard_next_vehicle            n
 
@@ -43,8 +43,8 @@ gamepad_stabilize                rstick
 gamepad_gyro_yaw                 none
 gamepad_gyro_pitch               right_y
 gamepad_gyro_roll                right_x
-gamepad_thrust                   lshoulder
-gamepad_airbrake                 ltrigger
+gamepad_thrust                   left_trigger
+gamepad_airbrake                 right_trigger
 gamepad_camera_mode              face_y
 gamepad_next_vehicle             face_x
 >>>>>>> 1de452300141fedaaed1f0f4aed47ea7417aa742
@@ -60,3 +60,4 @@ flight_stick_gyro_roll_left      hat_left
 flight_stick_gyro_roll_right     hat_right
 flight_stick_switch_driving_mode joystick3
 flight_stick_thrust              trigger
+flight_stick_airbrake            joystick7
