@@ -1,9 +1,12 @@
+import sys
+
 from direct.showbase.ShowBase import ShowBase
 from direct.actor.Actor import Actor
 
 from panda3d.core import DirectionalLight, KeyboardButton
 
 s = ShowBase()
+s.accept('escape', sys.exit)
 s.cam.setPos(0, -5, 5)
 s.cam.lookAt(0, 0, 0)
 
@@ -21,8 +24,8 @@ for r, repulsor in enumerate(repulsors):
     joint = a.exposeJoint(None,"modelRoot","repulsor_bone:"+str(r))
     repulsor.reparentTo(joint)
 
-a.enableBlend()
-animations = ["gems", "accelerate", "turn", "strafe", "hover", "airbrake"]
+#a.enableBlend()
+animations = ["gems", "accelerate", "turn", "strafe", "hover"]
 for animation in animations:
     a.setControlEffect(animation, 1)
     a.play(animation)
@@ -69,11 +72,33 @@ def update(task):
     else:
         pingPong("hover", 0, 0,0,20)
 
-    s.accept('q', a.play, ['airbrake'])
-
     return task.cont
 
 s.taskMgr.add(update)
+
+
+
+airbrake_speed = 1 / -0.1 # 0.1 seconds
+airbrake_state = 0.0
+
+def toggle_airbrake():
+    global airbrake_speed
+    airbrake_speed *= -1
+
+s.accept('q', toggle_airbrake)
+
+def update_airbrake_state(task):
+    global airbrake_state
+    global airbrake_speed
+    airbrake_state += airbrake_speed * globalClock.dt
+    if airbrake_state >= 1.0:
+        airbrake_state = 1.0
+    if airbrake_state <= 0.0:
+        airbrake_state = 0.0
+    a.pose('airbrake', airbrake_state)
+    return task.cont
+
+s.task_mgr.add(update_airbrake_state)
 
 l = DirectionalLight("light")
 ln = render.attachNewNode(l)
