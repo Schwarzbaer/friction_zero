@@ -47,7 +47,12 @@ REPULSOR_OLD_ORIENTATION = 'repulsor_old_orientation'
 GYRO_ROTATION = 'gyro_rotation'
 THRUST = 'thrust'
 THRUSTER_ACTIVATION = 'thruster_activation'
-ACTIVE_STABILIZATION = 'active_stabilization'
+TO_HORIZON = 'to_horizon'
+TO_GROUND = 'to_ground'
+PASSIVE = 'passive'
+ACTIVE_STABILIZATION_ON_GROUND = 'active_stabilization_on_ground'
+ACTIVE_STABILIZATION_CUTOFF_ANGLE = 'active_stabilization_cutoff_angle'
+ACTIVE_STABILIZATION_IN_AIR = 'active_stabilization_in_air'
 ACCELERATE = 'accelerate'
 TURN = 'turn'
 TURN_LEFT = 'turn_left'
@@ -133,8 +138,8 @@ class Vehicle:
         self.airbrake_speed = 1 / airbrake_duration
 
         self.centroid = base.loader.load_model('models/smiley')
-        self.centroid.set_scale(0.3)
         self.centroid.reparent_to(self.vehicle)
+        self.centroid.hide()
 
         self.inputs = {
             # Repulsors
@@ -144,7 +149,9 @@ class Vehicle:
             STRAFE: 0.0,
             HOVER: 0.0,
             # Gyro
-            ACTIVE_STABILIZATION: False,
+            ACTIVE_STABILIZATION_ON_GROUND: PASSIVE,
+            ACTIVE_STABILIZATION_CUTOFF_ANGLE: PASSIVE,
+            ACTIVE_STABILIZATION_IN_AIR: PASSIVE,
             TARGET_ORIENTATION: Vec3(0, 0, 0),
             # Thrust
             THRUST: 0.0,
@@ -315,7 +322,6 @@ class Vehicle:
         }
 
     def ecu_gyro_stabilization(self):
-        ground_contact = False
         local_up = False
         # Find the local up
         contacts = [pos
@@ -325,16 +331,17 @@ class Vehicle:
                     )
                     if active and self.inputs[REPULSOR_ACTIVATION]]
         if len(contacts) > 2:
-            ground_contact = True
             local_up = True
+            target_mode = self.inputs[ACTIVE_STABILIZATION_ON_GROUND]
             # We can calculate a local up
             centroid = reduce(lambda a,b: a+b, contacts) / len(contacts)
             covariance = [[c.x, c.y, c.z]
-                 for c in [contact - centroid for contact in contacts]
-                ][0:3]
+                          for c in [contact - centroid for contact in contacts]
+            ][0:3] # We need exactly 3, no PCA yet. :(
             eigenvalues, eigenvectors = numpy.linalg.eig(
                 numpy.array(covariance)
             )
+            # FIXME: These few lines look baaaad...
             indexed_eigenvalues = enumerate(eigenvalues)
             def get_magnitude(indexed_element):
                 index, value = indexed_element
@@ -343,42 +350,44 @@ class Vehicle:
                 indexed_eigenvalues,
                 key=get_magnitude,
             )
-            small_eigval_idx, small_eigval = sorted_indexed_eigenvalues[0]
-            small_eigvec = VBase3(*eigenvectors[:,small_eigval_idx])
-            if small_eigvec.z < 0:
-                small_eigvec *= -1
+            # The smallest eigenvalue leads to the ground plane's normal
+            up_vec_idx, _ = sorted_indexed_eigenvalues[0]
+            up_vec = VBase3(*eigenvectors[:, up_vec_idx])
+            # Point into the upper half-space
+            if up_vec.z < 0:
+                up_vec *= -1
+            # Calculate the forward of the centroid
+            centroid_forward = Vec3(0,1,0) - up_vec * (Vec3(0,1,0).dot(up_vec))
+            # FIXME: Huh?
+            forward_planar = centroid_forward - up_vec * (centroid_forward.dot(up_vec))
+            # Now let's orient and place the centroid
             self.centroid.set_pos(self.vehicle, (0, 0, 0))
-            self.centroid.heads_up(small_eigvec)
-            centroid_forward = Vec3(0,1,0) - small_eigvec * (Vec3(0,1,0).dot(small_eigvec))
-            forward_planar = centroid_forward - small_eigvec * (centroid_forward.dot(small_eigvec))
-            self.centroid.heads_up(forward_planar, small_eigvec)
-            self.centroid.show()
+            self.centroid.heads_up(forward_planar, up_vec)
             self.centroid.set_pos(self.vehicle, centroid)
-            self.centroid.set_scale(
-                3,
-                3,
-                0.2,
-            )
         else:
-            ground_contact = True
             local_up = False
-            self.centroid.hide()
 
         # Active stabilization and angular dampening
         tau = 0.2  # Seconds until target orientation is reached
 
-        if self.inputs[ACTIVE_STABILIZATION]:
-            if local_up:
-                self.target_node.set_hpr(self.centroid, (0, 0, 0))
-            else:
-                # Stabilize to the current heading, but in a horizontal
-                # orientation
-                self.target_node.set_hpr(
-                    self.app.render,
-                    self.vehicle.get_h(),
-                    0,
-                    0,
-                )
+        if local_up:
+            target_mode = self.inputs[ACTIVE_STABILIZATION_ON_GROUND]
+        else:
+            target_mode = self.inputs[ACTIVE_STABILIZATION_IN_AIR]
+
+        if target_mode == TO_HORIZON:
+            # Stabilize to the current heading, but in a horizontal
+            # orientation
+            self.target_node.set_hpr(
+                self.app.render,
+                self.vehicle.get_h(),
+                0,
+                0,
+            )
+        elif target_mode == TO_GROUND:
+            self.target_node.set_hpr(self.centroid, (0, 0, 0))
+
+        if target_mode != PASSIVE:
             xyz_driver_modification = self.inputs[TARGET_ORIENTATION]
             hpr_driver_modification = VBase3(
                 xyz_driver_modification.z,
@@ -414,7 +423,7 @@ class Vehicle:
             # has to be reached to achieve the targeted orientation in tau
             # seconds.
             target_angular_velocity = axis_of_torque * delta_angle / tau
-        else:
+        else: # `elif target_mode == PASSIVE:`, since we moght want an OFF mode
             # Passive stabilization, so this is the pure commanded impulse
             target_angular_velocity = self.app.render.get_relative_vector(
                 self.vehicle,
