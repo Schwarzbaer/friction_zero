@@ -100,7 +100,7 @@ class GameApp(ShowBase):
 
 def main():
     if len(sys.argv) > 1:
-        map = "maps/"+sys.argv[1]
+        map = "maps/"+sys.argv[1]+"/"+sys.argv[1]+".bam"
         app = GameApp(map)
     else:
         app = GameApp()

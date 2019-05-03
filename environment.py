@@ -1,4 +1,4 @@
-from panda3d.core import Vec3, AmbientLight
+from panda3d.core import Vec3
 
 from panda3d.bullet import BulletWorld
 from panda3d.bullet import BulletRigidBodyNode
@@ -16,6 +16,7 @@ SPAWN_POINTS = 'fz_spawn_point'
 SKYSPHERE = 'fz_skysphere'
 TERRAIN_COLLIDER = 'fz_collision'
 GRAVITY = 'gravity'
+BAKED = 'baked'
 
 
 class Environment:
@@ -53,7 +54,9 @@ class Environment:
             '{}*'.format(TERRAIN_COLLIDER)
         )
 
-        self.model.find("**/baked").set_light_off(1)
+        baked = self.model.find("**/"+BAKED)
+        if not baked.is_empty():
+            baked.set_light_off(1)
 
         for collision_solid in collision_solids:
             collision_solid.flatten_strong()
