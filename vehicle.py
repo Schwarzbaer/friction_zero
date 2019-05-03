@@ -208,6 +208,8 @@ class Vehicle:
         ground_contact.reparent_to(self.app.render)
         repulsor.set_python_tag('ray_end', ground_contact)
 
+        self.last_flight_height = None
+
     def add_thruster(self, thruster):
         force = float(thruster.get_tag(FORCE))
         thruster.set_python_tag(FORCE, force)
@@ -366,8 +368,18 @@ class Vehicle:
             self.centroid.set_pos(self.vehicle, (0, 0, 0))
             self.centroid.heads_up(forward_planar, up_vec)
             self.centroid.set_pos(self.vehicle, centroid)
+
+            # Flight height for repulsor attenuation
+            flight_height = -self.centroid.get_z(self.vehicle)
+            if self.last_flight_height is not None:
+                climb_speed = (flight_height - self.last_flight_height) / globalClock.dt
+            else:
+                climb_speed = 0
+            self.last_flight_height = flight_height
+            #print("{:2.1f} {:2.3f}".format(flight_height, climb_speed))
         else:
             local_up = False
+            self.last_flight_height = None
 
         # Active stabilization and angular dampening
         tau = 0.2  # Seconds until target orientation is reached
@@ -459,7 +471,7 @@ class Vehicle:
             # Repulse in current orientation
             if active and activation:
                 # Repulsor power at zero distance
-                base_strength = node.get_python_tag(FORCE)
+                base_strength = node.get_python_tag(FORCE) * 3
                 # Effective fraction of repulsors force
                 transfer_frac = cos(0.5*pi * frac)
                 # Effective repulsor force
