@@ -130,6 +130,11 @@ class CameraController(DirectObject):
                 off_model.set_p(-90)
                 off_model.hide()
                 self.repulsor_models.append((on_model, off_model))
+        elif num_models_delta < 0:
+            for on_model, off_model in self.repulsor_models[num_models_delta:]:
+                on_model.remove_node()
+                off_model.remove_node()
+            self.repulsor_models = self.repulsor_models[:len(ray_dirs)]
         for (ray_pos, ray_dir, ray_active, ray_frac), (on_model, off_model) in zip(ray_data, self.repulsor_models):
             offset_dir = self.vehicle.np().get_relative_vector(
                 base.render,
