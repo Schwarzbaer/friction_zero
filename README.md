@@ -15,7 +15,7 @@ TODO
   * Repulsors should act like dampening springs
   * (low importance) Make angular stabilization deactivateable
   * (low importance) Stabilize to global orientation
-* Stabilizer: Code equals that of airbrake
+* (SMALL) Stabilizer: Code equals that of airbrake
 * Air drag and aerodynamics (https://www.gamedev.net/forums/topic/457235-flight-sim-physics/)
   * Drag scales with the square of the speed
   * Artist-defined air density
@@ -29,11 +29,11 @@ TODO
   * Background music
   * Crashes
 * GUI
-  * Basic setup: In a separate render bin
-  * Elevation: Fighter jet like height-over-ground indication
-  * Speed direction
-  * Repulsor activation levels
-  * Thruster activation
+  * (SMALL) Basic setup: In a separate render bin
+  * (SMALL) Elevation: Fighter jet like height-over-ground indication
+  * (SMALL) Speed direction
+  * (SMALL) Repulsor activation levels
+  * (SMALL) Thruster activation
 * Limits on thruster
   * Fuel
   * Overheating
@@ -44,7 +44,7 @@ TODO
 * Shadows
 * Repulsoring other vehicles
 * Clamp timestep in physics simulation
-  * Move value min_frame_rate into settings file
+  * (SMALL) Move value min_frame_rate into settings file
 * Game Mode: Free Driving
 * Countdown to start
 * Game Mode: Timed solo race

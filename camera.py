@@ -98,6 +98,8 @@ class CameraController(DirectObject):
         # Speed
         mps = self.vehicle.physics_node.get_linear_velocity().length()
         kmh = mps * 60 * 60 / 1000
+        # FIXME: Fudge factor
+        kmh /= 2
         self.speed['text'] = "{:03.1f} km/h".format(kmh)
 
         # Driving mode
