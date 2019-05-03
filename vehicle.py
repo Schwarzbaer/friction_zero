@@ -53,6 +53,9 @@ PASSIVE = 'passive'
 ACTIVE_STABILIZATION_ON_GROUND = 'active_stabilization_on_ground'
 ACTIVE_STABILIZATION_CUTOFF_ANGLE = 'active_stabilization_cutoff_angle'
 ACTIVE_STABILIZATION_IN_AIR = 'active_stabilization_in_air'
+LOCAL_UP = 'local_up'
+FLIGHT_HEIGHT = 'flight_height'
+CLIMB_SPEED = 'climb_speed'
 ACCELERATE = 'accelerate'
 TURN = 'turn'
 TURN_LEFT = 'turn_left'
@@ -261,6 +264,64 @@ class Vehicle:
                 repulsor_ray_frac.append(ray_frac)
                 repulsor_ray_contact.append(None)
 
+        # Find the local ground's normal vector
+        local_up = False
+        contacts = [pos
+                    for pos, active in zip(
+                            repulsor_ray_contact,
+                            repulsor_ray_active,
+                    )
+                    if active and self.inputs[REPULSOR_ACTIVATION]]
+        if len(contacts) > 2:
+            local_up = True
+            target_mode = self.inputs[ACTIVE_STABILIZATION_ON_GROUND]
+            # We can calculate a local up
+            centroid = reduce(lambda a,b: a+b, contacts) / len(contacts)
+            covariance = [[c.x, c.y, c.z]
+                          for c in [contact - centroid for contact in contacts]
+            ][0:3] # We need exactly 3, no PCA yet. :(
+            eigenvalues, eigenvectors = numpy.linalg.eig(
+                numpy.array(covariance)
+            )
+            # FIXME: These few lines look baaaad...
+            indexed_eigenvalues = enumerate(eigenvalues)
+            def get_magnitude(indexed_element):
+                index, value = indexed_element
+                return abs(value)
+            sorted_indexed_eigenvalues = sorted(
+                indexed_eigenvalues,
+                key=get_magnitude,
+            )
+            # The smallest eigenvalue leads to the ground plane's normal
+            up_vec_idx, _ = sorted_indexed_eigenvalues[0]
+            up_vec = VBase3(*eigenvectors[:, up_vec_idx])
+            # Point into the upper half-space
+            if up_vec.z < 0:
+                up_vec *= -1
+            # Calculate the forward of the centroid
+            centroid_forward = Vec3(0,1,0) - up_vec * (Vec3(0,1,0).dot(up_vec))
+            # FIXME: Huh?
+            forward_planar = centroid_forward - up_vec * (centroid_forward.dot(up_vec))
+            # Now let's orient and place the centroid
+            self.centroid.set_pos(self.vehicle, (0, 0, 0))
+            self.centroid.heads_up(forward_planar, up_vec)
+            self.centroid.set_pos(self.vehicle, centroid)
+
+            # Flight height for repulsor attenuation
+            flight_height = -self.centroid.get_z(self.vehicle)
+            if self.last_flight_height is not None:
+                climb_speed = (flight_height - self.last_flight_height) / globalClock.dt
+            else:
+                climb_speed = 0
+            self.last_flight_height = flight_height
+            #print("{:2.1f} {:2.3f}".format(flight_height, climb_speed))
+        else:
+            local_up = False
+            self.last_flight_height = None
+            flight_height = 0.0
+            climb_speed = 0.0
+
+
         self.sensors = {
             CURRENT_ORIENTATION: self.vehicle.get_hpr(self.app.render),
             CURRENT_MOVEMENT: self.physics_node.get_linear_velocity(),
@@ -270,6 +331,9 @@ class Vehicle:
             REPULSOR_RAY_DIR: repulsor_ray_dir,
             REPULSOR_RAY_FRAC: repulsor_ray_frac,
             REPULSOR_RAY_CONTACT: repulsor_ray_contact,
+            LOCAL_UP: local_up,
+            FLIGHT_HEIGHT: flight_height,
+            CLIMB_SPEED: climb_speed,
         }
 
     def ecu(self):
@@ -326,65 +390,10 @@ class Vehicle:
         }
 
     def ecu_gyro_stabilization(self):
-        local_up = False
-        # Find the local up
-        contacts = [pos
-                    for pos, active in zip(
-                            self.sensors[REPULSOR_RAY_CONTACT],
-                            self.sensors[REPULSOR_RAY_ACTIVE],
-                    )
-                    if active and self.inputs[REPULSOR_ACTIVATION]]
-        if len(contacts) > 2:
-            local_up = True
-            target_mode = self.inputs[ACTIVE_STABILIZATION_ON_GROUND]
-            # We can calculate a local up
-            centroid = reduce(lambda a,b: a+b, contacts) / len(contacts)
-            covariance = [[c.x, c.y, c.z]
-                          for c in [contact - centroid for contact in contacts]
-            ][0:3] # We need exactly 3, no PCA yet. :(
-            eigenvalues, eigenvectors = numpy.linalg.eig(
-                numpy.array(covariance)
-            )
-            # FIXME: These few lines look baaaad...
-            indexed_eigenvalues = enumerate(eigenvalues)
-            def get_magnitude(indexed_element):
-                index, value = indexed_element
-                return abs(value)
-            sorted_indexed_eigenvalues = sorted(
-                indexed_eigenvalues,
-                key=get_magnitude,
-            )
-            # The smallest eigenvalue leads to the ground plane's normal
-            up_vec_idx, _ = sorted_indexed_eigenvalues[0]
-            up_vec = VBase3(*eigenvectors[:, up_vec_idx])
-            # Point into the upper half-space
-            if up_vec.z < 0:
-                up_vec *= -1
-            # Calculate the forward of the centroid
-            centroid_forward = Vec3(0,1,0) - up_vec * (Vec3(0,1,0).dot(up_vec))
-            # FIXME: Huh?
-            forward_planar = centroid_forward - up_vec * (centroid_forward.dot(up_vec))
-            # Now let's orient and place the centroid
-            self.centroid.set_pos(self.vehicle, (0, 0, 0))
-            self.centroid.heads_up(forward_planar, up_vec)
-            self.centroid.set_pos(self.vehicle, centroid)
-
-            # Flight height for repulsor attenuation
-            flight_height = -self.centroid.get_z(self.vehicle)
-            if self.last_flight_height is not None:
-                climb_speed = (flight_height - self.last_flight_height) / globalClock.dt
-            else:
-                climb_speed = 0
-            self.last_flight_height = flight_height
-            #print("{:2.1f} {:2.3f}".format(flight_height, climb_speed))
-        else:
-            local_up = False
-            self.last_flight_height = None
-
         # Active stabilization and angular dampening
         tau = 0.2  # Seconds until target orientation is reached
 
-        if local_up:
+        if self.sensors[LOCAL_UP]:
             target_mode = self.inputs[ACTIVE_STABILIZATION_ON_GROUND]
         else:
             target_mode = self.inputs[ACTIVE_STABILIZATION_IN_AIR]
