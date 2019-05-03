@@ -30,7 +30,12 @@ from vehicle import ACCELERATE
 from vehicle import TURN
 from vehicle import STRAFE
 from vehicle import HOVER
-from vehicle import ACTIVE_STABILIZATION
+from vehicle import ACTIVE_STABILIZATION_ON_GROUND
+from vehicle import ACTIVE_STABILIZATION_CUTOFF_ANGLE
+from vehicle import ACTIVE_STABILIZATION_IN_AIR
+from vehicle import TO_GROUND
+from vehicle import TO_HORIZON
+from vehicle import PASSIVE
 from vehicle import TARGET_ORIENTATION
 from vehicle import THRUST
 from vehicle import AIRBRAKE
@@ -115,7 +120,6 @@ class VehicleController:
                 if self.controller.is_pressed(GE_TURN_RIGHT):
                     repulsor_strafe += 1.0
                 # Gyro control
-                stabilizer_active = not self.controller.is_pressed(GE_STABILIZE)
                 gyro_yaw = 0.0
                 gyro_pitch = 0.0
                 if self.controller.is_pressed(GE_GYRO_ROLL_LEFT):
@@ -183,7 +187,6 @@ class VehicleController:
                     repulsor_strafe = 0.0
                 # Gyro control
                 # By default, stabilization is active.
-                stabilizer_active = not self.controller.is_pressed(GE_STABILIZE)
                 # Instead of rolling, the horizontal gyro control is
                 # to change the heading.
                 gyro_yaw = self.controller.axis_value(GE_GYRO_ROLL)
@@ -231,7 +234,6 @@ class VehicleController:
 
             if self.driving_mode == DM_STUNT:
                 repulsor_turn -= self.controller.axis_value(GE_TURN)
-                stabilizer_active = self.controller.is_pressed(GE_STABILIZE)
             elif self.driving_mode == DM_CRUISE:
                 stabilizer_active = not self.controller.is_pressed(GE_STABILIZE)
 
@@ -240,6 +242,26 @@ class VehicleController:
                 thrust = 1.0
 
             airbrake = self.controller.pressed_or_value(GE_AIRBRAKE)
+
+        stabilizer_active = self.controller.is_pressed(GE_STABILIZE)
+        if self.driving_mode == DM_CRUISE:
+            if not stabilizer_active:
+                active_stabilization_on_ground = TO_GROUND
+                active_stabilization_cutoff_angle = 20
+                active_stabilization_in_air = TO_HORIZON
+            else:
+                active_stabilization_on_ground = TO_HORIZON
+                active_stabilization_cutoff_angle = -1
+                active_stabilization_in_air = PASSIVE
+        elif self.driving_mode == DM_STUNT:
+            if not stabilizer_active:
+                active_stabilization_on_ground = TO_GROUND
+                active_stabilization_cutoff_angle = 20
+                active_stabilization_in_air = PASSIVE
+            else:
+                active_stabilization_on_ground = TO_HORIZON
+                active_stabilization_cutoff_angle = -1
+                active_stabilization_in_air = TO_HORIZON
 
         self.vehicle.set_inputs(
             {
@@ -250,7 +272,9 @@ class VehicleController:
                 STRAFE: repulsor_strafe,
                 HOVER: repulsor_hover,
                 # Gyro
-                ACTIVE_STABILIZATION: stabilizer_active,
+                ACTIVE_STABILIZATION_ON_GROUND: active_stabilization_on_ground,
+                ACTIVE_STABILIZATION_CUTOFF_ANGLE: active_stabilization_cutoff_angle,
+                ACTIVE_STABILIZATION_IN_AIR: active_stabilization_in_air,
                 TARGET_ORIENTATION: target_orientation,
                 # Thrust
                 THRUST: thrust,
@@ -267,7 +291,6 @@ class VehicleController:
 
     def toggle_repulsors(self):
         self.repulsors_active = not self.repulsors_active
-        print("repulsors toggled")
 
     def switch_driving_mode(self):
         if self.driving_mode == DM_CRUISE:

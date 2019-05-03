@@ -3,6 +3,9 @@ from math import pi
 from math import cos
 from math import isnan
 from math import copysign
+from functools import reduce
+
+import numpy
 
 from panda3d.core import NodePath
 from panda3d.core import VBase3
@@ -37,13 +40,19 @@ REPULSOR_RAY_ACTIVE = 'repulsor_ray_active'
 REPULSOR_RAY_FRAC = 'repulsor_ray_frac'
 REPULSOR_RAY_DIR = 'repulsor_ray_dir'
 REPULSOR_RAY_POS = 'repulsor_ray_pos'
+REPULSOR_RAY_CONTACT = 'repulsor_ray_contact'
 REPULSOR_TURNING_ANGLE = 'repulsor_turning_angle'
 REPULSOR_TARGET_ORIENTATIONS = 'repulsor_target_orientation'
 REPULSOR_OLD_ORIENTATION = 'repulsor_old_orientation'
 GYRO_ROTATION = 'gyro_rotation'
 THRUST = 'thrust'
 THRUSTER_ACTIVATION = 'thruster_activation'
-ACTIVE_STABILIZATION = 'active_stabilization'
+TO_HORIZON = 'to_horizon'
+TO_GROUND = 'to_ground'
+PASSIVE = 'passive'
+ACTIVE_STABILIZATION_ON_GROUND = 'active_stabilization_on_ground'
+ACTIVE_STABILIZATION_CUTOFF_ANGLE = 'active_stabilization_cutoff_angle'
+ACTIVE_STABILIZATION_IN_AIR = 'active_stabilization_in_air'
 ACCELERATE = 'accelerate'
 TURN = 'turn'
 TURN_LEFT = 'turn_left'
@@ -54,6 +63,14 @@ X = '_x'
 Y = '_y'
 MASS = 'mass'
 AIRBRAKE = 'airbrake'
+
+
+# class RepulsorSensor:
+#     def __init__(self, active, fraction, direction, position):
+#         self.active = active
+#         self.fraction = fraction
+#         self.direction = direction
+#         self.position = position
 
 
 class Vehicle:
@@ -71,6 +88,8 @@ class Vehicle:
         self.physics_node.set_friction(friction)
         self.physics_node.set_linear_sleep_threshold(0)
         self.physics_node.set_angular_sleep_threshold(0)
+        self.physics_node.setCcdMotionThreshold(1e-7)
+        self.physics_node.setCcdSweptSphereRadius(0.5)
         mass_node = self.model.find('**/={}'.format(MASS))
         mass_str = mass_node.get_tag('mass')
         mass = float(mass_str)
@@ -120,6 +139,10 @@ class Vehicle:
         airbrake_duration = 0.2 # seconds
         self.airbrake_speed = 1 / airbrake_duration
 
+        self.centroid = base.loader.load_model('models/smiley')
+        self.centroid.reparent_to(self.vehicle)
+        self.centroid.hide()
+
         self.inputs = {
             # Repulsors
             REPULSOR_ACTIVATION: 0.0,
@@ -128,7 +151,9 @@ class Vehicle:
             STRAFE: 0.0,
             HOVER: 0.0,
             # Gyro
-            ACTIVE_STABILIZATION: False,
+            ACTIVE_STABILIZATION_ON_GROUND: PASSIVE,
+            ACTIVE_STABILIZATION_CUTOFF_ANGLE: PASSIVE,
+            ACTIVE_STABILIZATION_IN_AIR: PASSIVE,
             TARGET_ORIENTATION: Vec3(0, 0, 0),
             # Thrust
             THRUST: 0.0,
@@ -197,10 +222,12 @@ class Vehicle:
         self.apply_airbrake()
 
     def gather_sensors(self):
+        # Gather ray data on collision with ground from each repulsor
         repulsor_ray_active = []
         repulsor_ray_frac = []
         repulsor_ray_dir = []
         repulsor_ray_pos = []
+        repulsor_ray_contact = []
         for repulsor in self.repulsor_nodes:
             max_distance = repulsor.get_python_tag(ACTIVATION_DISTANCE)
             repulsor_pos = repulsor.get_pos(self.app.render)
@@ -216,15 +243,21 @@ class Vehicle:
                 repulsor_pos + repulsor_dir,
                 CM_TERRAIN,
             )
-            #repulsor.get_python_tag('ray_start').set_pos(repulsor_pos)
             if feeler.has_hit():
                 repulsor_ray_active.append(True)
                 ray_frac = feeler.get_hit_fraction()
                 repulsor_ray_frac.append(ray_frac)
+                repulsor_ray_contact.append(
+                    self.vehicle.get_relative_point(
+                        self.app.render,
+                        feeler.get_hit_pos(),
+                    )
+                )
             else:
                 repulsor_ray_active.append(False)
                 ray_frac = 1.0
                 repulsor_ray_frac.append(ray_frac)
+                repulsor_ray_contact.append(None)
 
         self.sensors = {
             CURRENT_ORIENTATION: self.vehicle.get_hpr(self.app.render),
@@ -234,6 +267,7 @@ class Vehicle:
             REPULSOR_RAY_POS: repulsor_ray_pos,
             REPULSOR_RAY_DIR: repulsor_ray_dir,
             REPULSOR_RAY_FRAC: repulsor_ray_frac,
+            REPULSOR_RAY_CONTACT: repulsor_ray_contact,
         }
 
     def ecu(self):
@@ -290,15 +324,72 @@ class Vehicle:
         }
 
     def ecu_gyro_stabilization(self):
+        local_up = False
+        # Find the local up
+        contacts = [pos
+                    for pos, active in zip(
+                            self.sensors[REPULSOR_RAY_CONTACT],
+                            self.sensors[REPULSOR_RAY_ACTIVE],
+                    )
+                    if active and self.inputs[REPULSOR_ACTIVATION]]
+        if len(contacts) > 2:
+            local_up = True
+            target_mode = self.inputs[ACTIVE_STABILIZATION_ON_GROUND]
+            # We can calculate a local up
+            centroid = reduce(lambda a,b: a+b, contacts) / len(contacts)
+            covariance = [[c.x, c.y, c.z]
+                          for c in [contact - centroid for contact in contacts]
+            ][0:3] # We need exactly 3, no PCA yet. :(
+            eigenvalues, eigenvectors = numpy.linalg.eig(
+                numpy.array(covariance)
+            )
+            # FIXME: These few lines look baaaad...
+            indexed_eigenvalues = enumerate(eigenvalues)
+            def get_magnitude(indexed_element):
+                index, value = indexed_element
+                return abs(value)
+            sorted_indexed_eigenvalues = sorted(
+                indexed_eigenvalues,
+                key=get_magnitude,
+            )
+            # The smallest eigenvalue leads to the ground plane's normal
+            up_vec_idx, _ = sorted_indexed_eigenvalues[0]
+            up_vec = VBase3(*eigenvectors[:, up_vec_idx])
+            # Point into the upper half-space
+            if up_vec.z < 0:
+                up_vec *= -1
+            # Calculate the forward of the centroid
+            centroid_forward = Vec3(0,1,0) - up_vec * (Vec3(0,1,0).dot(up_vec))
+            # FIXME: Huh?
+            forward_planar = centroid_forward - up_vec * (centroid_forward.dot(up_vec))
+            # Now let's orient and place the centroid
+            self.centroid.set_pos(self.vehicle, (0, 0, 0))
+            self.centroid.heads_up(forward_planar, up_vec)
+            self.centroid.set_pos(self.vehicle, centroid)
+        else:
+            local_up = False
+
+        # Active stabilization and angular dampening
         tau = 0.2  # Seconds until target orientation is reached
 
-        if self.inputs[ACTIVE_STABILIZATION]:
+        if local_up:
+            target_mode = self.inputs[ACTIVE_STABILIZATION_ON_GROUND]
+        else:
+            target_mode = self.inputs[ACTIVE_STABILIZATION_IN_AIR]
+
+        if target_mode == TO_HORIZON:
+            # Stabilize to the current heading, but in a horizontal
+            # orientation
             self.target_node.set_hpr(
                 self.app.render,
                 self.vehicle.get_h(),
                 0,
                 0,
             )
+        elif target_mode == TO_GROUND:
+            self.target_node.set_hpr(self.centroid, (0, 0, 0))
+
+        if target_mode != PASSIVE:
             xyz_driver_modification = self.inputs[TARGET_ORIENTATION]
             hpr_driver_modification = VBase3(
                 xyz_driver_modification.z,
@@ -334,7 +425,7 @@ class Vehicle:
             # has to be reached to achieve the targeted orientation in tau
             # seconds.
             target_angular_velocity = axis_of_torque * delta_angle / tau
-        else:
+        else: # `elif target_mode == PASSIVE:`, since we moght want an OFF mode
             # Passive stabilization, so this is the pure commanded impulse
             target_angular_velocity = self.app.render.get_relative_vector(
                 self.vehicle,
