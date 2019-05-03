@@ -9,13 +9,14 @@ TODO
 
 ### Code
 
-* Animations
-  * Air brake
 * ECU
   * Gyroscopic stabilization
-    * Determine local "up" from repulsor ray fractions
+    * Replace numpy.linalg.eig() with a PCA-based approach
   * Repulsors should act like dampening springs
-* Air drag and aerodynamics
+  * (low importance) Make angular stabilization deactivateable
+  * (low importance) Stabilize to global orientation
+* Stabilizer: Code equals that of airbrake
+* Air drag and aerodynamics (https://www.gamedev.net/forums/topic/457235-flight-sim-physics/)
   * Drag scales with the square of the speed
   * Artist-defined air density
   * Air brakes
@@ -56,6 +57,8 @@ TODO
 
 * Design two other vehicles
 * Airbrake animations
+  * On Magnesium, rename 'airbrake' to 'stabilizer'
+  * Add parachute-like airbrake animation
 * Effect for the point where the repulsor ray hits the ground
 * When movement is mostly implemented, make racetrack
   * Start with a looping road.
@@ -91,6 +94,7 @@ TODO
 
 ### Post-Prototype
 
+* ECSify everything
 * Keybindings
   * Allow for multiple players
   * Allow for multiple devices (per player?)
