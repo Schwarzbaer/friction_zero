@@ -203,8 +203,8 @@ class Vehicle:
         repulsor.set_python_tag(REPULSOR_TURNING_ANGLE, 540)
         repulsor.set_python_tag(REPULSOR_OLD_ORIENTATION, Vec3(0, 0, 0))
 
-        ground_contact = self.app.loader.load_model("models/smiley")
-        ground_contact.set_scale(0.2)
+        ground_contact = self.app.loader.load_model("assets/repulsorhit.egg")
+        ground_contact.set_scale(1)
         ground_contact.reparent_to(self.app.render)
         repulsor.set_python_tag('ray_end', ground_contact)
 
@@ -493,7 +493,10 @@ class Vehicle:
                     node.get_pos(self.app.render) + contact_distance,
                 )
                 #contact_node.set_hpr(node, 0, -90, 0) # Look towards repulsor
-                contact_node.set_hpr(0, -90, 0) # Look up
+                #contact_node.set_hpr(0, -90, 0) # Look up
+                contact_node.set_hpr(0, -90, contact_node.getR()+4) # Look up and rotate
+                contact_node.set_scale(1-frac)
+
                 contact_node.show()
             else:
                 node.get_python_tag('ray_end').hide()
