@@ -88,6 +88,8 @@ class Vehicle:
         self.physics_node.set_friction(friction)
         self.physics_node.set_linear_sleep_threshold(0)
         self.physics_node.set_angular_sleep_threshold(0)
+        self.physics_node.setCcdMotionThreshold(1e-7)
+        self.physics_node.setCcdSweptSphereRadius(0.5)
         mass_node = self.model.find('**/={}'.format(MASS))
         mass_str = mass_node.get_tag('mass')
         mass = float(mass_str)

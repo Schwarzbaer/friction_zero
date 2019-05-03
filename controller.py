@@ -291,7 +291,6 @@ class VehicleController:
 
     def toggle_repulsors(self):
         self.repulsors_active = not self.repulsors_active
-        print("repulsors toggled")
 
     def switch_driving_mode(self):
         if self.driving_mode == DM_CRUISE:

@@ -45,7 +45,6 @@ TODO
 * Repulsoring other vehicles
 * Clamp timestep in physics simulation
   * Move value min_frame_rate into settings file
-* CCD
 * Game Mode: Free Driving
 * Countdown to start
 * Game Mode: Timed solo race
