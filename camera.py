@@ -10,6 +10,9 @@ from vehicle import REPULSOR_RAY_ACTIVE
 from vehicle import REPULSOR_RAY_POS
 from vehicle import REPULSOR_RAY_DIR
 from vehicle import REPULSOR_RAY_FRAC
+from vehicle import LOCAL_UP
+from vehicle import FLIGHT_HEIGHT
+from vehicle import CLIMB_SPEED
 
 from keybindings import GE_CAMERA_MODE
 
@@ -45,6 +48,23 @@ class CameraController(DirectObject):
         self.driving_mode = OnscreenText(
             text = '',
             pos = (1.3, 0.7),
+            scale = 0.1,
+            fg = (0.0, 0.0, 0.0, 1.0),
+            shadow = (0.2, 0.2, 0.2, 1.0),
+            align = TextNode.ARight,
+        )
+
+        self.flight_height = OnscreenText(
+            text = '',
+            pos = (1.3, -0.7),
+            scale = 0.1,
+            fg = (0.0, 0.0, 0.0, 1.0),
+            shadow = (0.2, 0.2, 0.2, 1.0),
+            align = TextNode.ARight,
+        )
+        self.climb_rate = OnscreenText(
+            text = '',
+            pos = (1.3, -0.8),
             scale = 0.1,
             fg = (0.0, 0.0, 0.0, 1.0),
             shadow = (0.2, 0.2, 0.2, 1.0),
@@ -151,3 +171,19 @@ class CameraController(DirectObject):
                 off_model.set_pos(offset)
                 off_model.show()
                 on_model.hide()
+
+        # Flight height / climb rate
+        flight_height = self.vehicle.sensors[FLIGHT_HEIGHT]
+        climb_rate = self.vehicle.sensors[CLIMB_SPEED]
+        if self.vehicle.sensors[LOCAL_UP]:
+            self.flight_height['text'] = "{:3.1f} m to ground".format(
+                flight_height,
+            )
+            self.flight_height['fg'] = (0.2, 0.8, 0.2, 1.0)
+            self.climb_rate['text'] = "{:3.1f} m/s climb".format(climb_rate)
+            self.climb_rate['fg'] = (0.8, 0.8, 0.8, 1.0)
+        else:
+            self.flight_height['text'] = "NO GROUND CONTACT"
+            self.flight_height['fg'] = (0.8, 0.2, 0.2, 1.0)
+            self.climb_rate['text'] = "--- m/s climb"
+            self.climb_rate['fg'] = (0.3, 0.3, 0.3, 1.0)
