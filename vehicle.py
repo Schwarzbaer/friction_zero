@@ -53,12 +53,21 @@ PASSIVE = 'passive'
 ACTIVE_STABILIZATION_ON_GROUND = 'active_stabilization_on_ground'
 ACTIVE_STABILIZATION_CUTOFF_ANGLE = 'active_stabilization_cutoff_angle'
 ACTIVE_STABILIZATION_IN_AIR = 'active_stabilization_in_air'
+LOCAL_UP = 'local_up'
+FLIGHT_HEIGHT = 'flight_height'
+CLIMB_SPEED = 'climb_speed'
+TARGET_FLIGHT_HEIGHT = 'target_flight_height'
+TARGET_FLIGHT_HEIGHT_TAU = 'target_flight_height_tau'
+HEIGHT_OVER_TARGET = 'height_over_target'
+HEIGHT_OVER_TARGET_PROJECTED = 'height_over_target_projected'
+REPULSOR_POWER_FRACTION_NEEDED = 'power_frac_needed'
 ACCELERATE = 'accelerate'
 TURN = 'turn'
 TURN_LEFT = 'turn_left'
 TURN_RIGHT = 'turn_right'
 STRAFE = 'strafe'
 HOVER = 'hover'
+FULL_REPULSORS = 'full_repulsors'
 X = '_x'
 Y = '_y'
 MASS = 'mass'
@@ -208,6 +217,8 @@ class Vehicle:
         ground_contact.reparent_to(self.app.render)
         repulsor.set_python_tag('ray_end', ground_contact)
 
+        self.last_flight_height = None
+
     def add_thruster(self, thruster):
         force = float(thruster.get_tag(FORCE))
         thruster.set_python_tag(FORCE, force)
@@ -259,77 +270,12 @@ class Vehicle:
                 repulsor_ray_frac.append(ray_frac)
                 repulsor_ray_contact.append(None)
 
-        self.sensors = {
-            CURRENT_ORIENTATION: self.vehicle.get_hpr(self.app.render),
-            CURRENT_MOVEMENT: self.physics_node.get_linear_velocity(),
-            CURRENT_ROTATION: self.physics_node.get_angular_velocity(),
-            REPULSOR_RAY_ACTIVE: repulsor_ray_active,
-            REPULSOR_RAY_POS: repulsor_ray_pos,
-            REPULSOR_RAY_DIR: repulsor_ray_dir,
-            REPULSOR_RAY_FRAC: repulsor_ray_frac,
-            REPULSOR_RAY_CONTACT: repulsor_ray_contact,
-        }
-
-    def ecu(self):
-        # Repulsors
-        repulsor_activation = [self.inputs[REPULSOR_ACTIVATION]
-                               for _ in self.repulsor_nodes]
-
-        # Calculate effective repulsor motion blend values
-        accelerate = self.inputs[ACCELERATE]
-        turn = self.inputs[TURN]
-        strafe = self.inputs[STRAFE]
-        hover = self.inputs[HOVER]
-        length = sum([abs(accelerate), abs(turn), abs(strafe), hover])
-        if length > 1:
-            accelerate /= length
-            turn /= length
-            strafe /= length
-            hover /= length
-        # Split the turn signal into animation blend factors
-        if turn > 0.0:
-            turn_left = 0.0
-            turn_right = turn
-        else:
-            turn_left = -turn
-            turn_right = 0.0
-        # Blend the repulsor angle
-        repulsor_target_angles = []
-        for repulsor in self.repulsor_nodes:
-            acc_angle = -(repulsor.get_python_tag(ACCELERATE)) * accelerate
-            turn_left_angle = repulsor.get_python_tag(TURN_LEFT) * turn_left
-            turn_right_angle = repulsor.get_python_tag(TURN_RIGHT) * turn_right
-            strafe_angle = repulsor.get_python_tag(STRAFE) * strafe
-            hover_angle = repulsor.get_python_tag(HOVER) * hover
-            angle = acc_angle + turn_left_angle + turn_right_angle + \
-                    strafe_angle + hover_angle
-            repulsor_target_angles.append(angle)
-
-        # Gyroscope:
-        gyro_rotation = self.ecu_gyro_stabilization()
-
-        # Thrusters
-        thruster_activation = [self.inputs[THRUST]
-                               for _ in self.thruster_nodes]
-
-        # Airbrake
-        airbrake = self.inputs[AIRBRAKE]
-
-        self.commands = {
-            REPULSOR_ACTIVATION: repulsor_activation,
-            REPULSOR_TARGET_ORIENTATIONS: repulsor_target_angles,
-            GYRO_ROTATION: gyro_rotation,
-            THRUSTER_ACTIVATION: thruster_activation,
-            AIRBRAKE: airbrake,
-        }
-
-    def ecu_gyro_stabilization(self):
+        # Find the local ground's normal vector
         local_up = False
-        # Find the local up
         contacts = [pos
                     for pos, active in zip(
-                            self.sensors[REPULSOR_RAY_CONTACT],
-                            self.sensors[REPULSOR_RAY_ACTIVE],
+                            repulsor_ray_contact,
+                            repulsor_ray_active,
                     )
                     if active and self.inputs[REPULSOR_ACTIVATION]]
         if len(contacts) > 2:
@@ -366,13 +312,159 @@ class Vehicle:
             self.centroid.set_pos(self.vehicle, (0, 0, 0))
             self.centroid.heads_up(forward_planar, up_vec)
             self.centroid.set_pos(self.vehicle, centroid)
+
+            # Flight height for repulsor attenuation
+            flight_height = -self.centroid.get_z(self.vehicle)
+            if self.last_flight_height is not None:
+                climb_speed = (flight_height - self.last_flight_height) / globalClock.dt
+            else:
+                climb_speed = 0
+            self.last_flight_height = flight_height
         else:
             local_up = False
+            self.last_flight_height = None
+            flight_height = 0.0
+            climb_speed = 0.0
 
+
+        self.sensors = {
+            CURRENT_ORIENTATION: self.vehicle.get_hpr(self.app.render),
+            CURRENT_MOVEMENT: self.physics_node.get_linear_velocity(),
+            CURRENT_ROTATION: self.physics_node.get_angular_velocity(),
+            REPULSOR_RAY_ACTIVE: repulsor_ray_active,
+            REPULSOR_RAY_POS: repulsor_ray_pos,
+            REPULSOR_RAY_DIR: repulsor_ray_dir,
+            REPULSOR_RAY_FRAC: repulsor_ray_frac,
+            REPULSOR_RAY_CONTACT: repulsor_ray_contact,
+            LOCAL_UP: local_up,
+            FLIGHT_HEIGHT: flight_height,
+            CLIMB_SPEED: climb_speed,
+        }
+
+    def ecu(self):
+        # Calculate effective repulsor motion blend values
+        accelerate = self.inputs[ACCELERATE]
+        turn = self.inputs[TURN]
+        strafe = self.inputs[STRAFE]
+        hover = self.inputs[HOVER]
+        length = sum([abs(accelerate), abs(turn), abs(strafe), hover])
+        if length > 1:
+            accelerate /= length
+            turn /= length
+            strafe /= length
+            hover /= length
+        # Split the turn signal into animation blend factors
+        if turn > 0.0:
+            turn_left = 0.0
+            turn_right = turn
+        else:
+            turn_left = -turn
+            turn_right = 0.0
+        # Blend the repulsor angle
+        repulsor_target_angles = []
+        for repulsor in self.repulsor_nodes:
+            acc_angle = -(repulsor.get_python_tag(ACCELERATE)) * accelerate
+            turn_left_angle = repulsor.get_python_tag(TURN_LEFT) * turn_left
+            turn_right_angle = repulsor.get_python_tag(TURN_RIGHT) * turn_right
+            strafe_angle = repulsor.get_python_tag(STRAFE) * strafe
+            hover_angle = repulsor.get_python_tag(HOVER) * hover
+            angle = acc_angle + turn_left_angle + turn_right_angle + \
+                    strafe_angle + hover_angle
+            repulsor_target_angles.append(angle)
+
+        # Repulsor activation
+        if self.sensors[LOCAL_UP]:
+            tau = self.inputs[TARGET_FLIGHT_HEIGHT_TAU]
+
+            # What would we be at in tau seconds if we weren't using repulsors?
+            flight_height = self.sensors[FLIGHT_HEIGHT]
+            target_flight_height = self.inputs[TARGET_FLIGHT_HEIGHT]
+            delta_height = flight_height - target_flight_height
+            gravity_z = self.centroid.get_relative_vector(
+                self.app.render,
+                self.app.environment.physics_world.get_gravity(),
+            ).get_z()
+            # Since gravity is an acceleration
+            gravity_h = 1/2 * gravity_z * tau ** 2
+            climb_rate = self.sensors[CLIMB_SPEED] * tau
+            projected_delta_height = delta_height + gravity_h + climb_rate
+            # Are we sinking?
+            if projected_delta_height <= 0:
+                # Our projected height will be under our target height, so we
+                # will need to apply the repulsors to make up the difference.
+                # How much climb can each repulsor provide at 100% power right
+                # now?
+                max_powers = [
+                    node.get_python_tag(FORCE) for node in self.repulsor_nodes
+                ]
+                transferrable_powers = [
+                    max_power * cos(0.5*pi * frac)
+                    for max_power, frac in zip(
+                            max_powers, self.sensors[REPULSOR_RAY_FRAC],
+                    )
+                ]
+                angle_ratios = [
+                    cos(node.get_quat(self.vehicle).get_angle_rad())
+                    for node in self.repulsor_nodes
+                ]
+                angled_powers = [
+                    power * ratio
+                    for power, ratio in zip(transferrable_powers, angle_ratios)
+                ]
+                # We don't want to activate the repulsors unevenly, so we'll
+                # have to go by the weakest link.
+                total_angled_power = min(angled_powers) * len(angled_powers)
+                # How high can we climb under 100% repulsor power?
+                max_climb = total_angled_power / self.inertia * tau
+                # The fraction of power needed to achieve the desired climb
+                power_frac_needed = -projected_delta_height / max_climb
+                if not self.inputs[FULL_REPULSORS]:
+                    repulsor_activation = [
+                        power_frac_needed
+                        for _ in self.repulsor_nodes
+                    ]
+                else:
+                    power_frac_needed = 1.0
+                    repulsor_activation = [
+                        1.0
+                        for _ in self.repulsor_nodes
+                    ]
+            else:
+                # We're not sinking.
+                repulsor_activation = [0.0 for node in self.repulsor_nodes]
+                power_frac_needed = 0.0
+        else:
+            repulsor_activation = [0.0 for node in self.repulsor_nodes]
+            delta_height = 0.0
+            projected_delta_height = 0.0
+            power_frac_needed = 0.0
+
+        # Gyroscope:
+        gyro_rotation = self.ecu_gyro_stabilization()
+
+        # Thrusters
+        thruster_activation = [self.inputs[THRUST]
+                               for _ in self.thruster_nodes]
+
+        # Airbrake
+        airbrake = self.inputs[AIRBRAKE]
+
+        self.commands = {
+            REPULSOR_ACTIVATION: repulsor_activation,
+            REPULSOR_TARGET_ORIENTATIONS: repulsor_target_angles,
+            GYRO_ROTATION: gyro_rotation,
+            THRUSTER_ACTIVATION: thruster_activation,
+            AIRBRAKE: airbrake,
+            HEIGHT_OVER_TARGET: delta_height,
+            HEIGHT_OVER_TARGET_PROJECTED: projected_delta_height,
+            REPULSOR_POWER_FRACTION_NEEDED: power_frac_needed,
+        }
+
+    def ecu_gyro_stabilization(self):
         # Active stabilization and angular dampening
         tau = 0.2  # Seconds until target orientation is reached
 
-        if local_up:
+        if self.sensors[LOCAL_UP]:
             target_mode = self.inputs[ACTIVE_STABILIZATION_ON_GROUND]
         else:
             target_mode = self.inputs[ACTIVE_STABILIZATION_IN_AIR]
@@ -458,7 +550,13 @@ class Vehicle:
         for node, active, frac, activation, angle in repulsor_data:
             # Repulse in current orientation
             if active and activation:
+                if activation > 1.0:
+                    activation = 1.0
+                if activation < 0.0:
+                    activation = 0.0
                 # Repulsor power at zero distance
+                # FIXME: No *30 once the fudge factor has been removed from the
+                # repulsor optimizations.
                 base_strength = node.get_python_tag(FORCE)
                 # Effective fraction of repulsors force
                 transfer_frac = cos(0.5*pi * frac)

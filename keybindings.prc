@@ -1,4 +1,4 @@
-keyboard_toggle_repulsor         e
+keyboard_toggle_repulsor         r
 keyboard_forward                 w
 keyboard_backward                s
 keyboard_turn_left               a
@@ -6,6 +6,7 @@ keyboard_turn_right              d
 keyboard_strafe_left             none
 keyboard_strafe_right            none
 keyboard_hover                   none
+keyboard_full_repulsors          e
 keyboard_switch_driving_mode     q
 keyboard_stabilize               lshift
 keyboard_gyro_pitch_down         arrow_up
@@ -21,14 +22,16 @@ gamepad_toggle_repulsor          face_b
 gamepad_forward                  left_y
 gamepad_turn                     left_x
 gamepad_strafe                   lstick
-gamepad_hover                    rshoulder
+gamepad_hover                    none
 gamepad_switch_driving_mode      face_a
 gamepad_stabilize                rstick
 gamepad_gyro_yaw                 none
 gamepad_gyro_pitch               right_y
 gamepad_gyro_roll                right_x
-gamepad_thrust                   left_trigger
-gamepad_airbrake                 right_trigger
+gamepad_full_repulsors           lshoulder
+gamepad_thrust                   ltrigger
+gamepad_stabilizers              rshoulder
+gamepad_airbrake                 rtrigger
 gamepad_camera_mode              face_y
 gamepad_next_vehicle             face_x
 

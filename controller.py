@@ -11,6 +11,7 @@ from keybindings import GE_STRAFE
 from keybindings import GE_STRAFE_LEFT
 from keybindings import GE_STRAFE_RIGHT
 from keybindings import GE_HOVER
+from keybindings import GE_FULL_REPULSORS
 from keybindings import GE_SWITCH_DRIVING_MODE
 from keybindings import GE_STABILIZE
 from keybindings import GE_GYRO_YAW
@@ -30,6 +31,7 @@ from vehicle import ACCELERATE
 from vehicle import TURN
 from vehicle import STRAFE
 from vehicle import HOVER
+from vehicle import FULL_REPULSORS
 from vehicle import ACTIVE_STABILIZATION_ON_GROUND
 from vehicle import ACTIVE_STABILIZATION_CUTOFF_ANGLE
 from vehicle import ACTIVE_STABILIZATION_IN_AIR
@@ -39,6 +41,8 @@ from vehicle import PASSIVE
 from vehicle import TARGET_ORIENTATION
 from vehicle import THRUST
 from vehicle import AIRBRAKE
+from vehicle import TARGET_FLIGHT_HEIGHT
+from vehicle import TARGET_FLIGHT_HEIGHT_TAU
 
 
 DM_CRUISE = 'dm_cruise'
@@ -263,6 +267,18 @@ class VehicleController:
                 active_stabilization_cutoff_angle = -1
                 active_stabilization_in_air = TO_HORIZON
 
+        # Repulsor damping
+        if self.driving_mode == DM_CRUISE:
+            target_flight_height = 1.5
+            target_flight_height_tau = 0.5
+        elif self.driving_mode == DM_STUNT:
+            target_flight_height = 3.0
+            target_flight_height_tau = 0.1
+
+        full_repulsors = False
+        if self.controller.is_pressed(GE_FULL_REPULSORS):
+            full_repulsors = True
+
         self.vehicle.set_inputs(
             {
                 # Repulsors
@@ -271,6 +287,10 @@ class VehicleController:
                 TURN: repulsor_turn,
                 STRAFE: repulsor_strafe,
                 HOVER: repulsor_hover,
+                FULL_REPULSORS: full_repulsors,
+                # Repulsor damping
+                TARGET_FLIGHT_HEIGHT: target_flight_height,
+                TARGET_FLIGHT_HEIGHT_TAU: target_flight_height_tau,
                 # Gyro
                 ACTIVE_STABILIZATION_ON_GROUND: active_stabilization_on_ground,
                 ACTIVE_STABILIZATION_CUTOFF_ANGLE: active_stabilization_cutoff_angle,
