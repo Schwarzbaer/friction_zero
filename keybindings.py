@@ -56,7 +56,7 @@ GE_GYRO_ROLL_LEFT = 'gyro_roll_left'
 GE_GYRO_ROLL_RIGHT = 'gyro_roll_right'
 GE_THRUST = 'thrust'
 GE_AIRBRAKE = 'airbrake'
-GE_STABILIZERS = 'stabilizers'
+GE_STABILIZER_FINS = 'stabilizer_fins'
 GE_CAMERA_MODE = 'camera_mode'
 GE_NEXT_VEHICLE = 'next_vehicle'
 
@@ -77,6 +77,7 @@ keyboard_bindings = {
     GE_GYRO_ROLL_RIGHT: ConfigVariableString('keyboard_gyro_roll_right', 'arrow_right'),
     GE_THRUST: ConfigVariableString('keyboard_thrust', 'space'),
     GE_AIRBRAKE: ConfigVariableString('keyboard_airbrake', 'tab'),
+    GE_STABILIZER_FINS: ConfigVariableString('keyboard_stabilizer_fins', 'none'),
     GE_CAMERA_MODE: ConfigVariableString('keyboard_camera_mode', 'c'),
     GE_NEXT_VEHICLE: ConfigVariableString('keyboard_next_vehicle', 'n'),
 }
@@ -95,7 +96,7 @@ gamepad_bindings = {
     GE_GYRO_ROLL: ConfigVariableString('gamepad_gyro_roll', 'right_x'),
     GE_FULL_REPULSORS: ConfigVariableString('gamepad_full_repulsors', 'lshoulder'),
     GE_THRUST: ConfigVariableString('gamepad_thrust', 'ltrigger'),
-    GE_STABILIZERS: ConfigVariableString('gamepad_stabilizers', 'rshoulder'),
+    GE_STABILIZER_FINS: ConfigVariableString('gamepad_stabilizers', 'rshoulder'),
     GE_AIRBRAKE: ConfigVariableString('gamepad_airbrake', 'rtrigger'),
     GE_CAMERA_MODE: ConfigVariableString('gamepad_camera_mode', 'face_y'),
     GE_NEXT_VEHICLE: ConfigVariableString('gamepad_next_vehicle', 'face_x'),

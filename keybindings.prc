@@ -30,7 +30,7 @@ gamepad_gyro_pitch               right_y
 gamepad_gyro_roll                right_x
 gamepad_full_repulsors           lshoulder
 gamepad_thrust                   ltrigger
-gamepad_stabilizers              rshoulder
+gamepad_stabilizer_fins          rshoulder
 gamepad_airbrake                 rtrigger
 gamepad_camera_mode              face_y
 gamepad_next_vehicle             face_x

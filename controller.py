@@ -23,6 +23,7 @@ from keybindings import GE_GYRO_ROLL_LEFT
 from keybindings import GE_GYRO_ROLL_RIGHT
 from keybindings import GE_THRUST
 from keybindings import GE_AIRBRAKE
+from keybindings import GE_STABILIZER_FINS
 from keybindings import GE_CAMERA_MODE
 from keybindings import GE_NEXT_VEHICLE
 
@@ -41,6 +42,7 @@ from vehicle import PASSIVE
 from vehicle import TARGET_ORIENTATION
 from vehicle import THRUST
 from vehicle import AIRBRAKE
+from vehicle import STABILIZER_FINS
 from vehicle import TARGET_FLIGHT_HEIGHT
 from vehicle import TARGET_FLIGHT_HEIGHT_TAU
 
@@ -144,7 +146,13 @@ class VehicleController:
             if self.controller.is_pressed(GE_THRUST):
                 thrust = 1
 
-            airbrake = self.controller.pressed_or_value(GE_AIRBRAKE)
+            airbrake = 0
+            if self.controller.is_pressed(GE_AIRBRAKE):
+                airbrake = 1
+
+            stabilizer_fins = 0
+            if self.controller.is_pressed(GE_STABILIZER_FINS):
+                stabilizer_fins = 1
 
         elif self.controller.method == InputDevice.DeviceClass.gamepad:
             if self.repulsors_active:
@@ -206,6 +214,14 @@ class VehicleController:
                 thrust = 1
 
             airbrake = self.controller.pressed_or_value(GE_AIRBRAKE)
+            if airbrake is True:
+                airbrake = 1
+            elif airbrake is False:
+                airbrake = 0
+
+            stabilizer_fins = 0
+            if self.controller.is_pressed(GE_STABILIZER_FINS):
+                stabilizer_fins = 1
 
         elif self.controller.method == InputDevice.DeviceClass.flight_stick:
             if self.repulsors_active:
@@ -246,6 +262,10 @@ class VehicleController:
                 thrust = 1.0
 
             airbrake = self.controller.pressed_or_value(GE_AIRBRAKE)
+
+            stabilizer_fins = 0
+            if self.controller.is_pressed(GE_STABILIZER_FINS):
+                stabilizer_fins = 1
 
         stabilizer_active = self.controller.is_pressed(GE_STABILIZE)
         if self.driving_mode == DM_CRUISE:
@@ -300,6 +320,7 @@ class VehicleController:
                 THRUST: thrust,
                 # Airbrake
                 AIRBRAKE: airbrake,
+                STABILIZER_FINS: stabilizer_fins,
             }
         )
 
