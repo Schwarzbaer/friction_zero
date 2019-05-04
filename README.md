@@ -14,7 +14,6 @@ TODO
     * Replace numpy.linalg.eig() with a PCA-based approach
   * Repulsors should act like dampening springs
   * (low importance) Make angular stabilization deactivateable
-  * (low importance) Stabilize to global orientation
 * (SMALL) Stabilizer: Code equals that of airbrake
 * Air drag and aerodynamics (https://www.gamedev.net/forums/topic/457235-flight-sim-physics/)
   * Drag scales with the square of the speed
