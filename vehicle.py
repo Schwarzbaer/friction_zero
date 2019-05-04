@@ -56,6 +56,11 @@ ACTIVE_STABILIZATION_IN_AIR = 'active_stabilization_in_air'
 LOCAL_UP = 'local_up'
 FLIGHT_HEIGHT = 'flight_height'
 CLIMB_SPEED = 'climb_speed'
+TARGET_FLIGHT_HEIGHT = 'target_flight_height'
+TARGET_FLIGHT_HEIGHT_TAU = 'target_flight_height_tau'
+HEIGHT_OVER_TARGET = 'height_over_target'
+HEIGHT_OVER_TARGET_PROJECTED = 'height_over_target_projected'
+REPULSOR_POWER_FRACTION_NEEDED = 'power_frac_needed'
 ACCELERATE = 'accelerate'
 TURN = 'turn'
 TURN_LEFT = 'turn_left'
@@ -314,7 +319,6 @@ class Vehicle:
             else:
                 climb_speed = 0
             self.last_flight_height = flight_height
-            #print("{:2.1f} {:2.3f}".format(flight_height, climb_speed))
         else:
             local_up = False
             self.last_flight_height = None
@@ -337,10 +341,6 @@ class Vehicle:
         }
 
     def ecu(self):
-        # Repulsors
-        repulsor_activation = [self.inputs[REPULSOR_ACTIVATION]
-                               for _ in self.repulsor_nodes]
-
         # Calculate effective repulsor motion blend values
         accelerate = self.inputs[ACCELERATE]
         turn = self.inputs[TURN]
@@ -371,6 +371,43 @@ class Vehicle:
                     strafe_angle + hover_angle
             repulsor_target_angles.append(angle)
 
+        # Repulsor activation
+        if self.sensors[LOCAL_UP]:
+            flight_height = self.sensors[FLIGHT_HEIGHT]
+            target_flight_height = self.inputs[TARGET_FLIGHT_HEIGHT]
+            gravity_z = self.centroid.get_relative_vector(
+                self.app.render,
+                self.app.environment.physics_world.get_gravity(),
+            ).get_z()
+            climb_rate = self.sensors[CLIMB_SPEED]
+            delta_height = flight_height - target_flight_height
+            projected_delta_height = delta_height + gravity_z + climb_rate
+            if projected_delta_height < 0:
+                # How high can we climb under 100% repulsor power?
+                repulsor_power = sum(
+                    node.get_python_tag(FORCE)
+                    for node in self.repulsor_nodes
+                )
+                max_climb = repulsor_power / self.inertia
+                # The fraction of power needed to achieve the desired climb
+                power_frac_needed = -projected_delta_height / max_climb
+                transfer_factors = [
+                    cos(2*pi * frac)
+                    for frac in self.sensors[REPULSOR_RAY_FRAC]
+                ]
+                repulsor_activation = [
+                    power_frac_needed / transfer_factor
+                    for transfer_factor in transfer_factors
+                ]
+            else:
+                repulsor_activation = [0.0 for node in self.repulsor_nodes]
+                power_frac_needed = 0.0
+        else:
+            repulsor_activation = [0.0 for node in self.repulsor_nodes]
+            delta_height = 0.0
+            projected_delta_height = 0.0
+            power_frac_needed = 0.0
+
         # Gyroscope:
         gyro_rotation = self.ecu_gyro_stabilization()
 
@@ -387,6 +424,9 @@ class Vehicle:
             GYRO_ROTATION: gyro_rotation,
             THRUSTER_ACTIVATION: thruster_activation,
             AIRBRAKE: airbrake,
+            HEIGHT_OVER_TARGET: delta_height,
+            HEIGHT_OVER_TARGET_PROJECTED: projected_delta_height,
+            REPULSOR_POWER_FRACTION_NEEDED: power_frac_needed,
         }
 
     def ecu_gyro_stabilization(self):
@@ -479,8 +519,12 @@ class Vehicle:
         for node, active, frac, activation, angle in repulsor_data:
             # Repulse in current orientation
             if active and activation:
+                if activation > 1.0:
+                    activation = 1.0
+                if activation < 0.0:
+                    activation = 0.0
                 # Repulsor power at zero distance
-                base_strength = node.get_python_tag(FORCE) * 3
+                base_strength = node.get_python_tag(FORCE)
                 # Effective fraction of repulsors force
                 transfer_frac = cos(0.5*pi * frac)
                 # Effective repulsor force

@@ -39,6 +39,8 @@ from vehicle import PASSIVE
 from vehicle import TARGET_ORIENTATION
 from vehicle import THRUST
 from vehicle import AIRBRAKE
+from vehicle import TARGET_FLIGHT_HEIGHT
+from vehicle import TARGET_FLIGHT_HEIGHT_TAU
 
 
 DM_CRUISE = 'dm_cruise'
@@ -263,6 +265,14 @@ class VehicleController:
                 active_stabilization_cutoff_angle = -1
                 active_stabilization_in_air = TO_HORIZON
 
+        # Repulsor damping
+        if self.driving_mode == DM_CRUISE:
+            target_flight_height = 2.5
+            target_flight_height_tau = 2.0
+        elif self.driving_mode == DM_STUNT:
+            target_flight_height = 1.0
+            target_flight_height_tau = 0.5
+
         self.vehicle.set_inputs(
             {
                 # Repulsors
@@ -271,6 +281,9 @@ class VehicleController:
                 TURN: repulsor_turn,
                 STRAFE: repulsor_strafe,
                 HOVER: repulsor_hover,
+                # Repulsor damping
+                TARGET_FLIGHT_HEIGHT: target_flight_height,
+                TARGET_FLIGHT_HEIGHT_TAU: target_flight_height_tau,
                 # Gyro
                 ACTIVE_STABILIZATION_ON_GROUND: active_stabilization_on_ground,
                 ACTIVE_STABILIZATION_CUTOFF_ANGLE: active_stabilization_cutoff_angle,

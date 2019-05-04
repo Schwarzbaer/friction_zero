@@ -1,4 +1,5 @@
 from panda3d.core import TextNode
+from panda3d.core import NodePath
 from panda3d.core import Vec3
 from panda3d.core import VBase3
 from panda3d.core import Point3
@@ -13,6 +14,9 @@ from vehicle import REPULSOR_RAY_FRAC
 from vehicle import LOCAL_UP
 from vehicle import FLIGHT_HEIGHT
 from vehicle import CLIMB_SPEED
+from vehicle import HEIGHT_OVER_TARGET
+from vehicle import HEIGHT_OVER_TARGET_PROJECTED
+from vehicle import REPULSOR_POWER_FRACTION_NEEDED
 
 from keybindings import GE_CAMERA_MODE
 
@@ -70,6 +74,34 @@ class CameraController(DirectObject):
             shadow = (0.2, 0.2, 0.2, 1.0),
             align = TextNode.ARight,
         )
+        self.repulsor_power_needed = OnscreenText(
+            text = '',
+            pos = (1.3, -0.9),
+            scale = 0.1,
+            fg = (0.0, 0.0, 0.0, 1.0),
+            shadow = (0.2, 0.2, 0.2, 1.0),
+            align = TextNode.ARight,
+        )
+
+        # Height meters and repulsor self-control
+        self.heights = base.render2d.attach_new_node("height meters")
+
+        self.height_null = base.loader.load_model('models/box')
+        self.height_null.set_scale(0.3, 0.3, 0.01)
+        self.height_null.set_pos(-0.15, -0.15, -0.005)
+        self.height_null.reparent_to(self.heights)
+
+        self.height_over_target = base.loader.load_model('models/smiley')
+        self.height_over_target.set_scale(0.01, 0.1, 0.1)
+        self.height_over_target.set_pos(-0.1, 0, 0)
+        self.height_over_target.reparent_to(self.heights)
+        self.height_over_target.hide()
+
+        self.height_over_target_projected = base.loader.load_model('models/smiley')
+        self.height_over_target_projected.set_scale(0.01, 0.1, 0.1)
+        self.height_over_target_projected.set_pos(-0.05, 0, 0)
+        self.height_over_target_projected.reparent_to(self.heights)
+        self.height_over_target_projected.hide()
 
         self.repulsor_hud = self.camera.attach_new_node('repulsor HUD')
         self.repulsor_hud.set_pos(-2, 10, 2)
@@ -175,6 +207,7 @@ class CameraController(DirectObject):
         # Flight height / climb rate
         flight_height = self.vehicle.sensors[FLIGHT_HEIGHT]
         climb_rate = self.vehicle.sensors[CLIMB_SPEED]
+        repulsor_power_needed = self.vehicle.commands[REPULSOR_POWER_FRACTION_NEEDED]
         if self.vehicle.sensors[LOCAL_UP]:
             self.flight_height['text'] = "{:3.1f} m to ground".format(
                 flight_height,
@@ -182,8 +215,28 @@ class CameraController(DirectObject):
             self.flight_height['fg'] = (0.2, 0.8, 0.2, 1.0)
             self.climb_rate['text'] = "{:3.1f} m/s climb".format(climb_rate)
             self.climb_rate['fg'] = (0.8, 0.8, 0.8, 1.0)
+            self.repulsor_power_needed['text'] = "{:3.1f}% repulsor power".format(repulsor_power_needed * 100)
+            if 0.0 < repulsor_power_needed < 1.0:
+                self.repulsor_power_needed['fg'] = (0.0, 1.0, 0.0, 1.0)
+            elif repulsor_power_needed <= 0.0:
+                self.repulsor_power_needed['fg'] = (0.3, 0.3, 0.3, 1.0)
+            else: # repulsor_power_needed >= 1.0
+                self.repulsor_power_needed['fg'] = (1.0, 0.0, 0.0, 1.0)
+            self.height_over_target.show()
+            self.height_over_target.set_z(
+                self.vehicle.commands[HEIGHT_OVER_TARGET] * 0.1,
+            )
+            self.height_over_target_projected.show()
+            self.height_over_target_projected.set_z(
+                self.vehicle.commands[HEIGHT_OVER_TARGET_PROJECTED] * 0.01,
+            )
+
         else:
             self.flight_height['text'] = "NO GROUND CONTACT"
             self.flight_height['fg'] = (0.8, 0.2, 0.2, 1.0)
             self.climb_rate['text'] = "--- m/s climb"
             self.climb_rate['fg'] = (0.3, 0.3, 0.3, 1.0)
+            self.repulsor_power_needed['text'] = "---% repulsor power"
+            self.repulsor_power_needed['fg'] = (0.3, 0.3, 0.3, 1.0)
+            self.height_over_target.hide()
+            self.height_over_target_projected.hide()
