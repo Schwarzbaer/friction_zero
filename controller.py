@@ -11,6 +11,7 @@ from keybindings import GE_STRAFE
 from keybindings import GE_STRAFE_LEFT
 from keybindings import GE_STRAFE_RIGHT
 from keybindings import GE_HOVER
+from keybindings import GE_FULL_REPULSORS
 from keybindings import GE_SWITCH_DRIVING_MODE
 from keybindings import GE_STABILIZE
 from keybindings import GE_GYRO_YAW
@@ -30,6 +31,7 @@ from vehicle import ACCELERATE
 from vehicle import TURN
 from vehicle import STRAFE
 from vehicle import HOVER
+from vehicle import FULL_REPULSORS
 from vehicle import ACTIVE_STABILIZATION_ON_GROUND
 from vehicle import ACTIVE_STABILIZATION_CUTOFF_ANGLE
 from vehicle import ACTIVE_STABILIZATION_IN_AIR
@@ -273,6 +275,10 @@ class VehicleController:
             target_flight_height = 1.0
             target_flight_height_tau = 0.5
 
+        full_repulsors = False
+        if self.controller.is_pressed(GE_FULL_REPULSORS):
+            full_repulsors = True
+
         self.vehicle.set_inputs(
             {
                 # Repulsors
@@ -281,6 +287,7 @@ class VehicleController:
                 TURN: repulsor_turn,
                 STRAFE: repulsor_strafe,
                 HOVER: repulsor_hover,
+                FULL_REPULSORS: full_repulsors,
                 # Repulsor damping
                 TARGET_FLIGHT_HEIGHT: target_flight_height,
                 TARGET_FLIGHT_HEIGHT_TAU: target_flight_height_tau,

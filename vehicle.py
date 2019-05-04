@@ -67,6 +67,7 @@ TURN_LEFT = 'turn_left'
 TURN_RIGHT = 'turn_right'
 STRAFE = 'strafe'
 HOVER = 'hover'
+FULL_REPULSORS = 'full_repulsors'
 X = '_x'
 Y = '_y'
 MASS = 'mass'
@@ -395,10 +396,16 @@ class Vehicle:
                     cos(2*pi * frac)
                     for frac in self.sensors[REPULSOR_RAY_FRAC]
                 ]
-                repulsor_activation = [
-                    power_frac_needed / transfer_factor
-                    for transfer_factor in transfer_factors
-                ]
+                if not self.inputs[FULL_REPULSORS]:
+                    repulsor_activation = [
+                        power_frac_needed / transfer_factor
+                        for transfer_factor in transfer_factors
+                    ]
+                else:
+                    repulsor_activation = [
+                        1.0
+                        for transfer_factor in transfer_factors
+                    ]
             else:
                 repulsor_activation = [0.0 for node in self.repulsor_nodes]
                 power_frac_needed = 0.0
