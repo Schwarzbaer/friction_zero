@@ -13,6 +13,7 @@ from vehicle import REPULSOR_RAY_DIR
 from vehicle import REPULSOR_RAY_FRAC
 from vehicle import LOCAL_UP
 from vehicle import FLIGHT_HEIGHT
+from vehicle import TARGET_FLIGHT_HEIGHT
 from vehicle import CLIMB_SPEED
 from vehicle import HEIGHT_OVER_TARGET
 from vehicle import HEIGHT_OVER_TARGET_PROJECTED
@@ -60,15 +61,23 @@ class CameraController(DirectObject):
 
         self.flight_height = OnscreenText(
             text = '',
-            pos = (1.3, -0.7),
+            pos = (1.3, -0.65),
             scale = 0.1,
             fg = (0.0, 0.0, 0.0, 1.0),
             shadow = (0.2, 0.2, 0.2, 1.0),
             align = TextNode.ARight,
         )
+        self.target_flight_height = OnscreenText(
+            text = '',
+            pos = (1.3, -0.75),
+            scale = 0.1,
+            fg = (0.2, 0.8, 0.2, 1.0),
+            shadow = (0.2, 0.2, 0.2, 1.0),
+            align = TextNode.ARight,
+        )
         self.climb_rate = OnscreenText(
             text = '',
-            pos = (1.3, -0.8),
+            pos = (1.3, -0.85),
             scale = 0.1,
             fg = (0.0, 0.0, 0.0, 1.0),
             shadow = (0.2, 0.2, 0.2, 1.0),
@@ -76,7 +85,7 @@ class CameraController(DirectObject):
         )
         self.repulsor_power_needed = OnscreenText(
             text = '',
-            pos = (1.3, -0.9),
+            pos = (1.3, -0.95),
             scale = 0.1,
             fg = (0.0, 0.0, 0.0, 1.0),
             shadow = (0.2, 0.2, 0.2, 1.0),
@@ -85,6 +94,7 @@ class CameraController(DirectObject):
 
         # Height meters and repulsor self-control
         self.heights = base.render2d.attach_new_node("height meters")
+        self.heights.set_pos(-0.8, 0.0, -0.6)
 
         self.height_null = base.loader.load_model('models/box')
         self.height_null.set_scale(0.3, 0.3, 0.01)
@@ -205,22 +215,26 @@ class CameraController(DirectObject):
                 on_model.hide()
 
         # Flight height / climb rate
+        target_flight_height = self.vehicle.inputs[TARGET_FLIGHT_HEIGHT]
+        self.target_flight_height['text'] = "{:2.1f}m target height".format(
+            target_flight_height,
+        )
         flight_height = self.vehicle.sensors[FLIGHT_HEIGHT]
         climb_rate = self.vehicle.sensors[CLIMB_SPEED]
         repulsor_power_needed = self.vehicle.commands[REPULSOR_POWER_FRACTION_NEEDED]
         if self.vehicle.sensors[LOCAL_UP]:
-            self.flight_height['text'] = "{:3.1f} m to ground".format(
+            self.flight_height['text'] = "{:3.1f}m to ground".format(
                 flight_height,
             )
             self.flight_height['fg'] = (0.2, 0.8, 0.2, 1.0)
-            self.climb_rate['text'] = "{:3.1f} m/s climb".format(climb_rate)
+            self.climb_rate['text'] = "{:3.1f}m/s climb".format(climb_rate)
             self.climb_rate['fg'] = (0.8, 0.8, 0.8, 1.0)
             self.repulsor_power_needed['text'] = "{:3.1f}% repulsor power".format(repulsor_power_needed * 100)
-            if 0.0 < repulsor_power_needed < 1.0:
+            if 0.0 < repulsor_power_needed <= 1.0:
                 self.repulsor_power_needed['fg'] = (0.0, 1.0, 0.0, 1.0)
             elif repulsor_power_needed <= 0.0:
                 self.repulsor_power_needed['fg'] = (0.3, 0.3, 0.3, 1.0)
-            else: # repulsor_power_needed >= 1.0
+            else: # repulsor_power_needed > 1.0
                 self.repulsor_power_needed['fg'] = (1.0, 0.0, 0.0, 1.0)
             self.height_over_target.show()
             self.height_over_target.set_z(
