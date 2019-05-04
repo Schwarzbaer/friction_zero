@@ -87,6 +87,22 @@ class Vehicle:
         self.app = app
 
         self.model = Actor(model_file)
+        airbrake_joints = [joint.name
+                           for joint in self.model.getJoints()
+                           if joint.name.startswith('airbreak')
+        ]
+        print(airbrake_joints)
+        self.model.makeSubpart(AIRBRAKE, airbrake_joints)
+        stabilizer_joints = [joint.name
+                             for joint in self.model.getJoints()
+                             if joint.name.startswith('stabilizer')
+        ]
+        print(stabilizer_joints)
+        self.model.makeSubpart(STABILIZER_FINS, stabilizer_joints)
+        #self.model.enableBlend()
+        #self.model.setControlEffect(AIRBRAKE, 1)
+        #self.model.setControlEffect(STABILIZER_FINS, 1)
+        # self.model.hide()
         puppet = self.app.loader.load_model(model_file)
         puppet.find("**/armature").hide()
         puppet.reparentTo(self.model)
@@ -660,7 +676,7 @@ class Vehicle:
             self.airbrake_state = 1.0
         if self.airbrake_state < 0.0:
             self.airbrake_state = 0.0
-        self.model.pose(AIRBRAKE, self.airbrake_state)
+        self.model.pose(AIRBRAKE, self.airbrake_state, partName=AIRBRAKE)
         # FIXME: This will be replaced by air drag.
         self.physics_node.set_linear_damping(self.airbrake_state * self.airbrake_factor)
 
@@ -678,7 +694,11 @@ class Vehicle:
             self.stabilizer_fins_state = 1.0
         if self.stabilizer_fins_state < 0.0:
             self.stabilizer_fins_state = 0.0
-        self.model.pose(STABILIZER_FINS, self.stabilizer_fins_state)
+        self.model.pose(
+            STABILIZER_FINS,
+            self.stabilizer_fins_state,
+            partName=STABILIZER_FINS,
+        )
         # FIXME: Implement stabilizing effect
 
     def shock(self, x=0, y=0, z=0):
