@@ -269,8 +269,8 @@ class VehicleController:
 
         # Repulsor damping
         if self.driving_mode == DM_CRUISE:
-            target_flight_height = 1.5
-            target_flight_height_tau = 0.5
+            target_flight_height = 3.5
+            target_flight_height_tau = 0.15
         elif self.driving_mode == DM_STUNT:
             target_flight_height = 3.0
             target_flight_height_tau = 0.1
