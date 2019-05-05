@@ -25,6 +25,12 @@ TODO
     at low repulsor powers, even though sufficient capacity is present? It can
     be mitigated by upping the repulsor power, but that leads to absurd jumping
     potential.
+    * At an activation_distance of 8m and a force of 10kN per repulsor, a 1t
+      Magnesium jumps into the air at 30km/h, reaching maybe 30-50 meters of
+      height from an on-the-ground start.
+    * A target flight height of 6m leads to an actual flight height of 4m. At
+      4m, acceleration is near optimum, activation still staying below 100%
+      constantly. One step higher, it going over 100% intermittendly is normal.
   * (low importance) Make angular stabilization deactivateable
 * File for map / vehicle values: TOML? YAML?
   * Write file from model data
@@ -39,6 +45,9 @@ TODO
   * Check which gate has been passed this frame
   * Race rules accounting
   * Timekeeping
+* Timing bug: Physics should happen after rendering, camera adjustments before
+  it. Currently the most visible effect is that last frame's contact points are
+  shown.
 * Sound
   * Repulsor activity
   * Background music
