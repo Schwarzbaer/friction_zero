@@ -26,8 +26,8 @@ gamepad_turn                     left_x
 gamepad_strafe                   lstick
 gamepad_hover                    none
 gamepad_switch_driving_mode      face_a
-gamepad_target_height_up         dpad_up
-gamepad_target_height_down       dpad_down
+gamepad_target_height_up         face_y
+gamepad_target_height_down       face_x
 gamepad_stabilize                rstick
 gamepad_gyro_yaw                 none
 gamepad_gyro_pitch               right_y
@@ -36,8 +36,8 @@ gamepad_full_repulsors           lshoulder
 gamepad_thrust                   ltrigger
 gamepad_stabilizers              rshoulder
 gamepad_airbrake                 rtrigger
-gamepad_camera_mode              face_y
-gamepad_next_vehicle             face_x
+gamepad_camera_mode              dpad_down
+gamepad_next_vehicle             dpad_up
 
 flight_stick_toggle_repulsor     joystick2
 flight_stick_stabilize           joystick4
