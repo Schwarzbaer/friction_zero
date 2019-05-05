@@ -9,12 +9,15 @@ TODO
 
 ### Code
 
+* Animations
+  * See branch magnesium-animation-bug. Using subParts in an Actor causes an
+    exception when .pose is used, as Actor seems to look for the file with the
+    animation, despite it being present in the model file.
+* Controls: rstick should disable to-horizon stabilization.
 * ECU
   * Gyroscopic stabilization
     * Replace numpy.linalg.eig() with a PCA-based approach
-  * Repulsors should act like dampening springs
   * (low importance) Make angular stabilization deactivateable
-* (SMALL) Stabilizer: Code equals that of airbrake
 * Air drag and aerodynamics (https://www.gamedev.net/forums/topic/457235-flight-sim-physics/)
   * Drag scales with the square of the speed
   * Artist-defined air density
