@@ -89,13 +89,13 @@ class Vehicle:
         self.model = Actor(model_file)
         airbrake_joints = [joint.name
                            for joint in self.model.getJoints()
-                           if joint.name.startswith('airbreak')
+                           if joint.name.startswith(AIRBRAKE)
         ]
         print(airbrake_joints)
         self.model.makeSubpart(AIRBRAKE, airbrake_joints)
         stabilizer_joints = [joint.name
                              for joint in self.model.getJoints()
-                             if joint.name.startswith('stabilizer')
+                             if joint.name.startswith(STABILIZER_FINS)
         ]
         print(stabilizer_joints)
         self.model.makeSubpart(STABILIZER_FINS, stabilizer_joints)
