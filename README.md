@@ -66,19 +66,11 @@ TODO
 ### Art
 
 * Magnesium
-  * Up the repulsor forces again by 5 (should be to 90,000). This makes the
-    flight height stabilization work best. It also introduces strong jumping
-    capabilities, which I don't know yet how to feel about.
-  * Increase the repulsor's range of movement to 60 degree.
-  * Change activation distances to 8.
-  * Change the airbrake animation to panels flipping up on their backside
-    hinges; see https://i.imgur.com/J8q2RFR.png
   * Add one or more thrusters with an animation
 * Lab map
   * Add a tube section into the large looping, so that infinite loopings become
     possible.
 * Design two other vehicles
-* Tricks map: Like the lab map, but prettier. A skatepark for hovercars.
 * Driving school: A tutorial map.
 * Sounds:
   * engine (playbackrate to speed?)
