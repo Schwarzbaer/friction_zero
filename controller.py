@@ -57,9 +57,9 @@ class VehicleController:
         self.app = app
         self.vehicle = vehicle
         self.controller = controller
-        self.repulsors_active = False
+        self.repulsors_active = True
         self.driving_mode = DM_CRUISE
-        self.target_height = 3.5
+        self.target_height = 0.5
         self.app.accept(GE_NEXT_VEHICLE, self.next_vehicle)
         self.app.accept(GE_TOGGLE_REPULSOR, self.toggle_repulsors)
         self.app.accept(GE_SWITCH_DRIVING_MODE, self.switch_driving_mode)
@@ -313,7 +313,7 @@ class VehicleController:
 
         # Repulsor damping
         if self.driving_mode == DM_CRUISE:
-            target_flight_height_tau = 0.2
+            target_flight_height_tau = 1/8
         elif self.driving_mode == DM_STUNT:
             target_flight_height_tau = 0.1
 
