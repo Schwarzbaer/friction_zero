@@ -13,7 +13,9 @@ TODO
   * See branch magnesium-animation-bug. Using subParts in an Actor causes an
     exception when .pose is used, as Actor seems to look for the file with the
     animation, despite it being present in the model file.
-* Controls: rstick should disable to-horizon stabilization.
+* Controls
+  * rstick should disable to-horizon stabilization.
+  * target flight height change should be on the four buttons.
 * ECU
   * Gyroscopic stabilization
     * Replace numpy.linalg.eig() with a PCA-based approach
@@ -61,6 +63,7 @@ TODO
     flight height stabilization work best. It also introduces strong jumping
     capabilities, which I don't know yet how to feel about.
   * Increase the repulsor's range of movement to 60 degree.
+  * Change activation distances to 8.
   * Change the airbrake animation to panels flipping up on their backside
     hinges; see https://i.imgur.com/J8q2RFR.png
   * Add one or more thrusters with an animation
