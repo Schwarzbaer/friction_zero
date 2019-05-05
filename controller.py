@@ -11,6 +11,7 @@ from keybindings import GE_STRAFE
 from keybindings import GE_STRAFE_LEFT
 from keybindings import GE_STRAFE_RIGHT
 from keybindings import GE_HOVER
+from keybindings import GE_FULL_REPULSORS
 from keybindings import GE_SWITCH_DRIVING_MODE
 from keybindings import GE_STABILIZE
 from keybindings import GE_GYRO_YAW
@@ -24,12 +25,14 @@ from keybindings import GE_THRUST
 from keybindings import GE_AIRBRAKE
 from keybindings import GE_CAMERA_MODE
 from keybindings import GE_NEXT_VEHICLE
-
+from keybindings import GE_TARGET_HEIGHT_UP
+from keybindings import GE_TARGET_HEIGHT_DOWN
 from vehicle import REPULSOR_ACTIVATION
 from vehicle import ACCELERATE
 from vehicle import TURN
 from vehicle import STRAFE
 from vehicle import HOVER
+from vehicle import FULL_REPULSORS
 from vehicle import ACTIVE_STABILIZATION_ON_GROUND
 from vehicle import ACTIVE_STABILIZATION_CUTOFF_ANGLE
 from vehicle import ACTIVE_STABILIZATION_IN_AIR
@@ -39,6 +42,8 @@ from vehicle import PASSIVE
 from vehicle import TARGET_ORIENTATION
 from vehicle import THRUST
 from vehicle import AIRBRAKE
+from vehicle import TARGET_FLIGHT_HEIGHT
+from vehicle import TARGET_FLIGHT_HEIGHT_TAU
 
 
 DM_CRUISE = 'dm_cruise'
@@ -52,9 +57,12 @@ class VehicleController:
         self.controller = controller
         self.repulsors_active = False
         self.driving_mode = DM_CRUISE
+        self.target_height = 3.5
         self.app.accept(GE_NEXT_VEHICLE, self.next_vehicle)
         self.app.accept(GE_TOGGLE_REPULSOR, self.toggle_repulsors)
         self.app.accept(GE_SWITCH_DRIVING_MODE, self.switch_driving_mode)
+        self.app.accept(GE_TARGET_HEIGHT_UP, self.change_target_height, [+0.5])
+        self.app.accept(GE_TARGET_HEIGHT_DOWN, self.change_target_height, [-0.5])
 
         # self.app.accept('x', self.shock, [10000, 0, 0])
         # self.app.accept('y', self.shock, [0, 10000, 0])
@@ -62,6 +70,26 @@ class VehicleController:
         # self.app.accept('shift-x', self.shock, [-10000, 0, 0])
         # self.app.accept('shift-y', self.shock, [0, -10000, 0])
         # self.app.accept('shift-z', self.shock, [0, 0, -10000])
+
+    def next_vehicle(self):
+        self.app.next_vehicle()
+
+    def set_vehicle(self, vehicle):
+        self.vehicle = vehicle
+
+    def toggle_repulsors(self):
+        self.repulsors_active = not self.repulsors_active
+
+    def switch_driving_mode(self):
+        if self.driving_mode == DM_CRUISE:
+            self.driving_mode = DM_STUNT
+        elif self.driving_mode == DM_STUNT:
+            self.driving_mode = DM_CRUISE
+
+    def change_target_height(self, delta):
+        self.target_height += delta
+        if self.target_height < 0.5:
+            self.target_height = 0.5
 
     def gather_inputs(self):
         if self.controller.method == InputDevice.DeviceClass.keyboard:
@@ -263,6 +291,16 @@ class VehicleController:
                 active_stabilization_cutoff_angle = -1
                 active_stabilization_in_air = TO_HORIZON
 
+        # Repulsor damping
+        if self.driving_mode == DM_CRUISE:
+            target_flight_height_tau = 0.2
+        elif self.driving_mode == DM_STUNT:
+            target_flight_height_tau = 0.1
+
+        full_repulsors = False
+        if self.controller.is_pressed(GE_FULL_REPULSORS):
+            full_repulsors = True
+
         self.vehicle.set_inputs(
             {
                 # Repulsors
@@ -271,6 +309,10 @@ class VehicleController:
                 TURN: repulsor_turn,
                 STRAFE: repulsor_strafe,
                 HOVER: repulsor_hover,
+                FULL_REPULSORS: full_repulsors,
+                # Repulsor damping
+                TARGET_FLIGHT_HEIGHT: self.target_height,
+                TARGET_FLIGHT_HEIGHT_TAU: target_flight_height_tau,
                 # Gyro
                 ACTIVE_STABILIZATION_ON_GROUND: active_stabilization_on_ground,
                 ACTIVE_STABILIZATION_CUTOFF_ANGLE: active_stabilization_cutoff_angle,
@@ -282,21 +324,5 @@ class VehicleController:
                 AIRBRAKE: airbrake,
             }
         )
-
-    def next_vehicle(self):
-        self.app.next_vehicle()
-
-    def set_vehicle(self, vehicle):
-        self.vehicle = vehicle
-
-    def toggle_repulsors(self):
-        self.repulsors_active = not self.repulsors_active
-
-    def switch_driving_mode(self):
-        if self.driving_mode == DM_CRUISE:
-            self.driving_mode = DM_STUNT
-        elif self.driving_mode == DM_STUNT:
-            self.driving_mode = DM_CRUISE
-
     def shock(self, x=0, y=0, z=0):
         self.vehicle.shock(x, y, z)
