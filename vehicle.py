@@ -91,18 +91,15 @@ class Vehicle:
                            for joint in self.model.getJoints()
                            if joint.name.startswith(AIRBRAKE)
         ]
-        print(airbrake_joints)
-        self.model.makeSubpart(AIRBRAKE, airbrake_joints)
-        stabilizer_joints = [joint.name
-                             for joint in self.model.getJoints()
-                             if joint.name.startswith(STABILIZER_FINS)
-        ]
-        print(stabilizer_joints)
-        self.model.makeSubpart(STABILIZER_FINS, stabilizer_joints)
-        #self.model.enableBlend()
-        #self.model.setControlEffect(AIRBRAKE, 1)
-        #self.model.setControlEffect(STABILIZER_FINS, 1)
-        # self.model.hide()
+        # self.model.makeSubpart(AIRBRAKE, airbrake_joints)
+        # stabilizer_joints = [joint.name
+        #                      for joint in self.model.getJoints()
+        #                      if joint.name.startswith(STABILIZER_FINS)
+        # ]
+        # self.model.makeSubpart(STABILIZER_FINS, stabilizer_joints)
+        self.model.enableBlend()
+        self.model.setControlEffect(AIRBRAKE, 1)
+        self.model.setControlEffect(STABILIZER_FINS, 1)
         puppet = self.app.loader.load_model(model_file)
         puppet.find("**/armature").hide()
         puppet.reparentTo(self.model)
@@ -675,7 +672,8 @@ class Vehicle:
             self.airbrake_state = 1.0
         if self.airbrake_state < 0.0:
             self.airbrake_state = 0.0
-        self.model.pose(AIRBRAKE, self.airbrake_state, partName=AIRBRAKE)
+        # self.model.pose(AIRBRAKE, self.airbrake_state, partName=AIRBRAKE)
+        self.model.pose(AIRBRAKE, self.airbrake_state)
         # FIXME: This will be replaced by air drag.
         self.physics_node.set_linear_damping(self.airbrake_state * self.airbrake_factor)
 
@@ -696,7 +694,7 @@ class Vehicle:
         self.model.pose(
             STABILIZER_FINS,
             self.stabilizer_fins_state,
-            partName=STABILIZER_FINS,
+            # partName=STABILIZER_FINS,
         )
         # FIXME: Implement stabilizing effect
 
