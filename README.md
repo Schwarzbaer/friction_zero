@@ -17,12 +17,14 @@ TODO
     * Probably bugfix Actor
 * Controls
   * rstick should disable to-horizon stabilization.
-  * target flight height change should be on the four buttons.
+  * Space mouse bindings
 * ECU
   * Gyroscopic stabilization
     * Replace numpy.linalg.eig() with a PCA-based approach
   * Repulsor damping: Why is there a droop in height relative to target height
-    at low repulsor powers, even though sufficient capacity is present?
+    at low repulsor powers, even though sufficient capacity is present? It can
+    be mitigated by upping the repulsor power, but that leads to absurd jumping
+    potential.
   * (low importance) Make angular stabilization deactivateable
 * File for map / vehicle values: TOML? YAML?
   * Write file from model data
@@ -31,6 +33,8 @@ TODO
   * Drag scales with the square of the speed
   * Artist-defined air density
   * Air brakes
+  * Sail effect (downforce, vector turning)
+  * Stabilizers effect (increasing sail effect)
 * Course gates
   * Check which gate has been passed this frame
   * Race rules accounting
@@ -49,6 +53,7 @@ TODO
   * Fuel
   * Overheating
 * Camera controls and automatics
+  * (SMALL) HUD element for camera mode
   * Camera distance and FOV should be related to vehicle's linear speed.
   * Camera should respect the ground / objects.
   * Cinematics

@@ -94,8 +94,8 @@ gamepad_bindings = {
     GE_STRAFE: ConfigVariableString('gamepad_strafe', 'lstick'),
     GE_HOVER: ConfigVariableString('gamepad_hover', 'none'),
     GE_SWITCH_DRIVING_MODE: ConfigVariableString('gamepad_switch_driving_mode', 'face_a'),
-    GE_TARGET_HEIGHT_UP: ConfigVariableString('gamepad_target_height_up', 'dpad_up'),
-    GE_TARGET_HEIGHT_DOWN: ConfigVariableString('gamepad_target_height_down', 'dpad_down'),
+    GE_TARGET_HEIGHT_UP: ConfigVariableString('gamepad_target_height_up', 'face_y'),
+    GE_TARGET_HEIGHT_DOWN: ConfigVariableString('gamepad_target_height_down', 'face_x'),
     GE_STABILIZE: ConfigVariableString('gamepad_stabilize', 'rstick'),
     GE_GYRO_YAW: ConfigVariableString('gamepad_gyro_yaw', 'none'),
     GE_GYRO_PITCH: ConfigVariableString('gamepad_gyro_pitch', 'right_y'),
@@ -104,8 +104,8 @@ gamepad_bindings = {
     GE_THRUST: ConfigVariableString('gamepad_thrust', 'ltrigger'),
     GE_STABILIZER_FINS: ConfigVariableString('gamepad_stabilizers', 'rshoulder'),
     GE_AIRBRAKE: ConfigVariableString('gamepad_airbrake', 'rtrigger'),
-    GE_CAMERA_MODE: ConfigVariableString('gamepad_camera_mode', 'face_y'),
-    GE_NEXT_VEHICLE: ConfigVariableString('gamepad_next_vehicle', 'face_x'),
+    GE_CAMERA_MODE: ConfigVariableString('gamepad_camera_mode', 'dpad_down'),
+    GE_NEXT_VEHICLE: ConfigVariableString('gamepad_next_vehicle', 'dpad_up'),
 }
 
 
