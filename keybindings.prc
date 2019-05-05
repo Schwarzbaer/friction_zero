@@ -8,6 +8,8 @@ keyboard_strafe_right            none
 keyboard_hover                   none
 keyboard_full_repulsors          e
 keyboard_switch_driving_mode     q
+keyboard_target_height_up        none
+keyboard_target_height_down      none
 keyboard_stabilize               lshift
 keyboard_gyro_pitch_down         arrow_up
 keyboard_gyro_pitch_up           arrow_down
@@ -24,6 +26,8 @@ gamepad_turn                     left_x
 gamepad_strafe                   lstick
 gamepad_hover                    none
 gamepad_switch_driving_mode      face_a
+gamepad_target_height_up         dpad_up
+gamepad_target_height_down       dpad_down
 gamepad_stabilize                rstick
 gamepad_gyro_yaw                 none
 gamepad_gyro_pitch               right_y
@@ -45,5 +49,7 @@ flight_stick_gyro_pitch_down     hat_up
 flight_stick_gyro_roll_left      hat_left
 flight_stick_gyro_roll_right     hat_right
 flight_stick_switch_driving_mode joystick3
+flight_stick_target_height_up    none
+flight_stick_target_height_down  none
 flight_stick_thrust              trigger
 flight_stick_airbrake            joystick7

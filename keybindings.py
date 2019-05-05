@@ -46,6 +46,8 @@ GE_STRAFE = 'strafe'
 GE_STRAFE_LEFT = 'strafe_left'
 GE_STRAFE_RIGHT = 'strafe_right'
 GE_HOVER = 'hover'
+GE_TARGET_HEIGHT_UP = 'target_height_up'
+GE_TARGET_HEIGHT_DOWN = 'target_height_down'
 GE_STABILIZE = 'stabilize'
 GE_GYRO_YAW = 'gyro_yaw'
 GE_GYRO_PITCH = 'gyro_pitch'
@@ -70,6 +72,8 @@ keyboard_bindings = {
     GE_HOVER: ConfigVariableString('keyboard_hover', 'none'),
     GE_FULL_REPULSORS: ConfigVariableString('keyboard_full_repulsors', 'e'),
     GE_SWITCH_DRIVING_MODE: ConfigVariableString('keyboard_switch_driving_mode', 'q'),
+    GE_TARGET_HEIGHT_UP: ConfigVariableString('keyboard_target_height_up', 'none'),
+    GE_TARGET_HEIGHT_DOWN: ConfigVariableString('keyboard_target_height_down', 'none'),
     GE_STABILIZE: ConfigVariableString('keyboard_stabilize', 'lshift'),
     GE_GYRO_PITCH_DOWN: ConfigVariableString('keyboard_gyro_pitch_down', 'arrow_up'),
     GE_GYRO_PITCH_UP: ConfigVariableString('keyboard_gyro_pitch_up', 'arrow_down'),
@@ -89,6 +93,8 @@ gamepad_bindings = {
     GE_STRAFE: ConfigVariableString('gamepad_strafe', 'lstick'),
     GE_HOVER: ConfigVariableString('gamepad_hover', 'none'),
     GE_SWITCH_DRIVING_MODE: ConfigVariableString('gamepad_switch_driving_mode', 'face_a'),
+    GE_TARGET_HEIGHT_UP: ConfigVariableString('gamepad_target_height_up', 'dpad_up'),
+    GE_TARGET_HEIGHT_DOWN: ConfigVariableString('gamepad_target_height_down', 'dpad_down'),
     GE_STABILIZE: ConfigVariableString('gamepad_stabilize', 'rstick'),
     GE_GYRO_YAW: ConfigVariableString('gamepad_gyro_yaw', 'none'),
     GE_GYRO_PITCH: ConfigVariableString('gamepad_gyro_pitch', 'right_y'),
@@ -113,6 +119,8 @@ flight_stick_bindings = {
     GE_GYRO_ROLL_LEFT: ConfigVariableString('flight_stick_gyro_roll_left', 'hat_left'),
     GE_GYRO_ROLL_RIGHT: ConfigVariableString('flight_stick_gyro_roll_right', 'hat_right'),
     GE_SWITCH_DRIVING_MODE: ConfigVariableString('flight_stick_switch_driving_mode', 'joystick3'),
+    GE_TARGET_HEIGHT_UP: ConfigVariableString('flight_stick_target_height_up', 'none'),
+    GE_TARGET_HEIGHT_DOWN: ConfigVariableString('flight_stick_target_height_down', 'none'),
     GE_THRUST: ConfigVariableString('flight_stick_thrust', 'trigger'),
     GE_AIRBRAKE: ConfigVariableString('flight_stick_airbrake', 'joystick7'),
 }

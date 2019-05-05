@@ -25,7 +25,8 @@ from keybindings import GE_THRUST
 from keybindings import GE_AIRBRAKE
 from keybindings import GE_CAMERA_MODE
 from keybindings import GE_NEXT_VEHICLE
-
+from keybindings import GE_TARGET_HEIGHT_UP
+from keybindings import GE_TARGET_HEIGHT_DOWN
 from vehicle import REPULSOR_ACTIVATION
 from vehicle import ACCELERATE
 from vehicle import TURN
@@ -56,9 +57,12 @@ class VehicleController:
         self.controller = controller
         self.repulsors_active = False
         self.driving_mode = DM_CRUISE
+        self.target_height = 3.5
         self.app.accept(GE_NEXT_VEHICLE, self.next_vehicle)
         self.app.accept(GE_TOGGLE_REPULSOR, self.toggle_repulsors)
         self.app.accept(GE_SWITCH_DRIVING_MODE, self.switch_driving_mode)
+        self.app.accept(GE_TARGET_HEIGHT_UP, self.change_target_height, [+0.5])
+        self.app.accept(GE_TARGET_HEIGHT_DOWN, self.change_target_height, [-0.5])
 
         # self.app.accept('x', self.shock, [10000, 0, 0])
         # self.app.accept('y', self.shock, [0, 10000, 0])
@@ -66,6 +70,26 @@ class VehicleController:
         # self.app.accept('shift-x', self.shock, [-10000, 0, 0])
         # self.app.accept('shift-y', self.shock, [0, -10000, 0])
         # self.app.accept('shift-z', self.shock, [0, 0, -10000])
+
+    def next_vehicle(self):
+        self.app.next_vehicle()
+
+    def set_vehicle(self, vehicle):
+        self.vehicle = vehicle
+
+    def toggle_repulsors(self):
+        self.repulsors_active = not self.repulsors_active
+
+    def switch_driving_mode(self):
+        if self.driving_mode == DM_CRUISE:
+            self.driving_mode = DM_STUNT
+        elif self.driving_mode == DM_STUNT:
+            self.driving_mode = DM_CRUISE
+
+    def change_target_height(self, delta):
+        self.target_height += delta
+        if self.target_height < 0.5:
+            self.target_height = 0.5
 
     def gather_inputs(self):
         if self.controller.method == InputDevice.DeviceClass.keyboard:
@@ -269,10 +293,8 @@ class VehicleController:
 
         # Repulsor damping
         if self.driving_mode == DM_CRUISE:
-            target_flight_height = 3.5
-            target_flight_height_tau = 0.15
+            target_flight_height_tau = 0.2
         elif self.driving_mode == DM_STUNT:
-            target_flight_height = 3.0
             target_flight_height_tau = 0.1
 
         full_repulsors = False
@@ -289,7 +311,7 @@ class VehicleController:
                 HOVER: repulsor_hover,
                 FULL_REPULSORS: full_repulsors,
                 # Repulsor damping
-                TARGET_FLIGHT_HEIGHT: target_flight_height,
+                TARGET_FLIGHT_HEIGHT: self.target_height,
                 TARGET_FLIGHT_HEIGHT_TAU: target_flight_height_tau,
                 # Gyro
                 ACTIVE_STABILIZATION_ON_GROUND: active_stabilization_on_ground,
@@ -302,21 +324,5 @@ class VehicleController:
                 AIRBRAKE: airbrake,
             }
         )
-
-    def next_vehicle(self):
-        self.app.next_vehicle()
-
-    def set_vehicle(self, vehicle):
-        self.vehicle = vehicle
-
-    def toggle_repulsors(self):
-        self.repulsors_active = not self.repulsors_active
-
-    def switch_driving_mode(self):
-        if self.driving_mode == DM_CRUISE:
-            self.driving_mode = DM_STUNT
-        elif self.driving_mode == DM_STUNT:
-            self.driving_mode = DM_CRUISE
-
     def shock(self, x=0, y=0, z=0):
         self.vehicle.shock(x, y, z)
