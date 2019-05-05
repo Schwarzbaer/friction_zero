@@ -13,13 +13,20 @@ TODO
   * See branch magnesium-animation-bug. Using subParts in an Actor causes an
     exception when .pose is used, as Actor seems to look for the file with the
     animation, despite it being present in the model file.
+    * Write minimalized example
+    * Probably bugfix Actor
 * Controls
   * rstick should disable to-horizon stabilization.
   * target flight height change should be on the four buttons.
 * ECU
   * Gyroscopic stabilization
     * Replace numpy.linalg.eig() with a PCA-based approach
+  * Repulsor damping: Why is there a droop in height relative to target height
+    at low repulsor powers, even though sufficient capacity is present?
   * (low importance) Make angular stabilization deactivateable
+* File for map / vehicle values: TOML? YAML?
+  * Write file from model data
+  * Read file during construction
 * Air drag and aerodynamics (https://www.gamedev.net/forums/topic/457235-flight-sim-physics/)
   * Drag scales with the square of the speed
   * Artist-defined air density
@@ -86,9 +93,6 @@ TODO
 
 * Normalize pman build / asset workflow
 * Map / vehicle verification
-* File for map / vehicle values: TOML? YAML?
-  * Write file from model data
-  * Read file during construction
 
 
 ### Other
