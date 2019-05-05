@@ -9,12 +9,24 @@ TODO
 
 ### Code
 
+* Animations
+  * See branch magnesium-animation-bug. Using subParts in an Actor causes an
+    exception when .pose is used, as Actor seems to look for the file with the
+    animation, despite it being present in the model file.
+    * Write minimalized example
+    * Probably bugfix Actor
+* Controls
+  * rstick should disable to-horizon stabilization.
+  * target flight height change should be on the four buttons.
 * ECU
   * Gyroscopic stabilization
     * Replace numpy.linalg.eig() with a PCA-based approach
-  * Repulsors should act like dampening springs
+  * Repulsor damping: Why is there a droop in height relative to target height
+    at low repulsor powers, even though sufficient capacity is present?
   * (low importance) Make angular stabilization deactivateable
-* (SMALL) Stabilizer: Code equals that of airbrake
+* File for map / vehicle values: TOML? YAML?
+  * Write file from model data
+  * Read file during construction
 * Air drag and aerodynamics (https://www.gamedev.net/forums/topic/457235-flight-sim-physics/)
   * Drag scales with the square of the speed
   * Artist-defined air density
@@ -53,17 +65,19 @@ TODO
 
 ### Art
 
+* Magnesium
+  * Up the repulsor forces again by 5 (should be to 90,000). This makes the
+    flight height stabilization work best. It also introduces strong jumping
+    capabilities, which I don't know yet how to feel about.
+  * Increase the repulsor's range of movement to 60 degree.
+  * Change activation distances to 8.
+  * Change the airbrake animation to panels flipping up on their backside
+    hinges; see https://i.imgur.com/J8q2RFR.png
+  * Add one or more thrusters with an animation
+* Lab map
+  * Add a tube section into the large looping, so that infinite loopings become
+    possible.
 * Design two other vehicles
-* Airbrake animations
-  * On Magnesium, rename 'airbrake' to 'stabilizer'
-  * Add parachute-like airbrake animation
-* Effect for the point where the repulsor ray hits the ground
-* When movement is mostly implemented, make racetrack
-  * Start with a looping road.
-  * Add start/finish, gates, spawn points
-  * Add surroundings
-* Lab map: Like plane, but with stunt elements to the right, left, and back of
-  starting position.
 * Tricks map: Like the lab map, but prettier. A skatepark for hovercars.
 * Driving school: A tutorial map.
 * Sounds:
@@ -79,9 +93,6 @@ TODO
 
 * Normalize pman build / asset workflow
 * Map / vehicle verification
-* File for map / vehicle values: TOML? YAML?
-  * Write file from model data
-  * Read file during construction
 
 
 ### Other

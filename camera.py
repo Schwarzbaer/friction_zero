@@ -1,3 +1,5 @@
+from enum import Enum
+
 from panda3d.core import TextNode
 from panda3d.core import NodePath
 from panda3d.core import Vec3
@@ -25,10 +27,11 @@ from controller import DM_STUNT
 from controller import DM_CRUISE
 
 
-CAM_MODE_FOLLOW = 1
-CAM_MODE_DIRECTION = 2
-CAM_MODE_MIXED = 3
-CAM_MODES = [CAM_MODE_FOLLOW, CAM_MODE_DIRECTION, CAM_MODE_MIXED]
+class CameraModes(Enum):
+    FOLLOW = 1
+    FIXED = 2
+    DIRECTION = 3
+    MIXED = 4
 
 
 class CameraController(DirectObject):
@@ -38,7 +41,7 @@ class CameraController(DirectObject):
         self.control = control
         self.camera.reparent_to(base.render)
 
-        self.camera_mode = 0
+        self.camera_mode = CameraModes.FOLLOW
         self.accept(GE_CAMERA_MODE, self.switch_camera_mode)
 
         self.speed = OnscreenText(
@@ -119,7 +122,8 @@ class CameraController(DirectObject):
         self.repulsor_models = []
 
     def switch_camera_mode(self):
-        self.camera_mode = (self.camera_mode + 1) % len(CAM_MODES)
+        new_mode = ((self.camera_mode.value) % len(CameraModes)) + 1
+        self.camera_mode = CameraModes(new_mode)
 
     def set_vehicle(self, vehicle):
         self.vehicle = vehicle
@@ -129,18 +133,31 @@ class CameraController(DirectObject):
         self.update_gui()
 
     def update_camera(self):
+        self.camera.reparent_to(base.render)
         horiz_dist = 20
         cam_offset = Vec3(0, 0, 5)
         focus_offset = Vec3(0, 0, 2)
         vehicle_pos = self.vehicle.np().get_pos(base.render)
-        if CAM_MODES[self.camera_mode] == CAM_MODE_FOLLOW:
+        if self.camera_mode == CameraModes.FOLLOW:
             vehicle_back = base.render.get_relative_vector(
                 self.vehicle.np(),
                 Vec3(0, -1, 0),
             )
-        elif CAM_MODES[self.camera_mode] == CAM_MODE_DIRECTION:
+        elif self.camera_mode == CameraModes.FIXED:
+            # # self.camera.reparent_to(self.vehicle.np())
+            # self.camera.set_pos(self.vehicle.np(), cam_offset + Vec3(0, -horiz_dist, 0))
+            # self.camera.look_at(
+            #     self.vehicle.np(),
+            #     focus_offset,
+            # )
+            # return
+            self.camera.reparent_to(self.vehicle.np())
+            self.camera.set_pos(cam_offset + Vec3(0, -horiz_dist, 0))
+            self.camera.look_at(focus_offset)
+            return
+        elif self.camera_mode == CameraModes.DIRECTION:
             vehicle_back = -self.vehicle.physics_node.get_linear_velocity()
-        elif CAM_MODES[self.camera_mode] == CAM_MODE_MIXED:
+        elif self.camera_mode == CameraModes.MIXED:
             vehicle_back = base.render.get_relative_vector(
                 self.vehicle.np(),
                 Vec3(0, -1, 0),
