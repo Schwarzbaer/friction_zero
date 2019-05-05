@@ -8,8 +8,8 @@ keyboard_strafe_right            none
 keyboard_hover                   none
 keyboard_full_repulsors          e
 keyboard_switch_driving_mode     q
-keyboard_target_height_up        none
-keyboard_target_height_down      none
+keyboard_target_height_up        f
+keyboard_target_height_down      v
 keyboard_stabilize               lshift
 keyboard_gyro_pitch_down         arrow_up
 keyboard_gyro_pitch_up           arrow_down
