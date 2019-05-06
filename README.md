@@ -25,7 +25,25 @@ TODO
     at low repulsor powers, even though sufficient capacity is present? It can
     be mitigated by upping the repulsor power, but that leads to absurd jumping
     potential.
+    * At an activation_distance of 8m and a force of 10kN per repulsor, a 1t
+      Magnesium jumps into the air at 30km/h, reaching maybe 30-50 meters of
+      height from an on-the-ground start.
+    * A target flight height of 6m leads to an actual flight height of 4m. At
+      4m, acceleration is near optimum, activation still staying below 100%
+      constantly. One step higher, it going over 100% intermittendly is normal.
+    * Reducing the repulsor power to 9kN leads to a drastic performance loss in
+      the algorithm. A target height of ~11m has to be set to achieve lift that
+      is slowly penduluming between 1m and 4m. Jumping abilities feel good
+      though; on lab, a Magnesium lying on the floor, 8m activation distance,
+      can easily clear the height of the largest block in the raised platform,
+      but not about twice as much. At 1m, the block can barely cleared, at 3m
+      about 2m are missing at the peak of the jump.
   * (low importance) Make angular stabilization deactivateable
+* Gyro power: 800Nm units is a bit high as a cap. 400Nm still helps a lot, but
+  has noticeable wobbles at collisions or big ground normal changes. 300Nm is
+  still very playable, but gyro weakness i noticeable, and one instability
+  occurred. 200Nm still lets the car (sometimes? Frame rate dependent?) roll on
+  the ground, 175Nm is too small for that.
 * File for map / vehicle values: TOML? YAML?
   * Write file from model data
   * Read file during construction
@@ -39,6 +57,9 @@ TODO
   * Check which gate has been passed this frame
   * Race rules accounting
   * Timekeeping
+* Timing bug: Physics should happen after rendering, camera adjustments before
+  it. Currently the most visible effect is that last frame's contact points are
+  shown.
 * Sound
   * Repulsor activity
   * Background music
@@ -71,19 +92,20 @@ TODO
 ### Art
 
 * Magnesium
-  * Up the repulsor forces again by 5 (should be to 90,000). This makes the
-    flight height stabilization work best. It also introduces strong jumping
-    capabilities, which I don't know yet how to feel about.
-  * Increase the repulsor's range of movement to 60 degree.
-  * Change activation distances to 8.
-  * Change the airbrake animation to panels flipping up on their backside
-    hinges; see https://i.imgur.com/J8q2RFR.png
   * Add one or more thrusters with an animation
+* All maps
+  * Some ambient lighting, please!
 * Lab map
   * Add a tube section into the large looping, so that infinite loopings become
     possible.
+  * Add the inside of a twisted tube, i.e. a hole in a wall leading into a
+    tunnel that re-enters the lab at another point.
+* hilltrack
+  * Make the texture direction align with the track, so that you can see where
+    in the pipe you are on the left/right direction.
+  * Make the bends at the edge higher and more overbearing, to reduce the risk
+    of slipping off the track.
 * Design two other vehicles
-* Tricks map: Like the lab map, but prettier. A skatepark for hovercars.
 * Driving school: A tutorial map.
 * Sounds:
   * engine (playbackrate to speed?)
@@ -109,6 +131,7 @@ TODO
 ### Post-Prototype
 
 * ECSify everything
+* Driver g-meter
 * Keybindings
   * Allow for multiple players
   * Allow for multiple devices (per player?)

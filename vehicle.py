@@ -72,7 +72,7 @@ X = '_x'
 Y = '_y'
 MASS = 'mass'
 AIRBRAKE = 'airbrake'
-
+STABILIZER_FINS = 'stabilizer_fins'
 
 # class RepulsorSensor:
 #     def __init__(self, active, fraction, direction, position):
@@ -87,7 +87,21 @@ class Vehicle:
         self.app = app
 
         self.model = Actor(model_file)
+        airbrake_joints = [joint.name
+                           for joint in self.model.getJoints()
+                           if joint.name.startswith(AIRBRAKE)
+        ]
+        # self.model.makeSubpart(AIRBRAKE, airbrake_joints)
+        # stabilizer_joints = [joint.name
+        #                      for joint in self.model.getJoints()
+        #                      if joint.name.startswith(STABILIZER_FINS)
+        # ]
+        # self.model.makeSubpart(STABILIZER_FINS, stabilizer_joints)
+        self.model.enableBlend()
+        self.model.setControlEffect(AIRBRAKE, 1)
+        self.model.setControlEffect(STABILIZER_FINS, 1)
         puppet = self.app.loader.load_model(model_file)
+        puppet.find("**/armature").hide()
         puppet.reparentTo(self.model)
 
         self.physics_node = BulletRigidBodyNode('vehicle')
@@ -142,11 +156,12 @@ class Vehicle:
 
         self.airbrake_state = 0.0
         self.airbrake_factor = 0.5
-        # FIXME: This will be replaced by air drag.
-        self.physics_node.set_linear_damping(self.airbrake_state)
         # FIXME: Make artist definable
         airbrake_duration = 0.2 # seconds
         self.airbrake_speed = 1 / airbrake_duration
+        # 
+        self.stabilizer_fins_state = 0.0
+        self.stabilizer_fins_speed = 1/0.2
 
         self.centroid = base.loader.load_model('models/smiley')
         self.centroid.reparent_to(self.vehicle)
@@ -167,8 +182,9 @@ class Vehicle:
             TARGET_ORIENTATION: Vec3(0, 0, 0),
             # Thrust
             THRUST: 0.0,
-            # Airbrake
+            # Air foils
             AIRBRAKE: 0.0,
+            STABILIZER_FINS: 0.0,
         }
         self.sensors = {}
         self.commands = {}
@@ -232,6 +248,7 @@ class Vehicle:
         self.apply_gyroscope()
         self.apply_thrusters()
         self.apply_airbrake()
+        self.apply_stabilizer_fins()
 
     def gather_sensors(self):
         # Gather ray data on collision with ground from each repulsor
@@ -449,6 +466,7 @@ class Vehicle:
 
         # Airbrake
         airbrake = self.inputs[AIRBRAKE]
+        stabilizer_fins = self.inputs[STABILIZER_FINS]
 
         self.commands = {
             REPULSOR_ACTIVATION: repulsor_activation,
@@ -456,6 +474,7 @@ class Vehicle:
             GYRO_ROTATION: gyro_rotation,
             THRUSTER_ACTIVATION: thruster_activation,
             AIRBRAKE: airbrake,
+            STABILIZER_FINS: stabilizer_fins,
             HEIGHT_OVER_TARGET: delta_height,
             HEIGHT_OVER_TARGET_PROJECTED: projected_delta_height,
             REPULSOR_POWER_FRACTION_NEEDED: power_frac_needed,
@@ -617,7 +636,7 @@ class Vehicle:
         else:
             clamped_impulse = impulse
 
-        self.physics_node.apply_torque_impulse(impulse)
+        self.physics_node.apply_torque_impulse(clamped_impulse)
 
     def apply_thrusters(self):
         dt = globalClock.dt
@@ -653,9 +672,31 @@ class Vehicle:
             self.airbrake_state = 1.0
         if self.airbrake_state < 0.0:
             self.airbrake_state = 0.0
+        # self.model.pose(AIRBRAKE, self.airbrake_state, partName=AIRBRAKE)
         self.model.pose(AIRBRAKE, self.airbrake_state)
         # FIXME: This will be replaced by air drag.
         self.physics_node.set_linear_damping(self.airbrake_state * self.airbrake_factor)
+
+    def apply_stabilizer_fins(self):
+        dt = globalClock.dt
+        target = self.commands[STABILIZER_FINS]
+        max_movement = self.stabilizer_fins_speed * dt
+        # Clamp change to available speed
+        delta = target - self.stabilizer_fins_state
+        if abs(delta) > max_movement:
+            self.stabilizer_fins_state += copysign(max_movement, delta)
+        else:
+            self.stabilizer_fins_state = target
+        if self.stabilizer_fins_state > 1.0:
+            self.stabilizer_fins_state = 1.0
+        if self.stabilizer_fins_state < 0.0:
+            self.stabilizer_fins_state = 0.0
+        self.model.pose(
+            STABILIZER_FINS,
+            self.stabilizer_fins_state,
+            # partName=STABILIZER_FINS,
+        )
+        # FIXME: Implement stabilizing effect
 
     def shock(self, x=0, y=0, z=0):
         self.physics_node.apply_impulse(

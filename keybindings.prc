@@ -8,8 +8,8 @@ keyboard_strafe_right            none
 keyboard_hover                   none
 keyboard_full_repulsors          e
 keyboard_switch_driving_mode     q
-keyboard_target_height_up        none
-keyboard_target_height_down      none
+keyboard_target_height_up        f
+keyboard_target_height_down      v
 keyboard_stabilize               lshift
 keyboard_gyro_pitch_down         arrow_up
 keyboard_gyro_pitch_up           arrow_down
@@ -34,7 +34,7 @@ gamepad_gyro_pitch               right_y
 gamepad_gyro_roll                right_x
 gamepad_full_repulsors           lshoulder
 gamepad_thrust                   ltrigger
-gamepad_stabilizers              rshoulder
+gamepad_stabilizer_fins          rshoulder
 gamepad_airbrake                 rtrigger
 gamepad_camera_mode              face_y
 gamepad_next_vehicle             face_x
