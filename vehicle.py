@@ -636,7 +636,7 @@ class Vehicle:
         else:
             clamped_impulse = impulse
 
-        self.physics_node.apply_torque_impulse(impulse)
+        self.physics_node.apply_torque_impulse(clamped_impulse)
 
     def apply_thrusters(self):
         dt = globalClock.dt
