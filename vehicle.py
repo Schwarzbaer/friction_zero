@@ -159,6 +159,7 @@ class Vehicle:
             TURN: 0.0,
             STRAFE: 0.0,
             HOVER: 0.0,
+            FULL_REPULSORS: False,
             # Gyro
             ACTIVE_STABILIZATION_ON_GROUND: PASSIVE,
             ACTIVE_STABILIZATION_CUTOFF_ANGLE: PASSIVE,
@@ -418,26 +419,26 @@ class Vehicle:
                 max_climb = total_angled_power / self.inertia * tau
                 # The fraction of power needed to achieve the desired climb
                 power_frac_needed = -projected_delta_height / max_climb
-                if not self.inputs[FULL_REPULSORS]:
-                    repulsor_activation = [
-                        power_frac_needed
-                        for _ in self.repulsor_nodes
-                    ]
-                else:
-                    power_frac_needed = 1.0
-                    repulsor_activation = [
-                        1.0
-                        for _ in self.repulsor_nodes
-                    ]
+                repulsor_activation = [
+                    power_frac_needed
+                    for _ in self.repulsor_nodes
+                ]
             else:
                 # We're not sinking.
                 repulsor_activation = [0.0 for node in self.repulsor_nodes]
                 power_frac_needed = 0.0
-        else:
+        else: # Neither ground contact nor does the driver give full repulsors
             repulsor_activation = [0.0 for node in self.repulsor_nodes]
             delta_height = 0.0
             projected_delta_height = 0.0
             power_frac_needed = 0.0
+        # But now he *does* give full repulsors! And we have gathered all
+        # ground-related data by now.
+        if self.inputs[FULL_REPULSORS]:
+            repulsor_activation = [
+                self.inputs[REPULSOR_ACTIVATION]
+                for _ in self.repulsor_nodes
+            ]
 
         # Gyroscope:
         gyro_rotation = self.ecu_gyro_stabilization()
@@ -555,8 +556,6 @@ class Vehicle:
                 if activation < 0.0:
                     activation = 0.0
                 # Repulsor power at zero distance
-                # FIXME: No *30 once the fudge factor has been removed from the
-                # repulsor optimizations.
                 base_strength = node.get_python_tag(FORCE)
                 # Effective fraction of repulsors force
                 transfer_frac = cos(0.5*pi * frac)

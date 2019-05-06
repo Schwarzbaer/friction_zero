@@ -20,30 +20,14 @@ keyboard_airbrake                tab
 keyboard_camera_mode             c
 keyboard_next_vehicle            n
 
-<<<<<<< HEAD
-gamepad_toggle_repulsor      face_b
-gamepad_forward              left_y
-gamepad_turn                 left_x
-gamepad_strafe               lstick
-gamepad_hover                rshoulder
-gamepad_switch_driving_mode  face_a
-gamepad_stabilize            rstick
-gamepad_gyro_yaw             none
-gamepad_gyro_pitch           right_trigger
-gamepad_gyro_roll            right_x
-gamepad_thrust               lshoulder
-gamepad_airbrake             ltrigger
-gamepad_camera_mode          face_y
-gamepad_next_vehicle         face_x
-=======
 gamepad_toggle_repulsor          face_b
 gamepad_forward                  left_y
 gamepad_turn                     left_x
 gamepad_strafe                   lstick
 gamepad_hover                    none
 gamepad_switch_driving_mode      face_a
-gamepad_target_height_up         dpad_up
-gamepad_target_height_down       dpad_down
+gamepad_target_height_up         face_y
+gamepad_target_height_down       face_x
 gamepad_stabilize                rstick
 gamepad_gyro_yaw                 none
 gamepad_gyro_pitch               right_y
@@ -54,7 +38,8 @@ gamepad_stabilizers              rshoulder
 gamepad_airbrake                 rtrigger
 gamepad_camera_mode              face_y
 gamepad_next_vehicle             face_x
->>>>>>> 1de452300141fedaaed1f0f4aed47ea7417aa742
+gamepad_camera_mode              dpad_down
+gamepad_next_vehicle             dpad_up
 
 flight_stick_toggle_repulsor     joystick2
 flight_stick_stabilize           joystick4
