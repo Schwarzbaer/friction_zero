@@ -5,7 +5,7 @@ auto_save = true
 
 [general]
 name = "Game"
-renderer = "none"
+renderer = "basic"
 material_mode = "legacy"
 physics_engine = "builtin"
 
