@@ -33,13 +33,23 @@ TODO
     * A target flight height of 6m leads to an actual flight height of 4m. At
       4m, acceleration is near optimum, activation still staying below 100%
       constantly. One step higher, it going over 100% intermittendly is normal.
+    * Reducing the repulsor power to 9kN leads to a drastic performance loss in
+      the algorithm. A target height of ~11m has to be set to achieve lift that
+      is slowly penduluming between 1m and 4m. Jumping abilities feel good
+      though; on lab, a Magnesium lying on the floor, 8m activation distance,
+      can easily clear the height of the largest block in the raised platform,
+      but not about twice as much. At 1m, the block can barely cleared, at 3m
+      about 2m are missing at the peak of the jump.
   * (low importance) Make angular stabilization deactivateable
 * (Requires vehicle config files, see above) Gyro power: 800Nm units is a bit
-  high as a cap. 400Nm still helps a lot, but
-  has noticeable wobbles at collisions or big ground normal changes. 300Nm is
-  still very playable, but gyro weakness i noticeable, and one instability
-  occurred. 200Nm still lets the car (sometimes? Frame rate dependent?) roll on
-  the ground, 175Nm is too small for that.
+  high as a cap. 400Nm still helps a lot, but has noticeable wobbles at
+  collisions or big ground normal changes. 300Nm is still very playable, but
+  gyro weakness i noticeable, and one instability occurred. 200Nm still lets the
+  car (sometimes? Frame rate dependent?) roll on the ground, 175Nm is too small
+  for that.
+* File for map / vehicle values: TOML? YAML?
+  * Write file from model data
+  * Read file during construction
 * Air drag and aerodynamics (https://www.gamedev.net/forums/topic/457235-flight-sim-physics/)
   * Drag scales with the square of the speed
   * Artist-defined air density
@@ -85,14 +95,9 @@ TODO
 ### Art
 
 * Magnesium
-  * Up the repulsor forces again by 5 (should be to 90,000). This makes the
-    flight height stabilization work best. It also introduces strong jumping
-    capabilities, which I don't know yet how to feel about.
-  * Increase the repulsor's range of movement to 60 degree.
-  * Change activation distances to 8.
-  * Change the airbrake animation to panels flipping up on their backside
-    hinges; see https://i.imgur.com/J8q2RFR.png
   * Add one or more thrusters with an animation
+* All maps
+  * Some ambient lighting, please!
 * Lab map
   * Add a tube section into the large looping, so that infinite loopings become
     possible.
@@ -104,7 +109,6 @@ TODO
   * Make the bends at the edge higher and more overbearing, to reduce the risk
     of slipping off the track.
 * Design two other vehicles
-* Tricks map: Like the lab map, but prettier. A skatepark for hovercars.
 * Driving school: A tutorial map.
 * Sounds:
   * engine (playbackrate to speed?)
