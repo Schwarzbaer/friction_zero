@@ -13,11 +13,13 @@ TODO
   * See branch magnesium-animation-bug. Using subParts in an Actor causes an
     exception when .pose is used, as Actor seems to look for the file with the
     animation, despite it being present in the model file.
-    * Write minimalized example
-    * Probably bugfix Actor
+    * Monitor issue or fix it yourself: https://github.com/panda3d/panda3d/issues/647
 * Controls
   * rstick should disable to-horizon stabilization.
   * Space mouse bindings
+* File for map / vehicle values: TOML? YAML?
+  * Write file from model data
+  * Read file during construction
 * ECU
   * Gyroscopic stabilization
     * Replace numpy.linalg.eig() with a PCA-based approach
@@ -39,11 +41,12 @@ TODO
       but not about twice as much. At 1m, the block can barely cleared, at 3m
       about 2m are missing at the peak of the jump.
   * (low importance) Make angular stabilization deactivateable
-* Gyro power: 800Nm units is a bit high as a cap. 400Nm still helps a lot, but
-  has noticeable wobbles at collisions or big ground normal changes. 300Nm is
-  still very playable, but gyro weakness i noticeable, and one instability
-  occurred. 200Nm still lets the car (sometimes? Frame rate dependent?) roll on
-  the ground, 175Nm is too small for that.
+* (Requires vehicle config files, see above) Gyro power: 800Nm units is a bit
+  high as a cap. 400Nm still helps a lot, but has noticeable wobbles at
+  collisions or big ground normal changes. 300Nm is still very playable, but
+  gyro weakness i noticeable, and one instability occurred. 200Nm still lets the
+  car (sometimes? Frame rate dependent?) roll on the ground, 175Nm is too small
+  for that.
 * File for map / vehicle values: TOML? YAML?
   * Write file from model data
   * Read file during construction
