@@ -31,7 +31,19 @@ TODO
     * A target flight height of 6m leads to an actual flight height of 4m. At
       4m, acceleration is near optimum, activation still staying below 100%
       constantly. One step higher, it going over 100% intermittendly is normal.
+    * Reducing the repulsor power to 9kN leads to a drastic performance loss in
+      the algorithm. A target height of ~11m has to be set to achieve lift that
+      is slowly penduluming between 1m and 4m. Jumping abilities feel good
+      though; on lab, a Magnesium lying on the floor, 8m activation distance,
+      can easily clear the height of the largest block in the raised platform,
+      but not about twice as much. At 1m, the block can barely cleared, at 3m
+      about 2m are missing at the peak of the jump.
   * (low importance) Make angular stabilization deactivateable
+* Gyro power: 800Nm units is a bit high as a cap. 400Nm still helps a lot, but
+  has noticeable wobbles at collisions or big ground normal changes. 300Nm is
+  still very playable, but gyro weakness i noticeable, and one instability
+  occurred. 200Nm still lets the car (sometimes? Frame rate dependent?) roll on
+  the ground, 175Nm is too small for that.
 * File for map / vehicle values: TOML? YAML?
   * Write file from model data
   * Read file during construction
@@ -81,9 +93,13 @@ TODO
 
 * Magnesium
   * Add one or more thrusters with an animation
+* All maps
+  * Some ambient lighting, please!
 * Lab map
   * Add a tube section into the large looping, so that infinite loopings become
     possible.
+* hilltrack
+  * Align the track's texture with the track's direction
 * Design two other vehicles
 * Driving school: A tutorial map.
 * Sounds:
