@@ -91,6 +91,13 @@ TODO
 * Lab map
   * Add a tube section into the large looping, so that infinite loopings become
     possible.
+  * Add the inside of a twisted tube, i.e. a hole in a wall leading into a
+    tunnel that re-enters the lab at another point.
+* hilltrack
+  * Make the texture direction align with the track, so that you can see where
+    in the pipe you are on the left/right direction.
+  * Make the bends at the edge higher and more overbearing, to reduce the risk
+    of slipping off the track.
 * Design two other vehicles
 * Tricks map: Like the lab map, but prettier. A skatepark for hovercars.
 * Driving school: A tutorial map.
@@ -118,6 +125,7 @@ TODO
 ### Post-Prototype
 
 * ECSify everything
+* Driver g-meter
 * Keybindings
   * Allow for multiple players
   * Allow for multiple devices (per player?)
