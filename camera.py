@@ -154,13 +154,14 @@ class CameraController(DirectObject):
             return
         elif self.camera_mode == CameraModes.COCKPIT:
             # FIXME: Symbolize
-            self.vehicle.np().find("**/fz_window").hide()
+            #self.vehicle.np().find("**/fz_window").hide()
             self.camera.reparent_to(self.vehicle.np().find('**/{}'.format(
                 COCKPIT_CAMERA,
             )))
             self.camera.set_pos(0, 0, 0)
             self.camera.set_hpr(0, -90, 0)
             self.camera.node().get_lens().set_near(0.1)
+            self.camera.node().get_lens().set_fov(90)
             return
         elif self.camera_mode == CameraModes.DIRECTION:
             vehicle_back = -self.vehicle.physics_node.get_linear_velocity()
