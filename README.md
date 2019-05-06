@@ -13,6 +13,8 @@ TODO
   * See branch magnesium-animation-bug. Using subParts in an Actor causes an
     exception when .pose is used, as Actor seems to look for the file with the
     animation, despite it being present in the model file.
+    * Revert to last commit before the merge; animations are now in separate
+      files. Whoops...
     * Monitor issue or fix it yourself: https://github.com/panda3d/panda3d/issues/647
 * Controls
   * rstick should disable to-horizon stabilization.
@@ -40,6 +42,8 @@ TODO
       can easily clear the height of the largest block in the raised platform,
       but not about twice as much. At 1m, the block can barely cleared, at 3m
       about 2m are missing at the peak of the jump.
+    * (Requires vehicle config files, see above) Add these finetunings after the
+      damping repulsors work properly.
   * (low importance) Make angular stabilization deactivateable
 * (Requires vehicle config files, see above) Gyro power: 800Nm units is a bit
   high as a cap. 400Nm still helps a lot, but has noticeable wobbles at
@@ -47,9 +51,6 @@ TODO
   gyro weakness i noticeable, and one instability occurred. 200Nm still lets the
   car (sometimes? Frame rate dependent?) roll on the ground, 175Nm is too small
   for that.
-* File for map / vehicle values: TOML? YAML?
-  * Write file from model data
-  * Read file during construction
 * Air drag and aerodynamics (https://www.gamedev.net/forums/topic/457235-flight-sim-physics/)
   * Drag scales with the square of the speed
   * Artist-defined air density
@@ -63,6 +64,10 @@ TODO
 * Timing bug: Physics should happen after rendering, camera adjustments before
   it. Currently the most visible effect is that last frame's contact points are
   shown.
+* Particle systems
+  * Repulsor contact points
+  * Vehicle-terrain crashes
+  * Vehicle-vehicle crashes
 * Sound
   * Repulsor activity
   * Background music
