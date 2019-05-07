@@ -27,11 +27,15 @@ from controller import DM_STUNT
 from controller import DM_CRUISE
 
 
+COCKPIT_CAMERA = 'fz_cockpit_camera'
+
+
 class CameraModes(Enum):
     FOLLOW = 1
     FIXED = 2
-    DIRECTION = 3
-    MIXED = 4
+    COCKPIT = 3
+    DIRECTION = 4
+    MIXED = 5
 
 
 class CameraController(DirectObject):
@@ -144,16 +148,19 @@ class CameraController(DirectObject):
                 Vec3(0, -1, 0),
             )
         elif self.camera_mode == CameraModes.FIXED:
-            # # self.camera.reparent_to(self.vehicle.np())
-            # self.camera.set_pos(self.vehicle.np(), cam_offset + Vec3(0, -horiz_dist, 0))
-            # self.camera.look_at(
-            #     self.vehicle.np(),
-            #     focus_offset,
-            # )
-            # return
             self.camera.reparent_to(self.vehicle.np())
-            self.camera.set_pos(cam_offset + Vec3(0, -horiz_dist, 0))
-            self.camera.look_at(focus_offset)
+            self.camera.set_pos(0, -10, 3)
+            self.camera.look_at(0, 0, 2)
+            return
+        elif self.camera_mode == CameraModes.COCKPIT:
+            # FIXME: Symbolize
+            self.vehicle.np().find("**/fz_window").hide()
+            self.camera.reparent_to(self.vehicle.np().find('**/{}'.format(
+                COCKPIT_CAMERA,
+            )))
+            self.camera.set_pos(0, 0, 0)
+            self.camera.set_hpr(0, -90, 0)
+            self.camera.node().get_lens().set_near(0.1)
             return
         elif self.camera_mode == CameraModes.DIRECTION:
             vehicle_back = -self.vehicle.physics_node.get_linear_velocity()
