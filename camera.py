@@ -49,6 +49,8 @@ class CameraController(DirectObject):
 
         self.camera = camera
         self.camera.node().get_lens().set_near(0.1)
+        self.camera_gimbal = NodePath("camera gimbal")
+        self.camera.reparent_to(self.camera_gimbal)
         self.set_camera_mode(CameraModes.FOLLOW)
         self.accept(GE_CAMERA_MODE, self.switch_camera_mode)
 
@@ -132,19 +134,21 @@ class CameraController(DirectObject):
     def set_camera_mode(self, mode):
         self.camera_mode = mode
         if mode == CameraModes.FOLLOW:
-            self.camera.reparent_to(self.vehicle.np())
+            self.camera_gimbal.reparent_to(self.vehicle.np())
+            self.camera_gimbal.set_pos_hpr((0, 0, 0), (0, 0, 0))
             # Position, focus, and FOV are set frame by frame.
         elif mode == CameraModes.FIXED:
-            self.camera.reparent_to(self.vehicle.np())
+            self.camera_gimbal.set_pos_hpr((0, 0, 0), (0, 0, 0))
+            self.camera_gimbal.reparent_to(self.vehicle.np())
             self.camera.set_pos(0, -10, 3)
             self.camera.look_at(0, 0, 2)
             self.camera.node().get_lens().set_fov(third_person_fov)
         elif mode == CameraModes.COCKPIT:
-            self.camera.reparent_to(self.vehicle.np().find('**/{}'.format(
-                COCKPIT_CAMERA,
-            )))
-            self.camera.set_pos(0, 0, 0)
-            self.camera.set_hpr(0, 0, 0)
+            self.camera_gimbal.reparent_to(
+                self.vehicle.np().find('**/{}'.format(COCKPIT_CAMERA)),
+            )
+            self.camera_gimbal.set_pos_hpr((0, 0, 0), (0, 0, 0))
+            self.camera.set_pos_hpr((0, 0, 0), (0, 0, 0))
             self.camera.node().get_lens().set_fov(first_person_fov)
 
     def switch_camera_mode(self):
@@ -185,9 +189,21 @@ class CameraController(DirectObject):
             )
             movement_dir = Vec3(movement)
             movement_dir.normalize()
+            ground_movement_global = self.vehicle.physics_node.get_linear_velocity()
+            ground_movement_global.z = 0
+            ground_movement = self.vehicle.np().get_relative_vector(
+                base.render,
+                ground_movement_global,
+            )
+            ground_speed = ground_movement.length()
+            ground_dir = Vec3(ground_movement)
+            ground_dir.normalize()
+            ground_movement_angle = ground_dir.angle_deg(forward_to_horizon)
+
             speed_mps = self.vehicle.physics_node.get_linear_velocity().length()
             speed_kmh = speed_mps * 60 * 60 / 1000
-            speed_factor = 1 + (speed_kmh / 1200)
+            speed_base_factor = speed_kmh / 1200
+            speed_factor = 1 + speed_base_factor
 
             # Now for the position of the camera and the focal point
             cam_pos = (forward_to_horizon * -15 + up * 5) * speed_factor
@@ -198,6 +214,10 @@ class CameraController(DirectObject):
             # ...and applying it.
             self.camera.set_pos(cam_pos)
             self.camera.look_at(focal, cam_up)
+            self.camera_gimbal.set_h(
+                self.vehicle.np(),
+                ground_movement_angle * speed_base_factor,
+            )
             self.camera.node().get_lens().set_fov(fov)
 
     def update_gui(self):
