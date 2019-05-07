@@ -5,6 +5,7 @@ from panda3d.core import NodePath
 from panda3d.core import Vec3
 from panda3d.core import VBase3
 from panda3d.core import Point3
+from panda3d.core import ConfigVariableDouble
 
 from direct.showbase.DirectObject import DirectObject
 from direct.gui.OnscreenText import OnscreenText
@@ -28,24 +29,27 @@ from controller import DM_CRUISE
 
 
 COCKPIT_CAMERA = 'fz_cockpit_camera'
+first_person_fov = ConfigVariableDouble('first_person_fov', 90).value
+third_person_fov = ConfigVariableDouble('third_person_fov', 60).value
 
 
 class CameraModes(Enum):
     FOLLOW = 1
     FIXED = 2
     COCKPIT = 3
-    DIRECTION = 4
-    MIXED = 5
+    # FIXME: To be merged with FOLLOW
+    # DIRECTION = 4
+    # MIXED = 5
 
 
 class CameraController(DirectObject):
     def __init__(self, camera, vehicle, control):
-        self.camera = camera
         self.vehicle = vehicle
         self.control = control
-        self.camera.reparent_to(base.render)
 
-        self.camera_mode = CameraModes.FOLLOW
+        self.camera = camera
+        self.camera.node().get_lens().set_near(0.1)
+        self.set_camera_mode(CameraModes.FOLLOW)
         self.accept(GE_CAMERA_MODE, self.switch_camera_mode)
 
         self.speed = OnscreenText(
@@ -125,61 +129,76 @@ class CameraController(DirectObject):
         self.repulsor_hud.set_p(90)
         self.repulsor_models = []
 
+    def set_camera_mode(self, mode):
+        self.camera_mode = mode
+        if mode == CameraModes.FOLLOW:
+            self.camera.reparent_to(self.vehicle.np())
+            # Position, focus, and FOV are set frame by frame.
+        elif mode == CameraModes.FIXED:
+            self.camera.reparent_to(self.vehicle.np())
+            self.camera.set_pos(0, -10, 3)
+            self.camera.look_at(0, 0, 2)
+            self.camera.node().get_lens().set_fov(third_person_fov)
+        elif mode == CameraModes.COCKPIT:
+            self.camera.reparent_to(self.vehicle.np().find('**/{}'.format(
+                COCKPIT_CAMERA,
+            )))
+            self.camera.set_pos(0, 0, 0)
+            self.camera.set_hpr(0, 0, 0)
+            self.camera.node().get_lens().set_fov(first_person_fov)
+
     def switch_camera_mode(self):
-        new_mode = ((self.camera_mode.value) % len(CameraModes)) + 1
-        self.camera_mode = CameraModes(new_mode)
+        new_mode_idx = ((self.camera_mode.value) % len(CameraModes)) + 1
+        new_mode = CameraModes(new_mode_idx)
+        self.set_camera_mode(new_mode)
 
     def set_vehicle(self, vehicle):
         self.vehicle = vehicle
+        self.set_camera_mode(self.camera_mode)
 
     def update(self):
         self.update_camera()
         self.update_gui()
 
     def update_camera(self):
-        self.camera.reparent_to(base.render)
-        horiz_dist = 20
-        cam_offset = Vec3(0, 0, 5)
-        focus_offset = Vec3(0, 0, 2)
-        vehicle_pos = self.vehicle.np().get_pos(base.render)
         if self.camera_mode == CameraModes.FOLLOW:
-            vehicle_back = base.render.get_relative_vector(
+            # The numbers that we're gonna build our camera offset from
+            forward = Vec3(0, 1, 0)
+            forward_global = base.render.get_relative_vector(
                 self.vehicle.np(),
-                Vec3(0, -1, 0),
+                forward,
             )
-        elif self.camera_mode == CameraModes.FIXED:
-            self.camera.reparent_to(self.vehicle.np())
-            self.camera.set_pos(0, -10, 3)
-            self.camera.look_at(0, 0, 2)
-            return
-        elif self.camera_mode == CameraModes.COCKPIT:
-            # FIXME: Symbolize
-            #self.vehicle.np().find("**/fz_window").hide()
-            self.camera.reparent_to(self.vehicle.np().find('**/{}'.format(
-                COCKPIT_CAMERA,
-            )))
-            self.camera.set_pos(0, 0, 0)
-            self.camera.set_hpr(0, -90, 0)
-            self.camera.node().get_lens().set_near(0.1)
-            self.camera.node().get_lens().set_fov(90)
-            return
-        elif self.camera_mode == CameraModes.DIRECTION:
-            vehicle_back = -self.vehicle.physics_node.get_linear_velocity()
-        elif self.camera_mode == CameraModes.MIXED:
-            vehicle_back = base.render.get_relative_vector(
-                self.vehicle.np(),
-                Vec3(0, -1, 0),
+            forward_to_horizon_global = Vec3(forward_global)
+            forward_to_horizon_global.z = 0
+            forward_to_horizon_global.normalize()
+            forward_to_horizon = self.vehicle.np().get_relative_vector(
+                base.render,
+                forward_to_horizon_global,
             )
-            movement = self.vehicle.physics_node.get_linear_velocity()
-            movement_back = -movement / movement.length()
-            vehicle_back = vehicle_back + movement_back
-        vehicle_back.z = 0
-        vehicle_back = vehicle_back / vehicle_back.length()
+            up = self.vehicle.np().get_relative_vector(
+                base.render,
+                Vec3(0, 0, 1),
+            )
+            movement = self.vehicle.np().get_relative_vector(
+                base.render,
+                self.vehicle.physics_node.get_linear_velocity(),
+            )
+            movement_dir = Vec3(movement)
+            movement_dir.normalize()
+            speed_mps = self.vehicle.physics_node.get_linear_velocity().length()
+            speed_kmh = speed_mps * 60 * 60 / 1000
+            speed_factor = 1 + (speed_kmh / 1200)
 
-        cam_pos = vehicle_pos + vehicle_back * horiz_dist + cam_offset
-        focus = vehicle_pos + focus_offset
-        self.camera.set_pos(cam_pos)
-        self.camera.look_at(focus)
+            # Now for the position of the camera and the focal point
+            cam_pos = (forward_to_horizon * -15 + up * 5) * speed_factor
+            cam_up = up
+            focal = up * 3
+            fov = third_person_fov * speed_factor
+
+            # ...and applying it.
+            self.camera.set_pos(cam_pos)
+            self.camera.look_at(focal, cam_up)
+            self.camera.node().get_lens().set_fov(fov)
 
     def update_gui(self):
         # Speed
