@@ -59,7 +59,7 @@ class VehicleController:
         self.controller = controller
         self.repulsors_active = True
         self.driving_mode = DM_CRUISE
-        self.target_height = 0.5
+        self.target_height = 0.0
         self.app.accept(GE_NEXT_VEHICLE, self.next_vehicle)
         self.app.accept(GE_TOGGLE_REPULSOR, self.toggle_repulsors)
         self.app.accept(GE_SWITCH_DRIVING_MODE, self.switch_driving_mode)
@@ -90,8 +90,8 @@ class VehicleController:
 
     def change_target_height(self, delta):
         self.target_height += delta
-        if self.target_height < 0.5:
-            self.target_height = 0.5
+        if self.target_height < 0.0:
+            self.target_height = 0.0
 
     def gather_inputs(self):
         if self.controller.method == InputDevice.DeviceClass.keyboard:
