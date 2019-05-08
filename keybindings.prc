@@ -3,6 +3,7 @@ keyboard_forward                 w
 keyboard_backward                s
 keyboard_turn_left               a
 keyboard_turn_right              d
+keyboard_strafe                  lshift
 keyboard_strafe_left             none
 keyboard_strafe_right            none
 keyboard_hover                   none
@@ -10,7 +11,7 @@ keyboard_full_repulsors          e
 keyboard_switch_driving_mode     q
 keyboard_target_height_up        f
 keyboard_target_height_down      v
-keyboard_stabilize               lshift
+keyboard_stabilize               none
 keyboard_gyro_pitch_down         arrow_up
 keyboard_gyro_pitch_up           arrow_down
 keyboard_gyro_roll_left          arrow_left
