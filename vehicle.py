@@ -433,7 +433,7 @@ class Vehicle:
                 # have to go by the weakest link.
                 total_angled_power = min(angled_powers) * len(angled_powers)
                 # How high can we climb under 100% repulsor power?
-                max_climb = total_angled_power / self.inertia * tau
+                max_climb = 1/2 * total_angled_power * tau**2 / self.inertia
                 # The fraction of power needed to achieve the desired climb
                 power_frac_needed = -projected_delta_height / max_climb
                 repulsor_activation = [
