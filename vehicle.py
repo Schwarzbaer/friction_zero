@@ -7,6 +7,8 @@ from functools import reduce
 
 import numpy
 
+import toml
+
 from panda3d.core import NodePath
 from panda3d.core import VBase3
 from panda3d.core import Vec3
@@ -36,11 +38,7 @@ CURRENT_ROTATION = 'current_rotation'
 TARGET_ORIENTATION = 'target_orientation'
 TARGET_ROTATION = 'target_rotation'
 REPULSOR_ACTIVATION = 'repulsor_activation'
-REPULSOR_RAY_ACTIVE = 'repulsor_ray_active'
-REPULSOR_RAY_FRAC = 'repulsor_ray_frac'
-REPULSOR_RAY_DIR = 'repulsor_ray_dir'
-REPULSOR_RAY_POS = 'repulsor_ray_pos'
-REPULSOR_RAY_CONTACT = 'repulsor_ray_contact'
+REPULSOR_DATA = 'repulsor_data'
 REPULSOR_TURNING_ANGLE = 'repulsor_turning_angle'
 REPULSOR_TARGET_ORIENTATIONS = 'repulsor_target_orientation'
 REPULSOR_OLD_ORIENTATION = 'repulsor_old_orientation'
@@ -74,50 +72,131 @@ MASS = 'mass'
 AIRBRAKE = 'airbrake'
 STABILIZER_FINS = 'stabilizer_fins'
 
-# class RepulsorSensor:
-#     def __init__(self, active, fraction, direction, position):
-#         self.active = active
-#         self.fraction = fraction
-#         self.direction = direction
-#         self.position = position
+
+
+
+class VehicleData:
+    def __init__(self, model, model_name):
+        #fn = Filename.expand_from('$MAIN_DIR/{}.toml'.format(model_name))
+        #file_exists = os.path.isfile(fn)
+        #with open(fn.to_os_specific()) as f:
+
+        # Body data
+        friction_node = model.find('**/={}'.format(FRICTION))
+        friction_str = friction_node.get_tag('friction')
+        friction = float(friction_str)
+        self.friction = friction
+        model.set_python_tag(FRICTION, friction)
+
+        mass_node = model.find('**/={}'.format(MASS))
+        mass_str = mass_node.get_tag('mass')
+        mass = float(mass_str) # kg
+        self.mass = mass
+        model.set_python_tag(MASS, mass)
+
+        self.airbrake_duration = 0.2 # seconds
+        self.stabilizer_fins_duration = 0.2 # seconds
+
+        # Sub-nodes for vehicle systems
+        self.repulsor_nodes = model.find_all_matches(
+            '**/{}*'.format(REPULSOR),
+        )
+        for node in self.repulsor_nodes:
+            self.transcribe_repulsor_tags(node)
+
+        self.thruster_nodes = model.find_all_matches(
+            '**/{}*'.format(THRUSTER),
+        )
+        for node in self.thruster_nodes:
+            self.transcribe_thruster_tags(node)
+
+    def transcribe_repulsor_tags(self, node):
+        force = float(node.get_tag(FORCE))
+        node.set_python_tag(FORCE, force)
+
+        activation_distance = float(node.get_tag(ACTIVATION_DISTANCE))
+        node.set_python_tag(ACTIVATION_DISTANCE, activation_distance)
+
+        animation_tags = [ACCELERATE, TURN_LEFT, TURN_RIGHT, STRAFE, HOVER]
+        for tag in animation_tags:
+            tag_x = node.get_tag(tag+X)
+            if tag_x == '':
+                tag_x = 0.0
+            else:
+                tag_x = float(tag_x)
+            tag_y = node.get_tag(tag+Y)
+            if tag_y == '':
+                tag_y = 0.0
+            else:
+                tag_y = float(tag_y)
+            angle = VBase3(tag_x, tag_y, 0)
+            node.set_python_tag(tag, angle)
+        # FIXME: Make it artist-definable
+        node.set_python_tag(REPULSOR_TURNING_ANGLE, 540)
+        node.set_python_tag(REPULSOR_OLD_ORIENTATION, Vec3(0, 0, 0))
+
+    def transcribe_thruster_tags(self, node):
+        force = float(node.get_tag(FORCE))
+        node.set_python_tag(FORCE, force)
+
+
+class RepulsorData:
+    def __init__(self):
+        self.active = None
+        self.fraction = None
+        self.direction = None
+        self.position = None
+        self.contact = None
+
+    def __repr__(self):
+        r = ("active {}, frac {}, dir {}, pos {}, contact {}"
+             "".format(
+                 self.active,
+                 self.fraction,
+                 self.direction,
+                 self.position,
+                 self.contact,
+             )
+        )
+        return r
 
 
 class Vehicle:
-    def __init__(self, app, model_file):
+    def __init__(self, app, model_name):
+        model_file_name = 'assets/cars/{}.bam'.format(model_name)
         self.app = app
 
-        self.model = Actor(model_file)
-        airbrake_joints = [joint.name
-                           for joint in self.model.getJoints()
-                           if joint.name.startswith(AIRBRAKE)
-        ]
+        self.model = Actor(model_file_name)
+        self.model.enableBlend()
+        self.model.setControlEffect(AIRBRAKE, 1)
+        self.model.setControlEffect(STABILIZER_FINS, 1)
+        # FIXME: This code fails due to a bug in Actor
+        # airbrake_joints = [joint.name
+        #                    for joint in self.model.getJoints()
+        #                    if joint.name.startswith(AIRBRAKE)
+        # ]
         # self.model.makeSubpart(AIRBRAKE, airbrake_joints)
         # stabilizer_joints = [joint.name
         #                      for joint in self.model.getJoints()
         #                      if joint.name.startswith(STABILIZER_FINS)
         # ]
         # self.model.makeSubpart(STABILIZER_FINS, stabilizer_joints)
-        self.model.enableBlend()
-        self.model.setControlEffect(AIRBRAKE, 1)
-        self.model.setControlEffect(STABILIZER_FINS, 1)
-        puppet = self.app.loader.load_model(model_file)
+
+        puppet = self.app.loader.load_model(model_file_name)
         puppet.find("**/armature").hide()
         puppet.reparentTo(self.model)
 
+        # Get the vehicle data
+        self.vehicle_data = VehicleData(puppet, model_name)
+
+        # Configure the physics node
         self.physics_node = BulletRigidBodyNode('vehicle')
-        friction_node = self.model.find('**/={}'.format(FRICTION))
-        friction_str = friction_node.get_tag('friction')
-        friction = float(friction_str)
-        self.physics_node.set_friction(friction)
+        self.physics_node.set_friction(self.vehicle_data.friction)
         self.physics_node.set_linear_sleep_threshold(0)
         self.physics_node.set_angular_sleep_threshold(0)
         self.physics_node.setCcdMotionThreshold(1e-7)
         self.physics_node.setCcdSweptSphereRadius(0.5)
-        mass_node = self.model.find('**/={}'.format(MASS))
-        mass_str = mass_node.get_tag('mass')
-        mass = float(mass_str)
-        self.inertia = mass
-        self.physics_node.setMass(mass)
+        self.physics_node.setMass(self.vehicle_data.mass)
         shape = BulletConvexHullShape()
         for geom_node in self.model.find_all_matches("**/+GeomNode"):
             for geom in geom_node.node().get_geoms():
@@ -129,12 +208,10 @@ class Vehicle:
         self.physics_node.add_shape(shape)
         self.vehicle = NodePath(self.physics_node)
         self.vehicle.set_collide_mask(CM_VEHICLE | CM_COLLIDE)
-
         self.model.reparent_to(self.vehicle)
 
         # Navigational aids
         self.target_node = self.app.loader.load_model('models/zup-axis')
-        # Might make a nice GUI interface
         self.target_node.reparent_to(self.model)
         self.target_node.set_scale(1)
         self.target_node.set_render_mode_wireframe()
@@ -145,28 +222,25 @@ class Vehicle:
         self.delta_node.reparent_to(base.cam)
         self.delta_node.hide()
 
-        # Vehicle systems
-        self.repulsor_nodes = []
-        for repulsor in self.model.find_all_matches('**/{}*'.format(REPULSOR)):
-            self.add_repulsor(repulsor)
-
-        self.thruster_nodes = []
-        for thruster in self.model.find_all_matches('**/{}*'.format(THRUSTER)):
-            self.add_thruster(thruster)
-
         self.airbrake_state = 0.0
         self.airbrake_factor = 0.5
-        # FIXME: Make artist definable
-        airbrake_duration = 0.2 # seconds
-        self.airbrake_speed = 1 / airbrake_duration
-        # 
+        self.airbrake_speed = 1 / self.vehicle_data.airbrake_duration
         self.stabilizer_fins_state = 0.0
-        self.stabilizer_fins_speed = 1/0.2
+        self.stabilizer_fins_speed = 1 / self.vehicle_data.stabilizer_fins_duration
 
         self.centroid = base.loader.load_model('models/smiley')
         self.centroid.reparent_to(self.vehicle)
         self.centroid.hide()
 
+        for repulsor in self.vehicle_data.repulsor_nodes:
+            self.add_repulsor(repulsor)
+        for thruster in self.vehicle_data.thruster_nodes:
+            self.add_thruster(thruster)
+
+        # ECU data storage from frame to frame
+        self.last_flight_height = None
+
+        # FIXME: Move into a default controller
         self.inputs = {
             # Repulsors
             REPULSOR_ACTIVATION: 0.0,
@@ -193,6 +267,7 @@ class Vehicle:
         return self.vehicle
 
     def place(self, spawn_point):
+        # FIXME: Pass a root node to __init__ instead
         self.vehicle.reparent_to(self.app.environment.model)
         connector = self.model.find("**/"+SPAWN_POINT_CONNECTOR)
         self.vehicle.set_hpr(-connector.get_hpr(spawn_point))
@@ -203,43 +278,13 @@ class Vehicle:
         self.inputs = inputs
 
     def add_repulsor(self, repulsor):
-        self.repulsor_nodes.append(repulsor)
-
-        # Transcribe tags
-        force = float(repulsor.get_tag(FORCE))
-        repulsor.set_python_tag(FORCE, force)
-        activation_distance = float(repulsor.get_tag(ACTIVATION_DISTANCE))
-        repulsor.set_python_tag(ACTIVATION_DISTANCE, activation_distance)
-
-        animation_tags = [ACCELERATE, TURN_LEFT, TURN_RIGHT, STRAFE, HOVER]
-        for tag in animation_tags:
-            tag_x = repulsor.get_tag(tag+X)
-            if tag_x == '':
-                tag_x = 0.0
-            else:
-                tag_x = float(tag_x)
-            tag_y = repulsor.get_tag(tag+Y)
-            if tag_y == '':
-                tag_y = 0.0
-            else:
-                tag_y = float(tag_y)
-            angle = VBase3(tag_x, tag_y, 0)
-            repulsor.set_python_tag(tag, angle)
-        # FIXME: Make it artist-definable
-        repulsor.set_python_tag(REPULSOR_TURNING_ANGLE, 540)
-        repulsor.set_python_tag(REPULSOR_OLD_ORIENTATION, Vec3(0, 0, 0))
-
         ground_contact = self.app.loader.load_model("assets/repulsorhit.egg")
         ground_contact.set_scale(1)
         ground_contact.reparent_to(self.app.render)
         repulsor.set_python_tag('ray_end', ground_contact)
 
-        self.last_flight_height = None
-
     def add_thruster(self, thruster):
-        force = float(thruster.get_tag(FORCE))
-        thruster.set_python_tag(FORCE, force)
-        self.thruster_nodes.append(thruster)
+        pass
 
     def game_loop(self):
         self.gather_sensors()
@@ -251,55 +296,44 @@ class Vehicle:
         self.apply_stabilizer_fins()
 
     def gather_sensors(self):
-        # Gather ray data on collision with ground from each repulsor
-        repulsor_ray_active = []
-        repulsor_ray_frac = []
-        repulsor_ray_dir = []
-        repulsor_ray_pos = []
-        repulsor_ray_contact = []
-        for repulsor in self.repulsor_nodes:
-            max_distance = repulsor.get_python_tag(ACTIVATION_DISTANCE)
-            repulsor_pos = repulsor.get_pos(self.app.render)
-            repulsor_ray_pos.append(repulsor.get_pos(self.vehicle))
-            repulsor_dir = self.app.render.get_relative_vector(
-                repulsor,
+        # Gather data repulsor ray collisions with ground
+        repulsor_data = []
+        for node in self.vehicle_data.repulsor_nodes:
+            data = RepulsorData()
+            repulsor_data.append(data)
+            max_distance = node.get_python_tag(ACTIVATION_DISTANCE)
+            data.position = node.get_pos(self.vehicle)
+            data.direction = self.app.render.get_relative_vector(
+                node,
                 Vec3(0, 0, -max_distance),
             )
-            repulsor_ray_dir.append(repulsor_dir)
             # FIXME: `self.app.environment.physics_world` is ugly.
             feeler = self.app.environment.physics_world.ray_test_closest(
-                repulsor_pos,
-                repulsor_pos + repulsor_dir,
+                base.render.get_relative_point(self.vehicle, data.position),
+                base.render.get_relative_point(self.vehicle, data.position + data.direction),
                 CM_TERRAIN,
             )
             if feeler.has_hit():
-                repulsor_ray_active.append(True)
-                ray_frac = feeler.get_hit_fraction()
-                repulsor_ray_frac.append(ray_frac)
-                repulsor_ray_contact.append(
-                    self.vehicle.get_relative_point(
-                        self.app.render,
-                        feeler.get_hit_pos(),
-                    )
+                data.active = True
+                data.fraction = feeler.get_hit_fraction()
+                data.contact = self.vehicle.get_relative_point(
+                    self.app.render,
+                    feeler.get_hit_pos(),
                 )
             else:
-                repulsor_ray_active.append(False)
-                ray_frac = 1.0
-                repulsor_ray_frac.append(ray_frac)
-                repulsor_ray_contact.append(None)
+                data.active = False
+                data.fraction = 1.0
 
         # Find the local ground's normal vector
         local_up = False
-        contacts = [pos
-                    for pos, active in zip(
-                            repulsor_ray_contact,
-                            repulsor_ray_active,
-                    )
-                    if active and self.inputs[REPULSOR_ACTIVATION]]
+        contacts = [data.contact
+                    for data in repulsor_data
+                    if data.active and self.inputs[REPULSOR_ACTIVATION]]
         if len(contacts) > 2:
             local_up = True
             target_mode = self.inputs[ACTIVE_STABILIZATION_ON_GROUND]
-            # We can calculate a local up
+            # We can calculate a local up as the smallest base vector of the
+            # point cloud of contacts.
             centroid = reduce(lambda a,b: a+b, contacts) / len(contacts)
             covariance = [[c.x, c.y, c.z]
                           for c in [contact - centroid for contact in contacts]
@@ -349,17 +383,39 @@ class Vehicle:
             CURRENT_ORIENTATION: self.vehicle.get_hpr(self.app.render),
             CURRENT_MOVEMENT: self.physics_node.get_linear_velocity(),
             CURRENT_ROTATION: self.physics_node.get_angular_velocity(),
-            REPULSOR_RAY_ACTIVE: repulsor_ray_active,
-            REPULSOR_RAY_POS: repulsor_ray_pos,
-            REPULSOR_RAY_DIR: repulsor_ray_dir,
-            REPULSOR_RAY_FRAC: repulsor_ray_frac,
-            REPULSOR_RAY_CONTACT: repulsor_ray_contact,
+            REPULSOR_DATA: repulsor_data,
             LOCAL_UP: local_up,
             FLIGHT_HEIGHT: flight_height,
             CLIMB_SPEED: climb_speed,
         }
 
     def ecu(self):
+        repulsor_target_angles = self.ecu_repulsor_reorientation()
+        repulsor_activation, delta_height, projected_delta_height, \
+            power_frac_needed = self.ecu_repulsor_activation()
+        gyro_rotation = self.ecu_gyro_stabilization()
+        thruster_activation = [
+            self.inputs[THRUST]
+            for _ in self.vehicle_data.thruster_nodes
+        ]
+        airbrake = self.inputs[AIRBRAKE]
+        stabilizer_fins = self.inputs[STABILIZER_FINS]
+
+        self.commands = {
+            # Steering commands
+            REPULSOR_TARGET_ORIENTATIONS: repulsor_target_angles,
+            REPULSOR_ACTIVATION: repulsor_activation,
+            GYRO_ROTATION: gyro_rotation,
+            THRUSTER_ACTIVATION: thruster_activation,
+            AIRBRAKE: airbrake,
+            STABILIZER_FINS: stabilizer_fins,
+            # ECU data output; Interesting numbers we found along the way.
+            HEIGHT_OVER_TARGET: delta_height,
+            HEIGHT_OVER_TARGET_PROJECTED: projected_delta_height,
+            REPULSOR_POWER_FRACTION_NEEDED: power_frac_needed,
+        }
+
+    def ecu_repulsor_reorientation(self):
         # Calculate effective repulsor motion blend values
         accelerate = self.inputs[ACCELERATE]
         turn = self.inputs[TURN]
@@ -380,20 +436,21 @@ class Vehicle:
             turn_right = 0.0
         # Blend the repulsor angle
         repulsor_target_angles = []
-        for repulsor in self.repulsor_nodes:
-            acc_angle = -(repulsor.get_python_tag(ACCELERATE)) * accelerate
-            turn_left_angle = repulsor.get_python_tag(TURN_LEFT) * turn_left
-            turn_right_angle = repulsor.get_python_tag(TURN_RIGHT) * turn_right
-            strafe_angle = repulsor.get_python_tag(STRAFE) * strafe
-            hover_angle = repulsor.get_python_tag(HOVER) * hover
+        for node in self.vehicle_data.repulsor_nodes:
+            acc_angle = -(node.get_python_tag(ACCELERATE)) * accelerate
+            turn_left_angle = node.get_python_tag(TURN_LEFT) * turn_left
+            turn_right_angle = node.get_python_tag(TURN_RIGHT) * turn_right
+            strafe_angle = node.get_python_tag(STRAFE) * strafe
+            hover_angle = node.get_python_tag(HOVER) * hover
             angle = acc_angle + turn_left_angle + turn_right_angle + \
                     strafe_angle + hover_angle
             repulsor_target_angles.append(angle)
+        return repulsor_target_angles
 
-        # Repulsor activation
+    def ecu_repulsor_activation(self):
+        # Do we know how high we are flying?
         if self.sensors[LOCAL_UP]:
             tau = self.inputs[TARGET_FLIGHT_HEIGHT_TAU]
-
             # What would we be at in tau seconds if we weren't using repulsors?
             flight_height = self.sensors[FLIGHT_HEIGHT]
             target_flight_height = self.inputs[TARGET_FLIGHT_HEIGHT]
@@ -413,17 +470,18 @@ class Vehicle:
                 # How much climb can each repulsor provide at 100% power right
                 # now?
                 max_powers = [
-                    node.get_python_tag(FORCE) for node in self.repulsor_nodes
+                    node.get_python_tag(FORCE)
+                    for node in self.vehicle_data.repulsor_nodes
                 ]
                 transferrable_powers = [
-                    max_power * cos(0.5*pi * frac)
-                    for max_power, frac in zip(
-                            max_powers, self.sensors[REPULSOR_RAY_FRAC],
+                    max_power * cos(0.5*pi * data.fraction)
+                    for max_power, data in zip(
+                            max_powers, self.sensors[REPULSOR_DATA],
                     )
                 ]
                 angle_ratios = [
                     cos(node.get_quat(self.vehicle).get_angle_rad())
-                    for node in self.repulsor_nodes
+                    for node in self.vehicle_data.repulsor_nodes
                 ]
                 angled_powers = [
                     power * ratio
@@ -433,55 +491,42 @@ class Vehicle:
                 # have to go by the weakest link.
                 total_angled_power = min(angled_powers) * len(angled_powers)
                 # How high can we climb under 100% repulsor power?
-                max_climb = 1/2 * total_angled_power * tau**2 / self.inertia
+                max_climb = 1/2 * total_angled_power * tau**2 / self.vehicle_data.mass
                 # The fraction of power needed to achieve the desired climb
                 power_frac_needed = -projected_delta_height / max_climb
+                # ...and store it.
                 repulsor_activation = [
                     power_frac_needed
-                    for _ in self.repulsor_nodes
+                    for _ in self.vehicle_data.repulsor_nodes
                 ]
             else:
                 # We're not sinking.
-                repulsor_activation = [0.0 for node in self.repulsor_nodes]
+                repulsor_activation = [
+                    0.0
+                    for _ in self.vehicle_data.repulsor_nodes
+                ]
                 power_frac_needed = 0.0
-        else: # Neither ground contact nor does the driver give full repulsors
-            repulsor_activation = [0.0 for node in self.repulsor_nodes]
+        else: # We do not have ground contact.
+            repulsor_activation = [
+                0.0
+                for _ in self.vehicle_data.repulsor_nodes
+            ]
             delta_height = 0.0
             projected_delta_height = 0.0
             power_frac_needed = 0.0
-        # But now he *does* give full repulsors! And we have gathered all
-        # ground-related data by now.
+        # The driver gives 100% repulsor power, no matter how high we are, or
+        # whether we even have ground contact.
         if self.inputs[FULL_REPULSORS]:
             repulsor_activation = [
                 self.inputs[REPULSOR_ACTIVATION]
-                for _ in self.repulsor_nodes
+                for _ in self.vehicle_data.repulsor_nodes
             ]
-
-        # Gyroscope:
-        gyro_rotation = self.ecu_gyro_stabilization()
-
-        # Thrusters
-        thruster_activation = [self.inputs[THRUST]
-                               for _ in self.thruster_nodes]
-
-        # Airbrake
-        airbrake = self.inputs[AIRBRAKE]
-        stabilizer_fins = self.inputs[STABILIZER_FINS]
-
-        self.commands = {
-            REPULSOR_ACTIVATION: repulsor_activation,
-            REPULSOR_TARGET_ORIENTATIONS: repulsor_target_angles,
-            GYRO_ROTATION: gyro_rotation,
-            THRUSTER_ACTIVATION: thruster_activation,
-            AIRBRAKE: airbrake,
-            STABILIZER_FINS: stabilizer_fins,
-            HEIGHT_OVER_TARGET: delta_height,
-            HEIGHT_OVER_TARGET_PROJECTED: projected_delta_height,
-            REPULSOR_POWER_FRACTION_NEEDED: power_frac_needed,
-        }
+        return repulsor_activation, delta_height, projected_delta_height,\
+            power_frac_needed
 
     def ecu_gyro_stabilization(self):
         # Active stabilization and angular dampening
+        # FIXME: Get from self.inputs
         tau = 0.2  # Seconds until target orientation is reached
 
         if self.sensors[LOCAL_UP]:
@@ -537,7 +582,7 @@ class Vehicle:
             # has to be reached to achieve the targeted orientation in tau
             # seconds.
             target_angular_velocity = axis_of_torque * delta_angle / tau
-        else: # `elif target_mode == PASSIVE:`, since we moght want an OFF mode
+        else: # `elif target_mode == PASSIVE:`, since we might want an OFF mode
             # Passive stabilization, so this is the pure commanded impulse
             target_angular_velocity = self.app.render.get_relative_vector(
                 self.vehicle,
@@ -550,8 +595,8 @@ class Vehicle:
 
         # An impulse of 1 causes an angular velocity of 2.5 rad on a unit mass,
         # so we have to adjust accordingly.
-        target_impulse = target_angular_velocity / 2.5 * self.inertia
-        countering_impulse = countering_velocity / 2.5 * self.inertia
+        target_impulse = target_angular_velocity / 2.5 * self.vehicle_data.mass
+        countering_impulse = countering_velocity / 2.5 * self.vehicle_data.mass
 
         # Now just sum those up, and we have the impulse that needs to be
         # applied to steer towards target.
@@ -561,13 +606,14 @@ class Vehicle:
     def apply_repulsors(self):
         dt = globalClock.dt
         repulsor_data = zip(
-            self.repulsor_nodes,
-            self.sensors[REPULSOR_RAY_ACTIVE],
-            self.sensors[REPULSOR_RAY_FRAC],
+            self.vehicle_data.repulsor_nodes,
+            self.sensors[REPULSOR_DATA],
             self.commands[REPULSOR_ACTIVATION],
             self.commands[REPULSOR_TARGET_ORIENTATIONS]
         )
-        for node, active, frac, activation, angle in repulsor_data:
+        for node, data, activation, angle in repulsor_data:
+            active = data.active
+            frac = data.fraction
             # Repulse in current orientation
             if active and activation:
                 if activation > 1.0:
@@ -641,7 +687,7 @@ class Vehicle:
     def apply_thrusters(self):
         dt = globalClock.dt
         thruster_data = zip(
-            self.thruster_nodes,
+            self.vehicle_data.thruster_nodes,
             self.commands[THRUSTER_ACTIVATION],
         )
         for node, thrust in thruster_data:

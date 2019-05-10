@@ -16,6 +16,7 @@ TODO
     * Revert to last commit before the merge; animations are now in separate
       files. Whoops...
     * Monitor issue or fix it yourself: https://github.com/panda3d/panda3d/issues/647
+* (SMALL STUFF) Default controller for NPC vehicles
 * Controls
   * rstick should disable to-horizon stabilization.
   * Space mouse bindings
