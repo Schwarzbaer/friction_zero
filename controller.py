@@ -59,7 +59,7 @@ class VehicleController:
         self.controller = controller
         self.repulsors_active = True
         self.driving_mode = DM_CRUISE
-        self.target_height = 0.5
+        self.target_height = 0.0
         self.app.accept(GE_NEXT_VEHICLE, self.next_vehicle)
         self.app.accept(GE_TOGGLE_REPULSOR, self.toggle_repulsors)
         self.app.accept(GE_SWITCH_DRIVING_MODE, self.switch_driving_mode)
@@ -90,8 +90,8 @@ class VehicleController:
 
     def change_target_height(self, delta):
         self.target_height += delta
-        if self.target_height < 0.5:
-            self.target_height = 0.5
+        if self.target_height < 0.0:
+            self.target_height = 0.0
 
     def gather_inputs(self):
         if self.controller.method == InputDevice.DeviceClass.keyboard:
@@ -113,19 +113,25 @@ class VehicleController:
 
             if self.driving_mode == DM_STUNT:
                 # Repulsor control
-                if self.controller.is_pressed(GE_TURN_LEFT):
-                    repulsor_turn += 1.0
-                if self.controller.is_pressed(GE_TURN_RIGHT):
-                    repulsor_turn -= 1.0
-                # In stunt mode, the gyro gives a yaw steering assist to
-                # repulsor steering, as those will often lose ground
-                # contact,
-                gyro_yaw = 0.0
-                if self.controller.is_pressed(GE_TURN_LEFT):
-                    gyro_yaw += 1.0
-                if self.controller.is_pressed(GE_TURN_RIGHT):
-                    gyro_yaw -= 1.0
-                target_orientation.z += gyro_yaw * 90 * 0.35
+                if self.controller.is_pressed(GE_STRAFE):
+                    if self.controller.is_pressed(GE_TURN_LEFT):
+                        repulsor_strafe -= 1.0
+                    if self.controller.is_pressed(GE_TURN_RIGHT):
+                        repulsor_strafe += 1.0
+                else:
+                    if self.controller.is_pressed(GE_TURN_LEFT):
+                        repulsor_turn -= 1.0
+                    if self.controller.is_pressed(GE_TURN_RIGHT):
+                        repulsor_turn += 1.0
+                    # In stunt mode, the gyro gives a yaw steering assist to
+                    # repulsor steering, as those will often lose ground
+                    # contact,
+                    gyro_yaw = 0.0
+                    if self.controller.is_pressed(GE_TURN_LEFT):
+                        gyro_yaw += 1.0
+                    if self.controller.is_pressed(GE_TURN_RIGHT):
+                        gyro_yaw -= 1.0
+                    target_orientation.z += gyro_yaw * 90 * 0.35
 
                 # Gyro control
                 stabilizer_active = self.controller.is_pressed(GE_STABILIZE)
