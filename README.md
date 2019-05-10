@@ -58,6 +58,7 @@ TODO
   * Air brakes
   * Sail effect (downforce, vector turning)
   * Stabilizers effect (increasing sail effect)
+* Exchangeable vehicle parts
 * Course gates
   * Check which gate has been passed this frame
   * Race rules accounting
@@ -102,6 +103,8 @@ TODO
 
 * Magnesium
   * Add one or more thrusters with an animation
+* All vehicles
+  * Add cockpit camera
 * All maps
   * Some ambient lighting, please!
 * Lab map
