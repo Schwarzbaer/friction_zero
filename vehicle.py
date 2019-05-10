@@ -1,3 +1,4 @@
+import os
 from random import random
 from math import pi
 from math import cos
@@ -14,6 +15,7 @@ from panda3d.core import VBase3
 from panda3d.core import Vec3
 from panda3d.core import GeomVertexReader
 from panda3d.core import invert
+from panda3d.core import Filename
 from panda3d.bullet import BulletRigidBodyNode
 from panda3d.bullet import BulletConvexHullShape
 
@@ -70,32 +72,49 @@ X = '_x'
 Y = '_y'
 MASS = 'mass'
 AIRBRAKE = 'airbrake'
+AIRBRAKE_DURATION = 'airbrake_duration'
 STABILIZER_FINS = 'stabilizer_fins'
-
-
+STABILIZER_FINS_DURATION = 'stabilizer_fins_duration'
 
 
 class VehicleData:
+    def get_value(self, name, model, specs):
+        print(model.find('**/={}'.format(name)))
+        if name in specs:
+            return specs[name]
+        else:
+            spec_node = model.find('**/={}'.format(name))
+            spec_str = spec_node.get_tag(name)
+            if spec_str == '':
+                raise ValueError("No value '{}' in file or model".format(name))
+            spec_val = float(spec_str)
+            specs[name] = spec_val
+            return spec_val
+
     def __init__(self, model, model_name):
-        #fn = Filename.expand_from('$MAIN_DIR/{}.toml'.format(model_name))
-        #file_exists = os.path.isfile(fn)
-        #with open(fn.to_os_specific()) as f:
-
+        fn_p = Filename.expand_from('$MAIN_DIR/{}.toml'.format(model_name))
+        fn = fn_p.to_os_specific()
+        specs = {}
+        if os.path.isfile(fn):
+            with open(fn) as f:
+                specs = toml.load(f)
         # Body data
-        friction_node = model.find('**/={}'.format(FRICTION))
-        friction_str = friction_node.get_tag('friction')
-        friction = float(friction_str)
-        self.friction = friction
-        model.set_python_tag(FRICTION, friction)
+        if not 'body' in specs:
+            specs['body'] = {}
+        body_specs = specs['body']
 
-        mass_node = model.find('**/={}'.format(MASS))
-        mass_str = mass_node.get_tag('mass')
-        mass = float(mass_str) # kg
-        self.mass = mass
-        model.set_python_tag(MASS, mass)
-
-        self.airbrake_duration = 0.2 # seconds
-        self.stabilizer_fins_duration = 0.2 # seconds
+        self.friction = self.get_value(FRICTION, model, body_specs)
+        self.mass = self.get_value(MASS, model, body_specs)
+        self.airbrake_duration = self.get_value(
+            AIRBRAKE_DURATION,
+            model,
+            body_specs,
+        )
+        self.stabilizer_fins_duration = self.get_value(
+            STABILIZER_FINS_DURATION,
+            model,
+            body_specs,
+        )
 
         # Sub-nodes for vehicle systems
         self.repulsor_nodes = model.find_all_matches(
