@@ -29,6 +29,7 @@ from common_vars import CM_COLLIDE
 
 
 SPAWN_POINT_CONNECTOR = 'fz_spawn_point_connector'
+VEHICLE = 'fz_vehicle'
 REPULSOR = 'fz_repulsor'
 ACTIVATION_DISTANCE = 'activation_distance'
 THRUSTER = 'fz_thruster'
@@ -78,16 +79,19 @@ STABILIZER_FINS_DURATION = 'stabilizer_fins_duration'
 
 
 class VehicleData:
-    def get_value(self, name, model, specs):
-        print(model.find('**/={}'.format(name)))
+    def get_value(self, name, spec_node, specs, default=None):
         if name in specs:
             return specs[name]
         else:
-            spec_node = model.find('**/={}'.format(name))
             spec_str = spec_node.get_tag(name)
-            if spec_str == '':
-                raise ValueError("No value '{}' in file or model".format(name))
-            spec_val = float(spec_str)
+            if spec_str != '':
+                spec_val = float(spec_str)
+            else:
+                if default is not None:
+                    spec_val = default
+                else:
+                    raise ValueError("No value '{}' in file or model, and no "
+                                     "default.".format(name))
             specs[name] = spec_val
             return spec_val
 
@@ -95,25 +99,30 @@ class VehicleData:
         fn_p = Filename.expand_from('$MAIN_DIR/{}.toml'.format(model_name))
         fn = fn_p.to_os_specific()
         specs = {}
-        if os.path.isfile(fn):
-            with open(fn) as f:
+        file_exists = os.path.isfile(fn)
+        if file_exists:
+            with open(fn, 'r') as f:
                 specs = toml.load(f)
-        # Body data
-        if not 'body' in specs:
-            specs['body'] = {}
-        body_specs = specs['body']
 
-        self.friction = self.get_value(FRICTION, model, body_specs)
-        self.mass = self.get_value(MASS, model, body_specs)
+        # Body data
+        if VEHICLE not in specs:
+            specs[VEHICLE] = {}
+        body_specs = specs[VEHICLE]
+
+        body_node = model.find('**/{}'.format(VEHICLE))
+        self.friction = self.get_value(FRICTION, body_node, body_specs)
+        self.mass = self.get_value(MASS, body_node, body_specs)
         self.airbrake_duration = self.get_value(
             AIRBRAKE_DURATION,
-            model,
+            body_node,
             body_specs,
+            default=0.2,
         )
         self.stabilizer_fins_duration = self.get_value(
             STABILIZER_FINS_DURATION,
-            model,
+            body_node,
             body_specs,
+            default=0.2,
         )
 
         # Sub-nodes for vehicle systems
@@ -121,41 +130,53 @@ class VehicleData:
             '**/{}*'.format(REPULSOR),
         )
         for node in self.repulsor_nodes:
-            self.transcribe_repulsor_tags(node)
+            node_name = node.get_name()
+            if node_name not in specs:
+                specs[node_name] = {}
+            repulsor_specs = specs[node_name]
+            self.transcribe_repulsor_tags(node, repulsor_specs)
 
         self.thruster_nodes = model.find_all_matches(
             '**/{}*'.format(THRUSTER),
         )
         for node in self.thruster_nodes:
-            self.transcribe_thruster_tags(node)
+            node_name = node.get_name()
+            if node_name not in specs:
+                specs[node_name] = {}
+            thruster_specs = specs[node_name]
+            self.transcribe_thruster_tags(node, thruster_specs)
 
-    def transcribe_repulsor_tags(self, node):
-        force = float(node.get_tag(FORCE))
+        if not file_exists:
+            with open(fn, 'w') as f:
+                toml_doc = toml.dumps(specs)
+                print(toml_doc)
+                toml.dump(specs, f)
+
+    def transcribe_repulsor_tags(self, node, specs):
+        force = self.get_value(FORCE, node, specs)
         node.set_python_tag(FORCE, force)
 
-        activation_distance = float(node.get_tag(ACTIVATION_DISTANCE))
+        activation_distance = self.get_value(ACTIVATION_DISTANCE, node, specs)
         node.set_python_tag(ACTIVATION_DISTANCE, activation_distance)
 
         animation_tags = [ACCELERATE, TURN_LEFT, TURN_RIGHT, STRAFE, HOVER]
         for tag in animation_tags:
-            tag_x = node.get_tag(tag+X)
-            if tag_x == '':
-                tag_x = 0.0
-            else:
-                tag_x = float(tag_x)
-            tag_y = node.get_tag(tag+Y)
-            if tag_y == '':
-                tag_y = 0.0
-            else:
-                tag_y = float(tag_y)
+            tag_x = self.get_value(tag+X, node, specs, default=0.0)
+            tag_y = self.get_value(tag+Y, node, specs, default=0.0)
             angle = VBase3(tag_x, tag_y, 0)
             node.set_python_tag(tag, angle)
         # FIXME: Make it artist-definable
-        node.set_python_tag(REPULSOR_TURNING_ANGLE, 540)
+        repulsor_turning_angle = self.get_value(
+            REPULSOR_TURNING_ANGLE,
+            node,
+            specs,
+            default=540,
+        )
+        node.set_python_tag(REPULSOR_TURNING_ANGLE, repulsor_turning_angle)
         node.set_python_tag(REPULSOR_OLD_ORIENTATION, Vec3(0, 0, 0))
 
-    def transcribe_thruster_tags(self, node):
-        force = float(node.get_tag(FORCE))
+    def transcribe_thruster_tags(self, node, specs):
+        force = self.get_value(FORCE, node, specs)
         node.set_python_tag(FORCE, force)
 
 

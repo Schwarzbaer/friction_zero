@@ -35,10 +35,10 @@ class GameApp(ShowBase):
         self.vehicles = []
         vehicle_files = [
             'Ricardeaut_Magnesium',
-            #'assets/cars/Ricardeaut_Himony.bam',
-            #'assets/cars/Psyoni_Culture.bam',
-            #'assets/cars/Texopec_Nako.bam',
-            # 'assets/cars/Doby_Phalix.bam',
+            #'Ricardeaut_Himony',
+            #'Psyoni_Culture',
+            #'Texopec_Nako',
+            # 'Doby_Phalix',
         ]
 
         for vehicle_file in vehicle_files:
