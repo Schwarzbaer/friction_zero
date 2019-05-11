@@ -16,6 +16,7 @@ TODO
     * Revert to last commit before the merge; animations are now in separate
       files. Whoops...
     * Monitor issue or fix it yourself: https://github.com/panda3d/panda3d/issues/647
+* (SMALL STUFF) Default controller for NPC vehicles
 * Controls
   * rstick should disable to-horizon stabilization.
   * Space mouse bindings
@@ -57,6 +58,7 @@ TODO
   * Air brakes
   * Sail effect (downforce, vector turning)
   * Stabilizers effect (increasing sail effect)
+* Exchangeable vehicle parts
 * Course gates
   * Check which gate has been passed this frame
   * Race rules accounting
@@ -98,16 +100,16 @@ TODO
 
 
 ### Art
-
+* Sequence animation
 * Magnesium
-  * Add one or more thrusters with an animation
+  * Add one or more thrusters with an animation (sequence flame model)
+* All vehicles
+  * Add cockpit camera
 * All maps
   * Some ambient lighting, please!
 * Lab map
-  * Add a tube section into the large looping, so that infinite loopings become
-    possible.
-  * Add the inside of a twisted tube, i.e. a hole in a wall leading into a
-    tunnel that re-enters the lab at another point.
+  * More visual cues to determine up and down in tunnels
+  * Plug up holes, basement_pool sticks out in east-tunnel.
 * hilltrack
   * Make the texture direction align with the track, so that you can see where
     in the pipe you are on the left/right direction.
@@ -210,6 +212,8 @@ Models checklist
   * fz_thruster:N
     * force			(20000)
   * fz_spawn_point_connector
+  * fz_cockpit
+    * fz_cockpit_camera
 
 * Map
   * Scene
