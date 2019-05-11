@@ -100,18 +100,16 @@ TODO
 
 
 ### Art
-
+* Sequence animation
 * Magnesium
-  * Add one or more thrusters with an animation
+  * Add one or more thrusters with an animation (sequence flame model)
 * All vehicles
   * Add cockpit camera
 * All maps
   * Some ambient lighting, please!
 * Lab map
-  * Add a tube section into the large looping, so that infinite loopings become
-    possible.
-  * Add the inside of a twisted tube, i.e. a hole in a wall leading into a
-    tunnel that re-enters the lab at another point.
+  * More visual cues to determine up and down in tunnels
+  * Plug up holes, basement_pool sticks out in east-tunnel.
 * hilltrack
   * Make the texture direction align with the track, so that you can see where
     in the pipe you are on the left/right direction.
@@ -214,6 +212,8 @@ Models checklist
   * fz_thruster:N
     * force			(20000)
   * fz_spawn_point_connector
+  * fz_cockpit
+    * fz_cockpit_camera
 
 * Map
   * Scene
