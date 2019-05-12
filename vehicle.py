@@ -34,7 +34,18 @@ REPULSOR = 'fz_repulsor'
 ACTIVATION_DISTANCE = 'activation_distance'
 THRUSTER = 'fz_thruster'
 FORCE = 'force'
-
+DRAG_COEFFICIENT_X = 'drag_coefficient_x'
+DRAG_COEFFICIENT_Y = 'drag_coefficient_y'
+DRAG_COEFFICIENT_Z = 'drag_coefficient_z'
+DRAG_AREA_X = 'drag_area_x'
+DRAG_AREA_Y = 'drag_area_y'
+DRAG_AREA_Z = 'drag_area_z'
+AIRBRAKE_AREA_X = 'airbrake_area_x'
+AIRBRAKE_AREA_Y = 'airbrake_area_y'
+AIRBRAKE_AREA_Z = 'airbrake_area_z'
+STABILIZER_FINS_AREA_X = 'stabilizer_fins_area_x'
+STABILIZER_FINS_AREA_Y = 'stabilizer_fins_area_y'
+STABILIZER_FINS_AREA_Z = 'stabilizer_fins_area_z'
 CURRENT_ORIENTATION = 'current_orientation'
 CURRENT_MOVEMENT = 'current_movement'
 CURRENT_ROTATION = 'current_rotation'
@@ -72,6 +83,7 @@ FULL_REPULSORS = 'full_repulsors'
 X = '_x'
 Y = '_y'
 MASS = 'mass'
+LOCAL_DRAG_FORCE = 'local_drag_force'
 AIRBRAKE = 'airbrake'
 AIRBRAKE_DURATION = 'airbrake_duration'
 STABILIZER_FINS = 'stabilizer_fins'
@@ -108,21 +120,101 @@ class VehicleData:
         if VEHICLE not in specs:
             specs[VEHICLE] = {}
         body_specs = specs[VEHICLE]
-
         body_node = model.find('**/{}'.format(VEHICLE))
+
         self.friction = self.get_value(FRICTION, body_node, body_specs)
         self.mass = self.get_value(MASS, body_node, body_specs)
         self.airbrake_duration = self.get_value(
             AIRBRAKE_DURATION,
             body_node,
             body_specs,
-            default=0.2,
         )
         self.stabilizer_fins_duration = self.get_value(
             STABILIZER_FINS_DURATION,
             body_node,
             body_specs,
-            default=0.2,
+        )
+
+        # Aerodynamic properties
+        drag_coefficient_x = self.get_value(
+            DRAG_COEFFICIENT_X,
+            body_node,
+            body_specs,
+        )
+        drag_coefficient_y = self.get_value(
+            DRAG_COEFFICIENT_Y,
+            body_node,
+            body_specs,
+        )
+        drag_coefficient_z = self.get_value(
+            DRAG_COEFFICIENT_Z,
+            body_node,
+            body_specs,
+        )
+        self.drag_coefficient = Vec3(
+            drag_coefficient_x,
+            drag_coefficient_y,
+            drag_coefficient_z,
+        )
+        drag_area_x = self.get_value(
+            DRAG_AREA_X,
+            body_node,
+            body_specs,
+        )
+        drag_area_y = self.get_value(
+            DRAG_AREA_Y,
+            body_node,
+            body_specs,
+        )
+        drag_area_z = self.get_value(
+            DRAG_AREA_Z,
+            body_node,
+            body_specs,
+        )
+        self.drag_area = Vec3(
+            drag_area_x,
+            drag_area_y,
+            drag_area_z,
+        )
+        airbrake_area_x = self.get_value(
+            AIRBRAKE_AREA_X,
+            body_node,
+            body_specs,
+        )
+        airbrake_area_y = self.get_value(
+            AIRBRAKE_AREA_Y,
+            body_node,
+            body_specs,
+        )
+        airbrake_area_z = self.get_value(
+            AIRBRAKE_AREA_Z,
+            body_node,
+            body_specs,
+        )
+        self.airbrake_area = Vec3(
+            airbrake_area_x,
+            airbrake_area_y,
+            airbrake_area_z,
+        )
+        stabilizer_fins_area_x = self.get_value(
+            STABILIZER_FINS_AREA_X,
+            body_node,
+            body_specs,
+        )
+        stabilizer_fins_area_y = self.get_value(
+            STABILIZER_FINS_AREA_Y,
+            body_node,
+            body_specs,
+        )
+        stabilizer_fins_area_z = self.get_value(
+            STABILIZER_FINS_AREA_Z,
+            body_node,
+            body_specs,
+        )
+        self.stabilizer_fins_area = Vec3(
+            stabilizer_fins_area_x,
+            stabilizer_fins_area_y,
+            stabilizer_fins_area_z,
         )
 
         # Sub-nodes for vehicle systems
@@ -148,8 +240,6 @@ class VehicleData:
 
         if not file_exists:
             with open(fn, 'w') as f:
-                toml_doc = toml.dumps(specs)
-                print(toml_doc)
                 toml.dump(specs, f)
 
     def transcribe_repulsor_tags(self, node, specs):
@@ -206,7 +296,18 @@ class Vehicle:
         model_file_name = 'assets/cars/{}.bam'.format(model_name)
         self.app = app
 
-        self.model = Actor(model_file_name)
+        def animation_path(model, animation):
+            base_path = 'assets/cars/animations/{}-{}.bam'
+            return base_path.format(model, animation)
+
+        self.model = Actor(
+            model_file_name,
+            {
+            #    AIRBRAKE: 'assets/cars/animations/{}-{}.bam'.format(model_name, AIRBRAKE),
+            #    AIRBRAKE: animation_path(model_name, AIRBRAKE),
+            #    STABILIZER_FINS: animation_path(model_name, STABILIZER_FINS),
+            }
+        )
         self.model.enableBlend()
         self.model.setControlEffect(AIRBRAKE, 1)
         self.model.setControlEffect(STABILIZER_FINS, 1)
@@ -329,6 +430,7 @@ class Vehicle:
     def game_loop(self):
         self.gather_sensors()
         self.ecu()
+        self.apply_air_drag()
         self.apply_repulsors()
         self.apply_gyroscope()
         self.apply_thrusters()
@@ -418,11 +520,31 @@ class Vehicle:
             flight_height = 0.0
             climb_speed = 0.0
 
+        # Air drag
+        movement = self.physics_node.get_linear_velocity()
+
+        drag_coefficient = self.vehicle_data.drag_coefficient
+        drag_area = self.vehicle_data.drag_area + \
+                    self.vehicle_data.airbrake_area * self.airbrake_state + \
+                    self.vehicle_data.stabilizer_fins_area * self.stabilizer_fins_state
+        air_density = 1.225 # kg/m**3 at 1 atm at 15 degree C
+        air_speed = -self.vehicle.get_relative_vector(
+            base.render,
+            movement,
+        )
+
+        # drag_force = 1/2*drag_coefficient*mass_density*area*flow_speed**2
+        result = Vec3(air_speed)
+        result = (result**3) / result.length()
+        result.componentwise_mult(drag_area)
+        result.componentwise_mult(self.vehicle_data.drag_coefficient)
+        drag_force = result * 1/2 * air_density
 
         self.sensors = {
             CURRENT_ORIENTATION: self.vehicle.get_hpr(self.app.render),
-            CURRENT_MOVEMENT: self.physics_node.get_linear_velocity(),
+            CURRENT_MOVEMENT: movement,
             CURRENT_ROTATION: self.physics_node.get_angular_velocity(),
+            LOCAL_DRAG_FORCE: drag_force,
             REPULSOR_DATA: repulsor_data,
             LOCAL_UP: local_up,
             FLIGHT_HEIGHT: flight_height,
@@ -643,6 +765,17 @@ class Vehicle:
         impulse = target_impulse + countering_impulse
         return impulse
 
+    def apply_air_drag(self):
+        drag_force = self.sensors[LOCAL_DRAG_FORCE]
+        global_drag_force = base.render.get_relative_vector(
+            self.vehicle,
+            drag_force,
+        )
+        if not isnan(global_drag_force.x):
+            self.physics_node.apply_central_impulse(
+                global_drag_force * globalClock.dt,
+            )
+
     def apply_repulsors(self):
         dt = globalClock.dt
         repulsor_data = zip(
@@ -745,6 +878,7 @@ class Vehicle:
             )
 
     def apply_airbrake(self):
+        # Animation and state update only, since the effect is in air drag
         dt = globalClock.dt
         target = self.commands[AIRBRAKE]
         max_movement = self.airbrake_speed * dt
@@ -758,12 +892,11 @@ class Vehicle:
             self.airbrake_state = 1.0
         if self.airbrake_state < 0.0:
             self.airbrake_state = 0.0
-        # self.model.pose(AIRBRAKE, self.airbrake_state, partName=AIRBRAKE)
+        #self.model.pose(AIRBRAKE, self.airbrake_state, partName=AIRBRAKE)
         self.model.pose(AIRBRAKE, self.airbrake_state)
-        # FIXME: This will be replaced by air drag.
-        self.physics_node.set_linear_damping(self.airbrake_state * self.airbrake_factor)
 
     def apply_stabilizer_fins(self):
+        # Animation and state update only, since the effect is in air drag
         dt = globalClock.dt
         target = self.commands[STABILIZER_FINS]
         max_movement = self.stabilizer_fins_speed * dt
@@ -780,7 +913,7 @@ class Vehicle:
         self.model.pose(
             STABILIZER_FINS,
             self.stabilizer_fins_state,
-            # partName=STABILIZER_FINS,
+            #partName=STABILIZER_FINS,
         )
         # FIXME: Implement stabilizing effect
 
