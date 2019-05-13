@@ -9,21 +9,47 @@ TODO
 
 ### Code
 
+* Animations
+  * See branch magnesium-animation-bug. Using subParts in an Actor causes an
+    exception when .pose is used, as Actor seems to look for the file with the
+    animation, despite it being present in the model file.
+    * Revert to last commit before the merge; animations are now in separate
+      files. Whoops...
+    * Monitor issue or fix it yourself: https://github.com/panda3d/panda3d/issues/647
+* (SMALL STUFF) Default controller for NPC vehicles
+* Controls
+  * Space mouse bindings
+* File for map values
+  * Air density
+  * Gravity
 * ECU
   * Gyroscopic stabilization
     * Replace numpy.linalg.eig() with a PCA-based approach
-  * Repulsors should act like dampening springs
   * (low importance) Make angular stabilization deactivateable
-  * (low importance) Stabilize to global orientation
-* (SMALL) Stabilizer: Code equals that of airbrake
+* (Requires vehicle config files, see above) Gyro power: 800Nm units is a bit
+  high as a cap. 400Nm still helps a lot, but has noticeable wobbles at
+  collisions or big ground normal changes. 300Nm is still very playable, but
+  gyro weakness i noticeable, and one instability occurred. 200Nm still lets the
+  car (sometimes? Frame rate dependent?) roll on the ground, 175Nm is too small
+  for that.
 * Air drag and aerodynamics (https://www.gamedev.net/forums/topic/457235-flight-sim-physics/)
   * Drag scales with the square of the speed
   * Artist-defined air density
   * Air brakes
+  * Sail effect (downforce, vector turning)
+  * Stabilizers effect (increasing sail effect)
+* Exchangeable vehicle parts
 * Course gates
   * Check which gate has been passed this frame
   * Race rules accounting
   * Timekeeping
+* Timing bug: Physics should happen after rendering, camera adjustments before
+  it. Currently the most visible effect is that last frame's contact points are
+  shown.
+* Particle systems
+  * Repulsor contact points
+  * Vehicle-terrain crashes
+  * Vehicle-vehicle crashes
 * Sound
   * Repulsor activity
   * Background music
@@ -38,6 +64,7 @@ TODO
   * Fuel
   * Overheating
 * Camera controls and automatics
+  * (SMALL) HUD element for camera mode
   * Camera distance and FOV should be related to vehicle's linear speed.
   * Camera should respect the ground / objects.
   * Cinematics
@@ -53,19 +80,29 @@ TODO
 
 
 ### Art
-
+* Sequence animation
+* Magnesium
+  * Add one or more thrusters with an animation (sequence flame model)
+* All vehicles
+  * Add cockpit camera
+* racetrack
+  * Add lane demarcations
+  * Add a gentle hilliness to the terrain
+  * Add a stretch gently curving back and forth
+  * Make hard curves gentler and/or add a bowl shape to their outsides
+  * Move trees a few meters away from the track
+    * More trees!
+* All maps
+  * Some ambient lighting, please!
+* Lab map
+  * More visual cues to determine up and down in tunnels
+  * Plug up holes, basement_pool sticks out in east-tunnel.
+* hilltrack
+  * Make the texture direction align with the track, so that you can see where
+    in the pipe you are on the left/right direction.
+  * Make the bends at the edge higher and more overbearing, to reduce the risk
+    of slipping off the track.
 * Design two other vehicles
-* Airbrake animations
-  * On Magnesium, rename 'airbrake' to 'stabilizer'
-  * Add parachute-like airbrake animation
-* Effect for the point where the repulsor ray hits the ground
-* When movement is mostly implemented, make racetrack
-  * Start with a looping road.
-  * Add start/finish, gates, spawn points
-  * Add surroundings
-* Lab map: Like plane, but with stunt elements to the right, left, and back of
-  starting position.
-* Tricks map: Like the lab map, but prettier. A skatepark for hovercars.
 * Driving school: A tutorial map.
 * Sounds:
   * engine (playbackrate to speed?)
@@ -80,9 +117,6 @@ TODO
 
 * Normalize pman build / asset workflow
 * Map / vehicle verification
-* File for map / vehicle values: TOML? YAML?
-  * Write file from model data
-  * Read file during construction
 
 
 ### Other
@@ -94,6 +128,7 @@ TODO
 ### Post-Prototype
 
 * ECSify everything
+* Driver g-meter
 * Keybindings
   * Allow for multiple players
   * Allow for multiple devices (per player?)
@@ -164,6 +199,8 @@ Models checklist
   * fz_thruster:N
     * force			(20000)
   * fz_spawn_point_connector
+  * fz_cockpit
+    * fz_cockpit_camera
 
 * Map
   * Scene
