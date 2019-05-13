@@ -36,7 +36,7 @@ gamepad_gyro_roll                right_x
 gamepad_full_repulsors           lshoulder
 gamepad_thrust                   ltrigger
 gamepad_stabilizer_fins          rshoulder
-gamepad_airbrake                 rtrigger
+gamepad_airbrake                 rshoulder
 gamepad_camera_mode              dpad_down
 gamepad_next_vehicle             dpad_up
 
