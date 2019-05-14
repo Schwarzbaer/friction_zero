@@ -17,12 +17,12 @@
 }
 
 <Texture> Texture {
-  "./tex/rayhit.png"
+  "./../textures/effect/rayhit.png"
   <Scalar> envtype { MODULATE }
   <Scalar> minfilter { LINEAR_MIPMAP_LINEAR }
   <Scalar> magfilter { LINEAR_MIPMAP_LINEAR }
   <Scalar> wrap { REPEAT }
-  <Scalar> alpha-file { "./tex/rayhit.png" }
+  <Scalar> alpha-file { "./../textures/effect/rayhit.png" }
   <Scalar> alpha-file-channel { 4 }
 }
 

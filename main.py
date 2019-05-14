@@ -21,7 +21,7 @@ panda3d.core.load_prc_file(
 
 
 class GameApp(ShowBase):
-    def __init__(self, map="assets/maps/lab.bam"):
+    def __init__(self, map="assets/maps/lab/lab.bam"):
         ShowBase.__init__(self)
         pman.shim.init(self)
         self.accept('escape', sys.exit)
@@ -100,7 +100,7 @@ class GameApp(ShowBase):
 
 def main():
     if len(sys.argv) > 1:
-        map = "assets/maps/"+sys.argv[1]
+        map = "assets/maps/"+sys.argv[1]+"/"+sys.argv[1]+".bam"
         app = GameApp(map)
     else:
         app = GameApp()

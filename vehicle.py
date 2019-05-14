@@ -108,7 +108,7 @@ class VehicleData:
             return spec_val
 
     def __init__(self, model, model_name):
-        fn_p = Filename.expand_from('$MAIN_DIR/{}.toml'.format(model_name))
+        fn_p = Filename.expand_from('$MAIN_DIR/assets/cars/{}/{}.toml'.format(model_name, model_name))
         fn = fn_p.to_os_specific()
         specs = {}
         file_exists = os.path.isfile(fn)
@@ -419,7 +419,7 @@ class Vehicle:
         self.inputs = inputs
 
     def add_repulsor(self, repulsor):
-        ground_contact = self.app.loader.load_model("assets/repulsorhit.egg")
+        ground_contact = self.app.loader.load_model("assets/effect/repulsorhit.egg")
         ground_contact.set_scale(1)
         ground_contact.reparent_to(self.app.render)
         repulsor.set_python_tag('ray_end', ground_contact)
