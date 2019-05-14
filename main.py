@@ -35,7 +35,7 @@ class GameApp(ShowBase):
         self.vehicles = []
         vehicle_files = [
             'Ricardeaut_Magnesium',
-            #'Ricardeaut_Himony',
+            'Ricardeaut_Himony',
             #'Psyoni_Culture',
             #'Texopec_Nako',
             # 'Doby_Phalix',

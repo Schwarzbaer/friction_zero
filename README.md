@@ -18,33 +18,13 @@ TODO
     * Monitor issue or fix it yourself: https://github.com/panda3d/panda3d/issues/647
 * (SMALL STUFF) Default controller for NPC vehicles
 * Controls
-  * rstick should disable to-horizon stabilization.
   * Space mouse bindings
-* File for map / vehicle values: TOML? YAML?
-  * Write file from model data
-  * Read file during construction
+* File for map values
+  * Air density
+  * Gravity
 * ECU
   * Gyroscopic stabilization
     * Replace numpy.linalg.eig() with a PCA-based approach
-  * Repulsor damping: Why is there a droop in height relative to target height
-    at low repulsor powers, even though sufficient capacity is present? It can
-    be mitigated by upping the repulsor power, but that leads to absurd jumping
-    potential.
-    * At an activation_distance of 8m and a force of 10kN per repulsor, a 1t
-      Magnesium jumps into the air at 30km/h, reaching maybe 30-50 meters of
-      height from an on-the-ground start.
-    * A target flight height of 6m leads to an actual flight height of 4m. At
-      4m, acceleration is near optimum, activation still staying below 100%
-      constantly. One step higher, it going over 100% intermittendly is normal.
-    * Reducing the repulsor power to 9kN leads to a drastic performance loss in
-      the algorithm. A target height of ~11m has to be set to achieve lift that
-      is slowly penduluming between 1m and 4m. Jumping abilities feel good
-      though; on lab, a Magnesium lying on the floor, 8m activation distance,
-      can easily clear the height of the largest block in the raised platform,
-      but not about twice as much. At 1m, the block can barely cleared, at 3m
-      about 2m are missing at the peak of the jump.
-    * (Requires vehicle config files, see above) Add these finetunings after the
-      damping repulsors work properly.
   * (low importance) Make angular stabilization deactivateable
 * (Requires vehicle config files, see above) Gyro power: 800Nm units is a bit
   high as a cap. 400Nm still helps a lot, but has noticeable wobbles at
@@ -52,12 +32,8 @@ TODO
   gyro weakness i noticeable, and one instability occurred. 200Nm still lets the
   car (sometimes? Frame rate dependent?) roll on the ground, 175Nm is too small
   for that.
-* Air drag and aerodynamics (https://www.gamedev.net/forums/topic/457235-flight-sim-physics/)
-  * Drag scales with the square of the speed
-  * Artist-defined air density
-  * Air brakes
-  * Sail effect (downforce, vector turning)
-  * Stabilizers effect (increasing sail effect)
+* Aerodynamics
+  * Airfoil effect
 * Exchangeable vehicle parts
 * Course gates
   * Check which gate has been passed this frame
@@ -105,6 +81,16 @@ TODO
   * Add one or more thrusters with an animation (sequence flame model)
 * All vehicles
   * Add cockpit camera
+* racetrack
+  * Add lane demarcations (ca. 2.75m apart)
+  * Align starting positions with track
+  * Add a gentle hilliness to the terrain
+  * Add a stretch gently curving back and forth
+  * Make hard curves gentler and/or add a bowl shape to their outsides
+  * Move trees a few meters away from the track
+    * More trees!
+  * There should be something big in the center of the map that makes it easier
+    to estimate one's position on the map.
 * All maps
   * Some ambient lighting, please!
 * Lab map

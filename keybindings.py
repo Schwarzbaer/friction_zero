@@ -239,14 +239,15 @@ class DeviceListener(DirectObject):
             button = self.controller.find_button(button_name)
             return button.pressed
 
-    def axis_value(self, game_event):
+    def axis_value(self, game_event, square_factor=1.0):
         axis_name = self.bindings[game_event].value
         if axis_name == UNBOUND:
             return 0.0
         axis = self.controller.find_axis(InputDevice.Axis[axis_name])
-        return axis.value
+        v = axis.value
+        return (v * (1-square_factor)) + v*abs(v) * square_factor
 
-    def pressed_or_value(self, game_event):
+    def pressed_or_value(self, game_event, square_factor=1.0):
         input_name = self.bindings[game_event].value
         if input_name == UNBOUND:
             return 0.0
@@ -259,7 +260,8 @@ class DeviceListener(DirectObject):
         axes_names = [axis.axis.name for axis in self.controller.axes]
         if input_name in axes_names:
             axis = self.controller.find_axis(InputDevice.Axis[input_name])
-            return axis.value
+            v = axis.value
+            return (v * (1-square_factor)) + v*abs(v) * square_factor
         else:
             button = self.controller.find_button(input_name)
             return button.pressed

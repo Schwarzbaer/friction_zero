@@ -1,18 +1,18 @@
 [fz_vehicle]
 friction = 1.25
-stabilizer_fins_duration = 0.3
 mass = 1500.0
 airbrake_duration = 0.3
+stabilizer_fins_duration = 0.3
 drag_coefficient_x = 0.47
 drag_coefficient_y = 0.29
 drag_coefficient_z = 1
 drag_area_x = 3
 drag_area_y = 2
-drag_area_z = 6
-airbrake_area_x = 0
+drag_area_z = 13
+airbrake_area_x = 40
 airbrake_area_y = 20
 airbrake_area_z = 0
-stabilizer_fins_area_x = 10
+stabilizer_fins_area_x = 40
 stabilizer_fins_area_y = 0
 stabilizer_fins_area_z = 0
 
