@@ -293,12 +293,12 @@ class RepulsorData:
 
 class Vehicle:
     def __init__(self, app, model_name):
-        model_file_name = 'assets/cars/{}.bam'.format(model_name)
+        model_file_name = 'assets/cars/{}/{}.bam'.format(model_name, model_name)
         self.app = app
 
         def animation_path(model, animation):
-            base_path = 'assets/cars/animations/{}-{}.bam'
-            return base_path.format(model, animation)
+            base_path = 'assets/cars/animations/{}/{}-{}.bam'
+            return base_path.format(model, model, animation)
 
         self.model = Actor(
             model_file_name,
