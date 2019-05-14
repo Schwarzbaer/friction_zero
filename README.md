@@ -32,12 +32,8 @@ TODO
   gyro weakness i noticeable, and one instability occurred. 200Nm still lets the
   car (sometimes? Frame rate dependent?) roll on the ground, 175Nm is too small
   for that.
-* Air drag and aerodynamics (https://www.gamedev.net/forums/topic/457235-flight-sim-physics/)
-  * Drag scales with the square of the speed
-  * Artist-defined air density
-  * Air brakes
-  * Sail effect (downforce, vector turning)
-  * Stabilizers effect (increasing sail effect)
+* Aerodynamics
+  * Airfoil effect
 * Exchangeable vehicle parts
 * Course gates
   * Check which gate has been passed this frame
@@ -86,12 +82,15 @@ TODO
 * All vehicles
   * Add cockpit camera
 * racetrack
-  * Add lane demarcations
+  * Add lane demarcations (ca. 2.75m apart)
+  * Align starting positions with track
   * Add a gentle hilliness to the terrain
   * Add a stretch gently curving back and forth
   * Make hard curves gentler and/or add a bowl shape to their outsides
   * Move trees a few meters away from the track
     * More trees!
+  * There should be something big in the center of the map that makes it easier
+    to estimate one's position on the map.
 * All maps
   * Some ambient lighting, please!
 * Lab map
