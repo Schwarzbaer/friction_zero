@@ -28,6 +28,7 @@ from model_data import ModelData
 
 SPAWN_POINT_CONNECTOR = 'fz_spawn_point_connector'
 VEHICLE = 'fz_vehicle'
+MAX_GYRO_TORQUE = 'max_gyro_torque'
 REPULSOR = 'fz_repulsor'
 ACTIVATION_DISTANCE = 'activation_distance'
 THRUSTER = 'fz_thruster'
@@ -98,6 +99,11 @@ class VehicleData(ModelData):
 
         self.friction = self.get_value(FRICTION, body_node, body_specs)
         self.mass = self.get_value(MASS, body_node, body_specs)
+        self.max_gyro_torque = self.get_value(
+            MAX_GYRO_TORQUE,
+            body_node,
+            body_specs,
+        )
         self.airbrake_duration = self.get_value(
             AIRBRAKE_DURATION,
             body_node,
@@ -497,7 +503,7 @@ class Vehicle:
         drag_area = self.vehicle_data.drag_area + \
                     self.vehicle_data.airbrake_area * self.airbrake_state + \
                     self.vehicle_data.stabilizer_fins_area * self.stabilizer_fins_state
-        air_density = 1.225 # kg/m**3 at 1 atm at 15 degree C
+        air_density = self.app.environment.env_data.air_density
         air_speed = -self.vehicle.get_relative_vector(
             base.render,
             movement,
@@ -819,7 +825,7 @@ class Vehicle:
     def apply_gyroscope(self):
         impulse = self.commands[GYRO_ROTATION]
         # Clamp the impulse to what the "motor" can produce.
-        max_impulse = 0.8 * 1000
+        max_impulse = self.vehicle_data.max_gyro_torque
         if impulse.length() > max_impulse:
             clamped_impulse = impulse / impulse.length() * max_impulse
         else:
