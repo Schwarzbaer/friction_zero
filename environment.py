@@ -19,7 +19,8 @@ GRAVITY = 'gravity'
 
 
 class Environment:
-    def __init__(self, app, map_file):
+    def __init__(self, app, map_name):
+        map_file = 'assets/maps/{}/{}.bam'.format(map_name, map_name)
         self.app = app
 
         self.physics_world = BulletWorld()
