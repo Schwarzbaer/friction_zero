@@ -77,11 +77,6 @@ TODO
 
 
 ### Art
-* Sequence animation
-* Magnesium
-  * Add one or more thrusters with an animation (sequence flame model)
-* All vehicles
-  * Add cockpit camera
 * racetrack
   * Add lane demarcations (ca. 2.75m apart)
   * Align starting positions with track
@@ -92,8 +87,6 @@ TODO
     * More trees!
   * There should be something big in the center of the map that makes it easier
     to estimate one's position on the map.
-* All maps
-  * Some ambient lighting, please!
 * Lab map
   * More visual cues to determine up and down in tunnels
   * Plug up holes, basement_pool sticks out in east-tunnel.
@@ -102,7 +95,6 @@ TODO
     in the pipe you are on the left/right direction.
   * Make the bends at the edge higher and more overbearing, to reduce the risk
     of slipping off the track.
-* Design two other vehicles
 * Driving school: A tutorial map.
 * Sounds:
   * engine (playbackrate to speed?)
