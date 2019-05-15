@@ -9,10 +9,6 @@ TODO
 
 ### Code
 
-* File for map values
-  * Air density
-  * Gravity
-  * Friction
 * Animations
   * See branch magnesium-animation-bug. Using subParts in an Actor causes an
     exception when .pose is used, as Actor seems to look for the file with the
@@ -27,12 +23,6 @@ TODO
   * Gyroscopic stabilization
     * Replace numpy.linalg.eig() with a PCA-based approach
   * (low importance) Make angular stabilization deactivateable
-* (Requires vehicle config files, see above) Gyro power: 800Nm units is a bit
-  high as a cap. 400Nm still helps a lot, but has noticeable wobbles at
-  collisions or big ground normal changes. 300Nm is still very playable, but
-  gyro weakness i noticeable, and one instability occurred. 200Nm still lets the
-  car (sometimes? Frame rate dependent?) roll on the ground, 175Nm is too small
-  for that.
 * Aerodynamics
   * Airfoil effect
 * Exchangeable vehicle parts
