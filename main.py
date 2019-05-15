@@ -39,6 +39,7 @@ class GameApp(ShowBase):
             'Ricardeaut_Himony',
             #'Psyoni_Culture',
             #'Texopec_Nako',
+            #'Texopec_Reaal',
             # 'Doby_Phalix',
         ]
 
