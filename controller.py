@@ -113,19 +113,25 @@ class VehicleController:
 
             if self.driving_mode == DM_STUNT:
                 # Repulsor control
-                if self.controller.is_pressed(GE_TURN_LEFT):
-                    repulsor_turn += 1.0
-                if self.controller.is_pressed(GE_TURN_RIGHT):
-                    repulsor_turn -= 1.0
-                # In stunt mode, the gyro gives a yaw steering assist to
-                # repulsor steering, as those will often lose ground
-                # contact,
-                gyro_yaw = 0.0
-                if self.controller.is_pressed(GE_TURN_LEFT):
-                    gyro_yaw += 1.0
-                if self.controller.is_pressed(GE_TURN_RIGHT):
-                    gyro_yaw -= 1.0
-                target_orientation.z += gyro_yaw * 90 * 0.35
+                if self.controller.is_pressed(GE_STRAFE):
+                    if self.controller.is_pressed(GE_TURN_LEFT):
+                        repulsor_strafe -= 1.0
+                    if self.controller.is_pressed(GE_TURN_RIGHT):
+                        repulsor_strafe += 1.0
+                else:
+                    if self.controller.is_pressed(GE_TURN_LEFT):
+                        repulsor_turn -= 1.0
+                    if self.controller.is_pressed(GE_TURN_RIGHT):
+                        repulsor_turn += 1.0
+                    # In stunt mode, the gyro gives a yaw steering assist to
+                    # repulsor steering, as those will often lose ground
+                    # contact,
+                    gyro_yaw = 0.0
+                    if self.controller.is_pressed(GE_TURN_LEFT):
+                        gyro_yaw += 1.0
+                    if self.controller.is_pressed(GE_TURN_RIGHT):
+                        gyro_yaw -= 1.0
+                    target_orientation.z += gyro_yaw * 90 * 0.35
 
                 # Gyro control
                 stabilizer_active = self.controller.is_pressed(GE_STABILIZE)
@@ -313,7 +319,7 @@ class VehicleController:
 
         # Repulsor damping
         if self.driving_mode == DM_CRUISE:
-            target_flight_height_tau = 1/8
+            target_flight_height_tau = 0.15
         elif self.driving_mode == DM_STUNT:
             target_flight_height_tau = 0.1
 

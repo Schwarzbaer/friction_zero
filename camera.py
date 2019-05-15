@@ -10,10 +10,7 @@ from panda3d.core import ConfigVariableDouble
 from direct.showbase.DirectObject import DirectObject
 from direct.gui.OnscreenText import OnscreenText
 
-from vehicle import REPULSOR_RAY_ACTIVE
-from vehicle import REPULSOR_RAY_POS
-from vehicle import REPULSOR_RAY_DIR
-from vehicle import REPULSOR_RAY_FRAC
+from vehicle import REPULSOR_DATA
 from vehicle import LOCAL_UP
 from vehicle import FLIGHT_HEIGHT
 from vehicle import TARGET_FLIGHT_HEIGHT
@@ -238,12 +235,8 @@ class CameraController(DirectObject):
             self.driving_mode['fg'] = (0.5, 1.0, 0.5, 1.0)
 
         # Repulsors
-        ray_poss = self.vehicle.sensors[REPULSOR_RAY_POS]
-        ray_dirs = self.vehicle.sensors[REPULSOR_RAY_DIR]
-        ray_actives = self.vehicle.sensors[REPULSOR_RAY_ACTIVE]
-        ray_fracs = self.vehicle.sensors[REPULSOR_RAY_FRAC]
-        ray_data = zip(ray_poss, ray_dirs, ray_actives, ray_fracs)
-        num_models_delta = len(ray_dirs) - len(self.repulsor_models)
+        ray_data = self.vehicle.sensors[REPULSOR_DATA]
+        num_models_delta = len(ray_data) - len(self.repulsor_models)
         if num_models_delta > 0:
             # We need more models
             for _ in range(num_models_delta):
@@ -263,13 +256,13 @@ class CameraController(DirectObject):
                 on_model.remove_node()
                 off_model.remove_node()
             self.repulsor_models = self.repulsor_models[:len(ray_dirs)]
-        for (ray_pos, ray_dir, ray_active, ray_frac), (on_model, off_model) in zip(ray_data, self.repulsor_models):
+        for data, (on_model, off_model) in zip(ray_data, self.repulsor_models):
             offset_dir = self.vehicle.np().get_relative_vector(
                 base.render,
-                ray_dir,
+                data.direction,
             )
-            offset = ray_pos * 0.1 + offset_dir * ray_frac * 0.1
-            if ray_active:
+            offset = data.position * 0.1 + offset_dir * data.fraction * 0.1
+            if data.active:
                 on_model.set_pos(offset)
                 on_model.show()
                 off_model.hide()

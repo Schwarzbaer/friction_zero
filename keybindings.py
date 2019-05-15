@@ -67,6 +67,7 @@ keyboard_bindings = {
     GE_TOGGLE_REPULSOR: ConfigVariableString('keyboard_toggle_repulsor', 'r'),
     GE_FORWARD: ConfigVariableString('keyboard_forward', 'w'),
     GE_BACKWARD: ConfigVariableString('keyboard_backward', 's'),
+    GE_STRAFE: ConfigVariableString('keyboard_strafe', 'lshift'),
     GE_TURN_LEFT: ConfigVariableString('keyboard_turn_left', 'a'),
     GE_TURN_RIGHT: ConfigVariableString('keyboard_turn_right', 'd'),
     GE_HOVER: ConfigVariableString('keyboard_hover', 'none'),
@@ -74,7 +75,7 @@ keyboard_bindings = {
     GE_SWITCH_DRIVING_MODE: ConfigVariableString('keyboard_switch_driving_mode', 'q'),
     GE_TARGET_HEIGHT_UP: ConfigVariableString('keyboard_target_height_up', 'f'),
     GE_TARGET_HEIGHT_DOWN: ConfigVariableString('keyboard_target_height_down', 'v'),
-    GE_STABILIZE: ConfigVariableString('keyboard_stabilize', 'lshift'),
+    GE_STABILIZE: ConfigVariableString('keyboard_stabilize', 'none'),
     GE_GYRO_PITCH_DOWN: ConfigVariableString('keyboard_gyro_pitch_down', 'arrow_up'),
     GE_GYRO_PITCH_UP: ConfigVariableString('keyboard_gyro_pitch_up', 'arrow_down'),
     GE_GYRO_ROLL_LEFT: ConfigVariableString('keyboard_gyro_roll_left', 'arrow_left'),
@@ -238,14 +239,15 @@ class DeviceListener(DirectObject):
             button = self.controller.find_button(button_name)
             return button.pressed
 
-    def axis_value(self, game_event):
+    def axis_value(self, game_event, square_factor=1.0):
         axis_name = self.bindings[game_event].value
         if axis_name == UNBOUND:
             return 0.0
         axis = self.controller.find_axis(InputDevice.Axis[axis_name])
-        return axis.value
+        v = axis.value
+        return (v * (1-square_factor)) + v*abs(v) * square_factor
 
-    def pressed_or_value(self, game_event):
+    def pressed_or_value(self, game_event, square_factor=1.0):
         input_name = self.bindings[game_event].value
         if input_name == UNBOUND:
             return 0.0
@@ -258,7 +260,8 @@ class DeviceListener(DirectObject):
         axes_names = [axis.axis.name for axis in self.controller.axes]
         if input_name in axes_names:
             axis = self.controller.find_axis(InputDevice.Axis[input_name])
-            return axis.value
+            v = axis.value
+            return (v * (1-square_factor)) + v*abs(v) * square_factor
         else:
             button = self.controller.find_button(input_name)
             return button.pressed
