@@ -9,6 +9,10 @@ TODO
 
 ### Code
 
+* File for map values
+  * Air density
+  * Gravity
+  * Friction
 * Animations
   * See branch magnesium-animation-bug. Using subParts in an Actor causes an
     exception when .pose is used, as Actor seems to look for the file with the
@@ -19,9 +23,6 @@ TODO
 * (SMALL STUFF) Default controller for NPC vehicles
 * Controls
   * Space mouse bindings
-* File for map values
-  * Air density
-  * Gravity
 * ECU
   * Gyroscopic stabilization
     * Replace numpy.linalg.eig() with a PCA-based approach

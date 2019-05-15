@@ -1,4 +1,3 @@
-import os
 from random import random
 from math import pi
 from math import cos
@@ -8,14 +7,11 @@ from functools import reduce
 
 import numpy
 
-import toml
-
 from panda3d.core import NodePath
 from panda3d.core import VBase3
 from panda3d.core import Vec3
 from panda3d.core import GeomVertexReader
 from panda3d.core import invert
-from panda3d.core import Filename
 from panda3d.bullet import BulletRigidBodyNode
 from panda3d.bullet import BulletConvexHullShape
 
@@ -26,6 +22,8 @@ from common_vars import DEFAULT_FRICTION_VALUE
 from common_vars import CM_TERRAIN
 from common_vars import CM_VEHICLE
 from common_vars import CM_COLLIDE
+
+from model_data import ModelData
 
 
 SPAWN_POINT_CONNECTOR = 'fz_spawn_point_connector'
@@ -90,32 +88,8 @@ STABILIZER_FINS = 'stabilizer_fins'
 STABILIZER_FINS_DURATION = 'stabilizer_fins_duration'
 
 
-class VehicleData:
-    def get_value(self, name, spec_node, specs, default=None):
-        if name in specs:
-            return specs[name]
-        else:
-            spec_str = spec_node.get_tag(name)
-            if spec_str != '':
-                spec_val = float(spec_str)
-            else:
-                if default is not None:
-                    spec_val = default
-                else:
-                    raise ValueError("No value '{}' in file or model, and no "
-                                     "default.".format(name))
-            specs[name] = spec_val
-            return spec_val
-
-    def __init__(self, model, model_name):
-        fn_p = Filename.expand_from('$MAIN_DIR/assets/cars/{}/{}.toml'.format(model_name, model_name))
-        fn = fn_p.to_os_specific()
-        specs = {}
-        file_exists = os.path.isfile(fn)
-        if file_exists:
-            with open(fn, 'r') as f:
-                specs = toml.load(f)
-
+class VehicleData(ModelData):
+    def read_model(self, model, model_name, specs):
         # Body data
         if VEHICLE not in specs:
             specs[VEHICLE] = {}
@@ -238,10 +212,6 @@ class VehicleData:
             thruster_specs = specs[node_name]
             self.transcribe_thruster_tags(node, thruster_specs)
 
-        if not file_exists:
-            with open(fn, 'w') as f:
-                toml.dump(specs, f)
-
     def transcribe_repulsor_tags(self, node, specs):
         force = self.get_value(FORCE, node, specs)
         node.set_python_tag(FORCE, force)
@@ -328,7 +298,7 @@ class Vehicle:
         puppet.reparentTo(self.model)
 
         # Get the vehicle data
-        self.vehicle_data = VehicleData(puppet, model_name)
+        self.vehicle_data = VehicleData(puppet, model_name, 'cars')
 
         # Configure the physics node
         self.physics_node = BulletRigidBodyNode('vehicle')
