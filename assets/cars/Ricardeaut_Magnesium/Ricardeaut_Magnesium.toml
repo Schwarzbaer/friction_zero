@@ -78,4 +78,4 @@ force = 15000.0
 repulsor_turning_angle = 540
 
 ["fz_thruster:0"]
-force = 20000.0
+force = 200000.0
