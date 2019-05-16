@@ -20,6 +20,8 @@ from vehicle import HEIGHT_OVER_TARGET
 from vehicle import HEIGHT_OVER_TARGET_PROJECTED
 from vehicle import REPULSOR_POWER_FRACTION_NEEDED
 from vehicle import GYRO_ROTATION
+from vehicle import THRUSTER_HEATING
+from vehicle import THRUSTER_COOLING
 
 from keybindings import GE_CAMERA_MODE
 
@@ -91,6 +93,12 @@ class CameraController(DirectObject):
             text = "",
             value = 0,
             pos = (0.9, 0, 0.58),
+            scale = 0.4,
+        )
+        self.thruster_heat = DirectWaitBar(
+            text = "",
+            value = 0,
+            pos = (0.9, 0, 0.51),
             scale = 0.4,
         )
 
@@ -354,3 +362,12 @@ class CameraController(DirectObject):
             self.gyro_power_needed['barColor'] = (0.3, 0.3, 0.3, 1.0)
         else: # repulsor_power_needed > 1.0
             self.gyro_power_needed['barColor'] = (1.0, 0.0, 0.0, 1.0)
+
+        self.thruster_heat['value'] = self.vehicle.thruster_heat * 100
+        self.thruster_heat['barColor'] = color_gradient(
+            self.vehicle.thruster_heat,
+        )
+        thruster_heat_str = "{:3.1f}% thruster heat".format(
+            self.vehicle.thruster_heat * 100,
+        )
+        self.thruster_heat['text'] = thruster_heat_str

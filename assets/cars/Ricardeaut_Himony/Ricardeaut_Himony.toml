@@ -79,3 +79,10 @@ force = 12000.0
 
 ["fz_thruster:0"]
 force = 0.0
+heating = 0.0
+cooling = 0.0
+
+["fz_thruster:1"]
+force = 0.0
+heating = 0.0
+cooling = 0.0

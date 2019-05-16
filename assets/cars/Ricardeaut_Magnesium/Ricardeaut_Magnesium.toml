@@ -79,3 +79,5 @@ repulsor_turning_angle = 540
 
 ["fz_thruster:0"]
 force = 200000.0
+heating = 0.33
+cooling = 0.04
