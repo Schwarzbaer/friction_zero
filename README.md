@@ -20,6 +20,8 @@ TODO
 * All physics-related things that use `globalClock.dt` should pull the time step
   size from the Environment instead, so that they too are capped by the physics
   minimum framerate.
+* When a vehicle flips on its back, it gets repulsor contacts above (globally)
+  the repulsors.
 
 
 ### Features
