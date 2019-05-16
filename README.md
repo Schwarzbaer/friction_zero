@@ -10,9 +10,6 @@ TODO
 ### Bugs
 
 * Move the `* dt` from the gyro's ECU into `apply_gyroscope()`.
-* Timing bug: Physics should happen after rendering, camera adjustments before
-  it. Currently the most visible effect is that last frame's contact points are
-  shown.
 * Animations
   * See branch magnesium-animation-bug. Using subParts in an Actor causes an
     exception when .pose is used, as Actor seems to look for the file with the
