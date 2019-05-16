@@ -51,11 +51,6 @@ TODO
   * (SMALL) Basic setup: In a separate render bin
   * (SMALL) Elevation: Fighter jet like height-over-ground indication
   * (SMALL) Speed direction
-  * (SMALL) Repulsor activation levels
-  * (SMALL) Thruster activation
-* Limits on thruster
-  * Fuel
-  * Overheating
 * Camera controls and automatics
   * (SMALL) HUD element for camera mode
   * Camera distance and FOV should be related to vehicle's linear speed.
@@ -136,6 +131,8 @@ TODO
 * Keybindings
   * Allow for multiple players
   * Allow for multiple devices (per player?)
+* Limits on thruster
+  * Fuel, replenishable by pit stop
 * Ingame screens from trackside AI cameras
 * Surfaces: Different materials can be repulsed differently well
 * Points (bonus time?) for tricks
