@@ -41,6 +41,18 @@ class CameraModes(Enum):
     # MIXED = 5
 
 
+def color_gradient(v):
+    red = v*2
+    if red > 1.0:
+        red = 1.0
+    green = 2 - v*2
+    if green > 1.0:
+        green = 1.0
+    blue = 0.0
+    alpha = 1.0
+    return (red, green, blue, alpha)
+
+
 class CameraController(DirectObject):
     def __init__(self, camera, vehicle, control):
         self.vehicle = vehicle
@@ -298,11 +310,8 @@ class CameraController(DirectObject):
             )
             self.repulsor_power_needed['text'] = power_needed_str
             if 0.0 < repulsor_power_needed <= 1.0:
-                self.repulsor_power_needed['barColor'] = (
+                self.repulsor_power_needed['barColor'] = color_gradient(
                     repulsor_power_needed,
-                    1 - repulsor_power_needed,
-                    0.0,
-                    1.0,
                 )
             elif repulsor_power_needed <= 0.0:
                 self.repulsor_power_needed['barColor'] = (0.3, 0.3, 0.3, 1.0)
@@ -338,11 +347,8 @@ class CameraController(DirectObject):
         )
         self.gyro_power_needed['text'] = power_needed_str
         if 0.0 < gyro_frac_needed <= 1.0:
-            self.gyro_power_needed['barColor'] = (
+            self.gyro_power_needed['barColor'] = color_gradient(
                 gyro_frac_needed,
-                1 - gyro_frac_needed,
-                0.0,
-                1.0,
             )
         elif gyro_frac_needed <= 0.0:
             self.gyro_power_needed['barColor'] = (0.3, 0.3, 0.3, 1.0)
