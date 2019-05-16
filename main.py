@@ -21,12 +21,13 @@ panda3d.core.load_prc_file(
 
 
 class GameApp(ShowBase):
-    def __init__(self, map="assets/maps/lab.bam"):
+    def __init__(self, map="lab"):
         ShowBase.__init__(self)
         pman.shim.init(self)
         self.accept('escape', sys.exit)
         #self.render.setShaderAuto()
         self.set_frame_rate_meter(True)
+        self.accept('tilde', self.debug)
 
         self.environment = Environment(self, map)
         self.bullet_debug()
@@ -38,6 +39,7 @@ class GameApp(ShowBase):
             'Ricardeaut_Himony',
             #'Psyoni_Culture',
             #'Texopec_Nako',
+            #'Texopec_Reaal',
             # 'Doby_Phalix',
         ]
 
@@ -98,9 +100,14 @@ class GameApp(ShowBase):
         else:
             self.debug_np.hide()
 
+    def debug(self):
+        import pdb
+        pdb.set_trace()
+
+
 def main():
     if len(sys.argv) > 1:
-        map = "assets/maps/"+sys.argv[1]
+        map = sys.argv[1]
         app = GameApp(map)
     else:
         app = GameApp()

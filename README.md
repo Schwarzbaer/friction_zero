@@ -19,25 +19,12 @@ TODO
 * (SMALL STUFF) Default controller for NPC vehicles
 * Controls
   * Space mouse bindings
-* File for map values
-  * Air density
-  * Gravity
 * ECU
   * Gyroscopic stabilization
     * Replace numpy.linalg.eig() with a PCA-based approach
   * (low importance) Make angular stabilization deactivateable
-* (Requires vehicle config files, see above) Gyro power: 800Nm units is a bit
-  high as a cap. 400Nm still helps a lot, but has noticeable wobbles at
-  collisions or big ground normal changes. 300Nm is still very playable, but
-  gyro weakness i noticeable, and one instability occurred. 200Nm still lets the
-  car (sometimes? Frame rate dependent?) roll on the ground, 175Nm is too small
-  for that.
-* Air drag and aerodynamics (https://www.gamedev.net/forums/topic/457235-flight-sim-physics/)
-  * Drag scales with the square of the speed
-  * Artist-defined air density
-  * Air brakes
-  * Sail effect (downforce, vector turning)
-  * Stabilizers effect (increasing sail effect)
+* Aerodynamics
+  * Airfoil effect
 * Exchangeable vehicle parts
 * Course gates
   * Check which gate has been passed this frame
@@ -86,12 +73,15 @@ TODO
 * All vehicles
   * Add cockpit camera
 * racetrack
-  * Add lane demarcations
+  * Add lane demarcations (ca. 2.75m apart)
+  * Align starting positions with track
   * Add a gentle hilliness to the terrain
   * Add a stretch gently curving back and forth
   * Make hard curves gentler and/or add a bowl shape to their outsides
   * Move trees a few meters away from the track
     * More trees!
+  * There should be something big in the center of the map that makes it easier
+    to estimate one's position on the map.
 * All maps
   * Some ambient lighting, please!
 * Lab map

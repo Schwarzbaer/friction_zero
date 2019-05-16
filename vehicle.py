@@ -1,4 +1,3 @@
-import os
 from random import random
 from math import pi
 from math import cos
@@ -8,14 +7,11 @@ from functools import reduce
 
 import numpy
 
-import toml
-
 from panda3d.core import NodePath
 from panda3d.core import VBase3
 from panda3d.core import Vec3
 from panda3d.core import GeomVertexReader
 from panda3d.core import invert
-from panda3d.core import Filename
 from panda3d.bullet import BulletRigidBodyNode
 from panda3d.bullet import BulletConvexHullShape
 
@@ -27,9 +23,12 @@ from common_vars import CM_TERRAIN
 from common_vars import CM_VEHICLE
 from common_vars import CM_COLLIDE
 
+from model_data import ModelData
+
 
 SPAWN_POINT_CONNECTOR = 'fz_spawn_point_connector'
 VEHICLE = 'fz_vehicle'
+MAX_GYRO_TORQUE = 'max_gyro_torque'
 REPULSOR = 'fz_repulsor'
 ACTIVATION_DISTANCE = 'activation_distance'
 THRUSTER = 'fz_thruster'
@@ -90,32 +89,8 @@ STABILIZER_FINS = 'stabilizer_fins'
 STABILIZER_FINS_DURATION = 'stabilizer_fins_duration'
 
 
-class VehicleData:
-    def get_value(self, name, spec_node, specs, default=None):
-        if name in specs:
-            return specs[name]
-        else:
-            spec_str = spec_node.get_tag(name)
-            if spec_str != '':
-                spec_val = float(spec_str)
-            else:
-                if default is not None:
-                    spec_val = default
-                else:
-                    raise ValueError("No value '{}' in file or model, and no "
-                                     "default.".format(name))
-            specs[name] = spec_val
-            return spec_val
-
-    def __init__(self, model, model_name):
-        fn_p = Filename.expand_from('$MAIN_DIR/{}.toml'.format(model_name))
-        fn = fn_p.to_os_specific()
-        specs = {}
-        file_exists = os.path.isfile(fn)
-        if file_exists:
-            with open(fn, 'r') as f:
-                specs = toml.load(f)
-
+class VehicleData(ModelData):
+    def read_model(self, model, model_name, specs):
         # Body data
         if VEHICLE not in specs:
             specs[VEHICLE] = {}
@@ -124,6 +99,11 @@ class VehicleData:
 
         self.friction = self.get_value(FRICTION, body_node, body_specs)
         self.mass = self.get_value(MASS, body_node, body_specs)
+        self.max_gyro_torque = self.get_value(
+            MAX_GYRO_TORQUE,
+            body_node,
+            body_specs,
+        )
         self.airbrake_duration = self.get_value(
             AIRBRAKE_DURATION,
             body_node,
@@ -238,10 +218,6 @@ class VehicleData:
             thruster_specs = specs[node_name]
             self.transcribe_thruster_tags(node, thruster_specs)
 
-        if not file_exists:
-            with open(fn, 'w') as f:
-                toml.dump(specs, f)
-
     def transcribe_repulsor_tags(self, node, specs):
         force = self.get_value(FORCE, node, specs)
         node.set_python_tag(FORCE, force)
@@ -293,12 +269,12 @@ class RepulsorData:
 
 class Vehicle:
     def __init__(self, app, model_name):
-        model_file_name = 'assets/cars/{}.bam'.format(model_name)
+        model_file_name = 'assets/cars/{}/{}.bam'.format(model_name, model_name)
         self.app = app
 
         def animation_path(model, animation):
-            base_path = 'assets/cars/animations/{}-{}.bam'
-            return base_path.format(model, animation)
+            base_path = 'assets/cars/animations/{}/{}-{}.bam'
+            return base_path.format(model, model, animation)
 
         self.model = Actor(
             model_file_name,
@@ -328,7 +304,7 @@ class Vehicle:
         puppet.reparentTo(self.model)
 
         # Get the vehicle data
-        self.vehicle_data = VehicleData(puppet, model_name)
+        self.vehicle_data = VehicleData(puppet, model_name, 'cars')
 
         # Configure the physics node
         self.physics_node = BulletRigidBodyNode('vehicle')
@@ -419,7 +395,7 @@ class Vehicle:
         self.inputs = inputs
 
     def add_repulsor(self, repulsor):
-        ground_contact = self.app.loader.load_model("assets/repulsorhit.egg")
+        ground_contact = self.app.loader.load_model("assets/effect/repulsorhit.egg")
         ground_contact.set_scale(1)
         ground_contact.reparent_to(self.app.render)
         repulsor.set_python_tag('ray_end', ground_contact)
@@ -527,7 +503,7 @@ class Vehicle:
         drag_area = self.vehicle_data.drag_area + \
                     self.vehicle_data.airbrake_area * self.airbrake_state + \
                     self.vehicle_data.stabilizer_fins_area * self.stabilizer_fins_state
-        air_density = 1.225 # kg/m**3 at 1 atm at 15 degree C
+        air_density = self.app.environment.env_data.air_density
         air_speed = -self.vehicle.get_relative_vector(
             base.render,
             movement,
@@ -849,7 +825,7 @@ class Vehicle:
     def apply_gyroscope(self):
         impulse = self.commands[GYRO_ROTATION]
         # Clamp the impulse to what the "motor" can produce.
-        max_impulse = 0.8 * 1000
+        max_impulse = self.vehicle_data.max_gyro_torque
         if impulse.length() > max_impulse:
             clamped_impulse = impulse / impulse.length() * max_impulse
         else:
