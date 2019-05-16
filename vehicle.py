@@ -682,6 +682,7 @@ class Vehicle:
                 0,
             )
         elif target_mode == TO_GROUND:
+            # Stabilize towards the local up
             self.target_node.set_hpr(self.centroid, (0, 0, 0))
 
         if target_mode != PASSIVE:
