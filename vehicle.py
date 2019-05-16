@@ -844,7 +844,10 @@ class Vehicle:
             max_force = node.get_python_tag(FORCE)
             real_force = max_force * thrust
             # FIXME: See repulsors above for the shortcoming that this suffers
-            thruster_pos = node.get_pos(self.vehicle)
+            thruster_pos = base.render.get_relative_vector(
+                self.vehicle,
+                node.get_pos(self.vehicle),
+            )
             thrust_direction = self.app.render.get_relative_vector(
                 node,
                 Vec3(0, 0, 1)
