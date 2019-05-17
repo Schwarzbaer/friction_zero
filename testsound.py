@@ -128,7 +128,7 @@ class MyApp(ShowBase):
         if self.thruster_heat < 0.0:
             self.thruster_heat = 0.0
         self.thruster_heat_bar['value'] = self.thruster_heat * 100
-        self.thruster_heat_bar['text'] = "{:3f}%".format(
+        self.thruster_heat_bar['text'] = "{:3.0f}%".format(
             self.thruster_power * 100,
         )
         if self.thruster_heat > 1.0:
