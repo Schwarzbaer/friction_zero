@@ -77,9 +77,17 @@ class MyApp(ShowBase):
             self.thruster_sound,
             self.emitter,
         )
+        self.thruster_overheat_sound = self.audio3d.load_sfx(
+            'assets/audio/sound/pop.wav',
+        )
+        self.audio3d.attachSoundToObject(
+            self.thruster_overheat_sound,
+            self.emitter,
+        )
         self.thruster_sound.set_loop(True)
         self.thruster_sound.play()
         self.thruster_power = 0.0
+        self.thruster_overheated = False
         self.thruster_heat = 0.0
         self.thruster_heat_bar = DirectWaitBar(
             text = "",
@@ -123,6 +131,9 @@ class MyApp(ShowBase):
             KeyboardButton.ascii_key(b's'),
         )
         overheated = self.thruster_heat > 1.0
+        if overheated and not self.overheated:
+            self.thruster_overheat_sound.play()
+        self.overheated = overheated
 
         if thrusting and not overheated:
             self.thruster_power += (1 / thruster_ramp_time) * globalClock.dt
