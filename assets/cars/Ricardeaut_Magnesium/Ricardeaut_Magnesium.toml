@@ -1,7 +1,7 @@
 [fz_vehicle]
 friction = 1.25
 mass = 1500.0
-max_gyro_torque = 300
+max_gyro_torque = 500
 airbrake_duration = 0.3
 stabilizer_fins_duration = 0.3
 drag_coefficient_x = 0.47
