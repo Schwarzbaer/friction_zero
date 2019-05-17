@@ -28,10 +28,13 @@ from model_data import ModelData
 
 SPAWN_POINT_CONNECTOR = 'fz_spawn_point_connector'
 VEHICLE = 'fz_vehicle'
+MAX_GYRO_TORQUE = 'max_gyro_torque'
 REPULSOR = 'fz_repulsor'
 ACTIVATION_DISTANCE = 'activation_distance'
 THRUSTER = 'fz_thruster'
 FORCE = 'force'
+THRUSTER_HEATING = 'heating'
+THRUSTER_COOLING = 'cooling'
 DRAG_COEFFICIENT_X = 'drag_coefficient_x'
 DRAG_COEFFICIENT_Y = 'drag_coefficient_y'
 DRAG_COEFFICIENT_Z = 'drag_coefficient_z'
@@ -98,6 +101,11 @@ class VehicleData(ModelData):
 
         self.friction = self.get_value(FRICTION, body_node, body_specs)
         self.mass = self.get_value(MASS, body_node, body_specs)
+        self.max_gyro_torque = self.get_value(
+            MAX_GYRO_TORQUE,
+            body_node,
+            body_specs,
+        )
         self.airbrake_duration = self.get_value(
             AIRBRAKE_DURATION,
             body_node,
@@ -238,6 +246,10 @@ class VehicleData(ModelData):
     def transcribe_thruster_tags(self, node, specs):
         force = self.get_value(FORCE, node, specs)
         node.set_python_tag(FORCE, force)
+        heating = self.get_value(THRUSTER_HEATING, node, specs)
+        node.set_python_tag(THRUSTER_HEATING, heating)
+        cooling = self.get_value(THRUSTER_COOLING, node, specs)
+        node.set_python_tag(THRUSTER_COOLING, cooling)
 
 
 class RepulsorData:
@@ -342,6 +354,10 @@ class Vehicle:
         self.centroid = base.loader.load_model('models/smiley')
         self.centroid.reparent_to(self.vehicle)
         self.centroid.hide()
+
+        # Thruster limiting
+        self.thruster_state = 0.0
+        self.thruster_heat = 0.0
 
         for repulsor in self.vehicle_data.repulsor_nodes:
             self.add_repulsor(repulsor)
@@ -497,7 +513,7 @@ class Vehicle:
         drag_area = self.vehicle_data.drag_area + \
                     self.vehicle_data.airbrake_area * self.airbrake_state + \
                     self.vehicle_data.stabilizer_fins_area * self.stabilizer_fins_state
-        air_density = 1.225 # kg/m**3 at 1 atm at 15 degree C
+        air_density = self.app.environment.env_data.air_density
         air_speed = -self.vehicle.get_relative_vector(
             base.render,
             movement,
@@ -676,6 +692,7 @@ class Vehicle:
                 0,
             )
         elif target_mode == TO_GROUND:
+            # Stabilize towards the local up
             self.target_node.set_hpr(self.centroid, (0, 0, 0))
 
         if target_mode != PASSIVE:
@@ -819,7 +836,7 @@ class Vehicle:
     def apply_gyroscope(self):
         impulse = self.commands[GYRO_ROTATION]
         # Clamp the impulse to what the "motor" can produce.
-        max_impulse = 0.8 * 1000
+        max_impulse = self.vehicle_data.max_gyro_torque
         if impulse.length() > max_impulse:
             clamped_impulse = impulse / impulse.length() * max_impulse
         else:
@@ -834,10 +851,15 @@ class Vehicle:
             self.commands[THRUSTER_ACTIVATION],
         )
         for node, thrust in thruster_data:
+            if self.thruster_heat >= 1.0:
+                thrust = 0.0
             max_force = node.get_python_tag(FORCE)
             real_force = max_force * thrust
             # FIXME: See repulsors above for the shortcoming that this suffers
-            thruster_pos = node.get_pos(self.vehicle)
+            thruster_pos = base.render.get_relative_vector(
+                self.vehicle,
+                node.get_pos(self.vehicle),
+            )
             thrust_direction = self.app.render.get_relative_vector(
                 node,
                 Vec3(0, 0, 1)
@@ -846,6 +868,12 @@ class Vehicle:
                 thrust_direction * real_force * dt,
                 thruster_pos,
             )
+            heating = node.get_python_tag(THRUSTER_HEATING)
+            cooling = node.get_python_tag(THRUSTER_COOLING)
+            effective_heating = -cooling + (heating - cooling) * thrust
+            self.thruster_heat += effective_heating * dt
+            if self.thruster_heat < 0.0:
+                self.thruster_heat = 0.0
 
     def apply_airbrake(self):
         # Animation and state update only, since the effect is in air drag

@@ -1,6 +1,7 @@
 [fz_vehicle]
 friction = 1.25
 mass = 1900.0
+max_gyro_torque = 8000
 airbrake_duration = 0.2
 stabilizer_fins_duration = 0.2
 drag_coefficient_x = 0.8
@@ -78,3 +79,10 @@ force = 12000.0
 
 ["fz_thruster:0"]
 force = 0.0
+heating = 0.0
+cooling = 0.0
+
+["fz_thruster:1"]
+force = 0.0
+heating = 0.0
+cooling = 0.0

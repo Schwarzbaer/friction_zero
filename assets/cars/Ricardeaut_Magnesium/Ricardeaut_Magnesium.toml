@@ -1,6 +1,7 @@
 [fz_vehicle]
 friction = 1.25
 mass = 1500.0
+max_gyro_torque = 300
 airbrake_duration = 0.3
 stabilizer_fins_duration = 0.3
 drag_coefficient_x = 0.47
@@ -77,4 +78,6 @@ force = 15000.0
 repulsor_turning_angle = 540
 
 ["fz_thruster:0"]
-force = 20000.0
+force = 200000.0
+heating = 0.33
+cooling = 0.04
