@@ -70,6 +70,15 @@ class MyApp(ShowBase):
         base.task_mgr.add(self.update_gyro)
 
         # And one thruster.
+        self.thruster_sound = self.audio3d.load_sfx(
+            'assets/audio/sound/hairdryer.wav',
+        )
+        self.audio3d.attachSoundToObject(
+            self.thruster_sound,
+            self.emitter,
+        )
+        self.thruster_sound.set_loop(True)
+        self.thruster_sound.play()
         self.thruster_power = 0.0
         self.thruster_heat = 0.0
         self.thruster_heat_bar = DirectWaitBar(
@@ -109,7 +118,7 @@ class MyApp(ShowBase):
     def update_thruster(self, task):
         heating = 0.33
         cooling = 0.04
-        thruster_ramp_time = 0.2
+        thruster_ramp_time = 0.4
         thrusting = base.mouseWatcherNode.is_button_down(
             KeyboardButton.ascii_key(b's'),
         )
@@ -127,6 +136,8 @@ class MyApp(ShowBase):
         self.thruster_heat += (-cooling * (1 - power) + heating * power) * globalClock.dt
         if self.thruster_heat < 0.0:
             self.thruster_heat = 0.0
+        self.thruster_sound.set_volume(self.thruster_power)
+        self.thruster_sound.set_play_rate(self.thruster_power)
         self.thruster_heat_bar['value'] = self.thruster_heat * 100
         self.thruster_heat_bar['text'] = "{:3.0f}%".format(
             self.thruster_power * 100,
