@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import sys
+from random import random
 
 from direct.gui.DirectGui import DirectWaitBar
 
@@ -49,15 +50,16 @@ class MyApp(ShowBase):
 
     def change_repulsor_power(self, change):
         self.repulsor_power += change
-        if self.repulsor_power > 1.0:
-            self.repulsor_power = 1.0
+        if self.repulsor_power > 0.9:
+            self.repulsor_power = 0.9
         if self.repulsor_power < 0.0:
             self.repulsor_power = 0.0
 
     def update_repulsor(self, task):
-        self.repulsor_power_bar['value'] = self.repulsor_power * 100
-        self.repulsor_sound.set_volume(self.repulsor_power)
-        self.repulsor_sound.set_play_rate(1 + self.repulsor_power * 2)
+        randomized_power = self.repulsor_power + random() * 0.1
+        self.repulsor_power_bar['value'] = randomized_power * 100
+        self.repulsor_sound.set_volume(randomized_power)
+        self.repulsor_sound.set_play_rate(1 + randomized_power * 2)
         return task.cont
 
 
