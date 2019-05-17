@@ -9,6 +9,7 @@ from direct.showbase.ShowBase import ShowBase
 from direct.showbase.Audio3DManager import Audio3DManager
 
 from panda3d.core import NodePath
+from panda3d.core import KeyboardButton
 
 
 class MyApp(ShowBase):
@@ -66,9 +67,6 @@ class MyApp(ShowBase):
             pos = (0, 0, -0.2),
             scale = 1,
         )
-
-        self.accept("w", self.max_out_gyro)
-        self.accept("w-repeat", self.max_out_gyro)
         base.task_mgr.add(self.update_gyro)
 
         # And one thruster.
@@ -80,7 +78,6 @@ class MyApp(ShowBase):
             pos = (0, 0, -0.4),
             scale = 1,
         )
-
         base.task_mgr.add(self.update_thruster)
 
     def change_repulsor_power(self, change):
@@ -97,10 +94,9 @@ class MyApp(ShowBase):
         self.repulsor_sound.set_play_rate(1 + randomized_power * 2)
         return task.cont
 
-    def max_out_gyro(self):
-        self.gyro_power = 1.0
-
     def update_gyro(self, task):
+        if base.mouseWatcherNode.is_button_down(KeyboardButton.ascii_key(b'w')):
+            self.gyro_power = 1.0
         self.gyro_power_bar['value'] = self.gyro_power * 100
         self.gyro_sound.set_volume(self.gyro_power)
         self.gyro_sound.set_play_rate(0.2 + self.gyro_power * 0.8)
@@ -111,13 +107,23 @@ class MyApp(ShowBase):
         return task.cont
 
     def update_thruster(self, task):
-        thruster_heating = 0.2
+        thruster_heating = 0.33
         thruster_cooling = 0.04
-        #self.thruster_heat_bar['value'] = 
-        # FIXME: Adjust sound here
-        self.gyro_power -= globalClock.dt
-        if self.gyro_power < 0.0:
-            self.gyro_power = 0.0
+        thrusting = base.mouseWatcherNode.is_button_down(
+            KeyboardButton.ascii_key(b's'),
+        )
+        overheated = self.thruster_heat > 1.0
+        if thrusting and not overheated:
+            self.thruster_heat += thruster_heating * globalClock.dt
+        else:
+            self.thruster_heat -= thruster_cooling * globalClock.dt
+        if self.thruster_heat < 0.0:
+            self.thruster_heat = 0.0
+        self.thruster_heat_bar['value'] = self.thruster_heat * 100
+        if self.thruster_heat > 1.0:
+            self.thruster_heat_bar['barColor'] = (1, 1, 1, 1)
+        else:
+            self.thruster_heat_bar['barColor'] = (1, 0, 0, 1)
         return task.cont
 
 
