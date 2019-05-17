@@ -23,15 +23,15 @@ class MyApp(ShowBase):
             base.sfxManagerList[0],
             self.camera,
         )
+        self.emitter = base.render.attach_new_node("repulsor_0")
 
-        # One repulsor emitter with sound
-        self.repulsor_emitter = base.render.attach_new_node("repulsor_0")
+        # One repulsor sound
         self.repulsor_sound = self.audio3d.load_sfx(
             'assets/audio/sound/repulsor.wav',
         )
         self.audio3d.attachSoundToObject(
             self.repulsor_sound,
-            self.repulsor_emitter,
+            self.emitter,
         )
         self.repulsor_sound.set_loop(True)
         self.repulsor_sound.play()
@@ -44,7 +44,21 @@ class MyApp(ShowBase):
             scale = 1,
         )
 
+        self.accept("q", self.change_repulsor_power, [0.1])
+        self.accept("a", self.change_repulsor_power, [-0.1])
+        base.task_mgr.add(self.update_repulsor)
+
         # One gyro as well
+        self.gyro_sound = self.audio3d.load_sfx(
+            'assets/audio/sound/gyro.wav',
+        )
+        self.audio3d.attachSoundToObject(
+            self.gyro_sound,
+            self.emitter,
+        )
+        self.gyro_sound.set_loop(True)
+        self.gyro_sound.play()
+
         self.gyro_power = 0.0
         self.gyro_power_bar = DirectWaitBar(
             text = "",
@@ -53,12 +67,21 @@ class MyApp(ShowBase):
             scale = 1,
         )
 
-        self.accept("q", self.change_repulsor_power, [0.1])
-        self.accept("a", self.change_repulsor_power, [-0.1])
-        base.task_mgr.add(self.update_repulsor)
         self.accept("w", self.max_out_gyro)
         self.accept("w-repeat", self.max_out_gyro)
         base.task_mgr.add(self.update_gyro)
+
+        # And one thruster.
+        self.thruster_power = 0.0
+        self.thruster_heat = 0.0
+        self.thruster_heat_bar = DirectWaitBar(
+            text = "",
+            value = 0,
+            pos = (0, 0, -0.4),
+            scale = 1,
+        )
+
+        base.task_mgr.add(self.update_thruster)
 
     def change_repulsor_power(self, change):
         self.repulsor_power += change
@@ -79,7 +102,19 @@ class MyApp(ShowBase):
 
     def update_gyro(self, task):
         self.gyro_power_bar['value'] = self.gyro_power * 100
-        # FIXME: Adjust gyro whining sound here
+        self.gyro_sound.set_volume(self.gyro_power)
+        self.gyro_sound.set_play_rate(0.2 + self.gyro_power * 0.8)
+
+        self.gyro_power -= globalClock.dt
+        if self.gyro_power < 0.0:
+            self.gyro_power = 0.0
+        return task.cont
+
+    def update_thruster(self, task):
+        thruster_heating = 0.2
+        thruster_cooling = 0.04
+        #self.thruster_heat_bar['value'] = 
+        # FIXME: Adjust sound here
         self.gyro_power -= globalClock.dt
         if self.gyro_power < 0.0:
             self.gyro_power = 0.0
