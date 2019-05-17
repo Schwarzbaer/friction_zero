@@ -44,9 +44,21 @@ class MyApp(ShowBase):
             scale = 1,
         )
 
+        # One gyro as well
+        self.gyro_power = 0.0
+        self.gyro_power_bar = DirectWaitBar(
+            text = "",
+            value = 0,
+            pos = (0, 0, -0.2),
+            scale = 1,
+        )
+
         self.accept("q", self.change_repulsor_power, [0.1])
         self.accept("a", self.change_repulsor_power, [-0.1])
         base.task_mgr.add(self.update_repulsor)
+        self.accept("w", self.max_out_gyro)
+        self.accept("w-repeat", self.max_out_gyro)
+        base.task_mgr.add(self.update_gyro)
 
     def change_repulsor_power(self, change):
         self.repulsor_power += change
@@ -60,6 +72,17 @@ class MyApp(ShowBase):
         self.repulsor_power_bar['value'] = randomized_power * 100
         self.repulsor_sound.set_volume(randomized_power)
         self.repulsor_sound.set_play_rate(1 + randomized_power * 2)
+        return task.cont
+
+    def max_out_gyro(self):
+        self.gyro_power = 1.0
+
+    def update_gyro(self, task):
+        self.gyro_power_bar['value'] = self.gyro_power * 100
+        # FIXME: Adjust gyro whining sound here
+        self.gyro_power -= globalClock.dt
+        if self.gyro_power < 0.0:
+            self.gyro_power = 0.0
         return task.cont
 
 
