@@ -26,13 +26,23 @@ Z = '_z'
 
 class EnvironmentData(ModelData):
     def read_model(self, node, model_name, specs):
-        self.friction = self.get_value(FRICTION, node, specs)
+        self.friction = self.get_value(FRICTION, node, specs, default=1.25)
         self.gravity = Vec3(
-            self.get_value(GRAVITY+X, node, specs),
-            self.get_value(GRAVITY+Y, node, specs),
-            self.get_value(GRAVITY+Z, node, specs),
+            self.get_value(GRAVITY+X, node, specs, default=0),
+            self.get_value(GRAVITY+Y, node, specs, default=0),
+            self.get_value(
+                GRAVITY+Z,
+                node,
+                specs,
+                default=-9.81, # Earth gravity
+            ),
         )
-        self.air_density = self.get_value(AIR_DENSITY, node, specs)
+        self.air_density = self.get_value(
+            AIR_DENSITY,
+            node,
+            specs,
+            default=1.225, # Air density, kg/m**3 at 15 degree C and 1 atm
+        )
 
 
 class Environment:

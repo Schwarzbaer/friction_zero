@@ -68,14 +68,26 @@ class GameApp(ShowBase):
             self.player_controller,
         )
 
-        base.task_mgr.add(self.game_loop, "game_loop", sort=5)
+        base.task_mgr.add(
+            self.game_loop_pre_render,
+            "game_loop_pre_render",
+            sort=45,
+        )
+        base.task_mgr.add(
+            self.game_loop_post_render,
+            "game_loop_post_render",
+            sort=55,
+        )
 
-    def game_loop(self, task):
+    def game_loop_pre_render(self, task):
         self.player_controller.gather_inputs()
         for vehicle in self.vehicles:
             vehicle.game_loop()
-        self.environment.update_physics()
         self.player_camera.update()
+        return task.cont
+
+    def game_loop_post_render(self, task):
+        self.environment.update_physics()
         return task.cont
 
     def next_vehicle(self):

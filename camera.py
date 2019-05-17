@@ -9,6 +9,7 @@ from panda3d.core import ConfigVariableDouble
 
 from direct.showbase.DirectObject import DirectObject
 from direct.gui.OnscreenText import OnscreenText
+from direct.gui.DirectGui import DirectWaitBar
 
 from vehicle import REPULSOR_DATA
 from vehicle import LOCAL_UP
@@ -18,6 +19,9 @@ from vehicle import CLIMB_SPEED
 from vehicle import HEIGHT_OVER_TARGET
 from vehicle import HEIGHT_OVER_TARGET_PROJECTED
 from vehicle import REPULSOR_POWER_FRACTION_NEEDED
+from vehicle import GYRO_ROTATION
+from vehicle import THRUSTER_HEATING
+from vehicle import THRUSTER_COOLING
 
 from keybindings import GE_CAMERA_MODE
 
@@ -37,6 +41,18 @@ class CameraModes(Enum):
     # FIXME: To be merged with FOLLOW
     # DIRECTION = 4
     # MIXED = 5
+
+
+def color_gradient(v):
+    red = v*2
+    if red > 1.0:
+        red = 1.0
+    green = 2 - v*2
+    if green > 1.0:
+        green = 1.0
+    blue = 0.0
+    alpha = 1.0
+    return (red, green, blue, alpha)
 
 
 class CameraController(DirectObject):
@@ -59,7 +75,6 @@ class CameraController(DirectObject):
             shadow = (0.2, 0.2, 0.2, 1.0),
             align = TextNode.ARight,
         )
-
         self.driving_mode = OnscreenText(
             text = '',
             pos = (1.3, 0.7),
@@ -67,6 +82,24 @@ class CameraController(DirectObject):
             fg = (0.0, 0.0, 0.0, 1.0),
             shadow = (0.2, 0.2, 0.2, 1.0),
             align = TextNode.ARight,
+        )
+        self.repulsor_power_needed = DirectWaitBar(
+            text = "",
+            value = 0,
+            pos = (0.9, 0, 0.65),
+            scale = 0.4,
+        )
+        self.gyro_power_needed = DirectWaitBar(
+            text = "",
+            value = 0,
+            pos = (0.9, 0, 0.58),
+            scale = 0.4,
+        )
+        self.thruster_heat = DirectWaitBar(
+            text = "",
+            value = 0,
+            pos = (0.9, 0, 0.51),
+            scale = 0.4,
         )
 
         self.flight_height = OnscreenText(
@@ -88,14 +121,6 @@ class CameraController(DirectObject):
         self.climb_rate = OnscreenText(
             text = '',
             pos = (1.3, -0.85),
-            scale = 0.1,
-            fg = (0.0, 0.0, 0.0, 1.0),
-            shadow = (0.2, 0.2, 0.2, 1.0),
-            align = TextNode.ARight,
-        )
-        self.repulsor_power_needed = OnscreenText(
-            text = '',
-            pos = (1.3, -0.95),
             scale = 0.1,
             fg = (0.0, 0.0, 0.0, 1.0),
             shadow = (0.2, 0.2, 0.2, 1.0),
@@ -286,13 +311,20 @@ class CameraController(DirectObject):
             self.flight_height['fg'] = (0.2, 0.8, 0.2, 1.0)
             self.climb_rate['text'] = "{:3.1f}m/s climb".format(climb_rate)
             self.climb_rate['fg'] = (0.8, 0.8, 0.8, 1.0)
-            self.repulsor_power_needed['text'] = "{:3.1f}% repulsor power".format(repulsor_power_needed * 100)
+            clamped_power = min(max(repulsor_power_needed, 0), 1)
+            self.repulsor_power_needed['value'] = clamped_power * 100
+            power_needed_str = "{:3.1f}% repulsor power".format(
+                repulsor_power_needed * 100,
+            )
+            self.repulsor_power_needed['text'] = power_needed_str
             if 0.0 < repulsor_power_needed <= 1.0:
-                self.repulsor_power_needed['fg'] = (0.0, 1.0, 0.0, 1.0)
+                self.repulsor_power_needed['barColor'] = color_gradient(
+                    repulsor_power_needed,
+                )
             elif repulsor_power_needed <= 0.0:
-                self.repulsor_power_needed['fg'] = (0.3, 0.3, 0.3, 1.0)
+                self.repulsor_power_needed['barColor'] = (0.3, 0.3, 0.3, 1.0)
             else: # repulsor_power_needed > 1.0
-                self.repulsor_power_needed['fg'] = (1.0, 0.0, 0.0, 1.0)
+                self.repulsor_power_needed['barColor'] = (1.0, 0.0, 0.0, 1.0)
             self.height_over_target.show()
             self.height_over_target.set_z(
                 self.vehicle.commands[HEIGHT_OVER_TARGET] * 0.1,
@@ -307,7 +339,35 @@ class CameraController(DirectObject):
             self.flight_height['fg'] = (0.8, 0.2, 0.2, 1.0)
             self.climb_rate['text'] = "--- m/s climb"
             self.climb_rate['fg'] = (0.3, 0.3, 0.3, 1.0)
+            self.repulsor_power_needed['value'] = 0.0
             self.repulsor_power_needed['text'] = "---% repulsor power"
-            self.repulsor_power_needed['fg'] = (0.3, 0.3, 0.3, 1.0)
+            self.repulsor_power_needed['barColor'] = (0.3, 0.3, 0.3, 1.0)
             self.height_over_target.hide()
             self.height_over_target_projected.hide()
+
+        gyro_power_needed = self.vehicle.commands[GYRO_ROTATION].length()
+        gyro_power_max = self.vehicle.vehicle_data.max_gyro_torque
+        gyro_frac_needed = gyro_power_needed / gyro_power_max
+        clamped_frac = min(max(gyro_frac_needed, 0), 1)
+        self.gyro_power_needed['value'] = clamped_frac * 100
+        power_needed_str = "{:3.1f}% gyroscope power".format(
+            gyro_frac_needed * 100,
+        )
+        self.gyro_power_needed['text'] = power_needed_str
+        if 0.0 < gyro_frac_needed <= 1.0:
+            self.gyro_power_needed['barColor'] = color_gradient(
+                gyro_frac_needed,
+            )
+        elif gyro_frac_needed <= 0.0:
+            self.gyro_power_needed['barColor'] = (0.3, 0.3, 0.3, 1.0)
+        else: # repulsor_power_needed > 1.0
+            self.gyro_power_needed['barColor'] = (1.0, 0.0, 0.0, 1.0)
+
+        self.thruster_heat['value'] = self.vehicle.thruster_heat * 100
+        self.thruster_heat['barColor'] = color_gradient(
+            self.vehicle.thruster_heat,
+        )
+        thruster_heat_str = "{:3.1f}% thruster heat".format(
+            self.vehicle.thruster_heat * 100,
+        )
+        self.thruster_heat['text'] = thruster_heat_str

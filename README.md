@@ -7,8 +7,9 @@ A racing game about hovering vehicles.
 TODO
 ----
 
-### Code
+### Bugs
 
+* Move the `* dt` from the gyro's ECU into `apply_gyroscope()`.
 * Animations
   * See branch magnesium-animation-bug. Using subParts in an Actor causes an
     exception when .pose is used, as Actor seems to look for the file with the
@@ -16,6 +17,15 @@ TODO
     * Revert to last commit before the merge; animations are now in separate
       files. Whoops...
     * Monitor issue or fix it yourself: https://github.com/panda3d/panda3d/issues/647
+* All physics-related things that use `globalClock.dt` should pull the time step
+  size from the Environment instead, so that they too are capped by the physics
+  minimum framerate.
+* When a vehicle flips on its back, it gets repulsor contacts above (globally)
+  the repulsors.
+
+
+### Features
+
 * (SMALL STUFF) Default controller for NPC vehicles
 * Controls
   * Space mouse bindings
@@ -25,14 +35,10 @@ TODO
   * (low importance) Make angular stabilization deactivateable
 * Aerodynamics
   * Airfoil effect
-* Exchangeable vehicle parts
 * Course gates
   * Check which gate has been passed this frame
   * Race rules accounting
   * Timekeeping
-* Timing bug: Physics should happen after rendering, camera adjustments before
-  it. Currently the most visible effect is that last frame's contact points are
-  shown.
 * Particle systems
   * Repulsor contact points
   * Vehicle-terrain crashes
@@ -45,11 +51,6 @@ TODO
   * (SMALL) Basic setup: In a separate render bin
   * (SMALL) Elevation: Fighter jet like height-over-ground indication
   * (SMALL) Speed direction
-  * (SMALL) Repulsor activation levels
-  * (SMALL) Thruster activation
-* Limits on thruster
-  * Fuel
-  * Overheating
 * Camera controls and automatics
   * (SMALL) HUD element for camera mode
   * Camera distance and FOV should be related to vehicle's linear speed.
@@ -119,9 +120,7 @@ TODO
 
 * ECSify everything
 * Driver g-meter
-* Keybindings
-  * Allow for multiple players
-  * Allow for multiple devices (per player?)
+* Exchangeable vehicle parts
 * Menu
   * Main menu
   * Options
@@ -129,6 +128,11 @@ TODO
   * Vehicle selection screen
     * Vehicle material color-picker
     * Choose repulsor model
+* Keybindings
+  * Allow for multiple players
+  * Allow for multiple devices (per player?)
+* Limits on thruster
+  * Fuel, replenishable by pit stop
 * Ingame screens from trackside AI cameras
 * Surfaces: Different materials can be repulsed differently well
 * Points (bonus time?) for tricks
