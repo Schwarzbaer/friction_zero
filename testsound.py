@@ -2,6 +2,7 @@
 
 import sys
 from random import random
+from math import sin
 
 from direct.gui.DirectGui import DirectWaitBar
 
@@ -59,7 +60,7 @@ class MyApp(ShowBase):
         )
         self.gyro_sound.set_loop(True)
         self.gyro_sound.play()
-
+        self.gyro_duration = 0
         self.gyro_power = 0.0
         self.gyro_power_bar = DirectWaitBar(
             text = "",
@@ -108,19 +109,25 @@ class MyApp(ShowBase):
         randomized_power = self.repulsor_power + random() * 0.1
         self.repulsor_power_bar['value'] = randomized_power * 100
         self.repulsor_sound.set_volume(randomized_power)
-        self.repulsor_sound.set_play_rate(1 + randomized_power * 2)
+        self.repulsor_sound.set_play_rate(1 + (randomized_power * 0.5))
         return task.cont
 
     def update_gyro(self, task):
         if base.mouseWatcherNode.is_button_down(KeyboardButton.ascii_key(b'w')):
             self.gyro_power = 1.0
+            if self.gyro_duration < 50:
+                self.gyro_duration += 2
+
         self.gyro_power_bar['value'] = self.gyro_power * 100
-        self.gyro_sound.set_volume(self.gyro_power)
-        self.gyro_sound.set_play_rate(0.2 + self.gyro_power * 0.8)
+        self.gyro_sound.set_volume(0.08 + self.gyro_power)
+        self.gyro_sound.set_play_rate(0.08 + (self.gyro_duration/400) + self.gyro_power * 0.25)
 
         self.gyro_power -= globalClock.dt
         if self.gyro_power < 0.0:
             self.gyro_power = 0.0
+        if self.gyro_duration > 1:
+            self.gyro_duration -= 1
+
         return task.cont
 
     def update_thruster(self, task):
@@ -147,8 +154,8 @@ class MyApp(ShowBase):
         self.thruster_heat += (-cooling * (1 - power) + heating * power) * globalClock.dt
         if self.thruster_heat < 0.0:
             self.thruster_heat = 0.0
-        self.thruster_sound.set_volume(self.thruster_power)
-        self.thruster_sound.set_play_rate(self.thruster_power)
+        self.thruster_sound.set_volume(self.thruster_power*2)
+        self.thruster_sound.set_play_rate(0.1+((random()/50) + (self.thruster_power/120)))
         self.thruster_heat_bar['value'] = self.thruster_heat * 100
         self.thruster_heat_bar['text'] = "{:3.0f}%".format(
             self.thruster_power * 100,
