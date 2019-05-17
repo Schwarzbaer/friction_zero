@@ -107,19 +107,30 @@ class MyApp(ShowBase):
         return task.cont
 
     def update_thruster(self, task):
-        thruster_heating = 0.33
-        thruster_cooling = 0.04
+        heating = 0.33
+        cooling = 0.04
+        thruster_ramp_time = 0.2
         thrusting = base.mouseWatcherNode.is_button_down(
             KeyboardButton.ascii_key(b's'),
         )
         overheated = self.thruster_heat > 1.0
+
         if thrusting and not overheated:
-            self.thruster_heat += thruster_heating * globalClock.dt
+            self.thruster_power += (1 / thruster_ramp_time) * globalClock.dt
         else:
-            self.thruster_heat -= thruster_cooling * globalClock.dt
+            self.thruster_power -= (1 / thruster_ramp_time) * globalClock.dt
+        if self.thruster_power < 0.0:
+            self.thruster_power = 0.0
+        if self.thruster_power > 1.0:
+            self.thruster_power = 1.0
+        power = self.thruster_power
+        self.thruster_heat += (-cooling * (1 - power) + heating * power) * globalClock.dt
         if self.thruster_heat < 0.0:
             self.thruster_heat = 0.0
         self.thruster_heat_bar['value'] = self.thruster_heat * 100
+        self.thruster_heat_bar['text'] = "{:3f}%".format(
+            self.thruster_power * 100,
+        )
         if self.thruster_heat > 1.0:
             self.thruster_heat_bar['barColor'] = (1, 1, 1, 1)
         else:
