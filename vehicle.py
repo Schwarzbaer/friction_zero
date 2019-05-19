@@ -33,7 +33,9 @@ MAX_GYRO_TORQUE = 'max_gyro_torque'
 REPULSOR = 'fz_repulsor'
 ACTIVATION_DISTANCE = 'activation_distance'
 THRUSTER_NODE = 'fz_thruster'
-THRUSTER_SOUND = 'thruster'
+THRUSTER_SOUND = 'thruster' # .wav
+THRUSTER_OVERHEAT_SOUND = 'thruster_overheat' # .wav
+THRUSTER_OVERHEATED = 'thruster_overheated' # bool, memorize last frame's state
 THRUSTER_POWER = 'thruster_power'  # Current power [0-1] of a thruster
 FORCE = 'force' # Maximum force in N produced by a thruster
 THRUSTER_HEATING = 'heating'
@@ -416,22 +418,31 @@ class Vehicle:
         ground_contact.reparent_to(self.app.render)
         repulsor.set_python_tag('ray_end', ground_contact)
 
-    def add_thruster(self, thruster, model_name):
-        thruster.set_python_tag(THRUSTER_POWER, 0.0)
-        thruster_sound_file = 'assets/cars/{}/{}.wav'.format(
+    def add_thruster(self, node, model_name):
+        node.set_python_tag(THRUSTER_POWER, 0.0)
+        node.set_python_tag(THRUSTER_OVERHEATED, False)
+
+        # Basic jet sound
+        sound_file = 'assets/cars/{}/{}.wav'.format(
             model_name,
             THRUSTER_SOUND,
         )
-        thruster_sound = base.audio3d.load_sfx(thruster_sound_file)
-        thruster.set_python_tag(THRUSTER_SOUND, thruster_sound)
-        base.audio3d.attach_sound_to_object(
-            thruster_sound,
-            thruster,
+        sound = base.audio3d.load_sfx(sound_file)
+        node.set_python_tag(THRUSTER_SOUND, sound)
+        base.audio3d.attach_sound_to_object(sound, node)
+        sound.set_volume(0)
+        sound.set_play_rate(0)
+        sound.set_loop(True)
+        sound.play()
+
+        # Overheating sound
+        sound_file = 'assets/cars/{}/{}.wav'.format(
+            model_name,
+            THRUSTER_OVERHEAT_SOUND,
         )
-        thruster_sound.set_volume(0)
-        thruster_sound.set_play_rate(0)
-        thruster_sound.set_loop(True)
-        thruster_sound.play()
+        sound = base.audio3d.load_sfx(sound_file)
+        node.set_python_tag(THRUSTER_OVERHEAT_SOUND, sound)
+        base.audio3d.attach_sound_to_object(sound, node)
 
     def game_loop(self):
         self.gather_sensors()
@@ -913,6 +924,15 @@ class Vehicle:
             sound = node.get_python_tag(THRUSTER_SOUND)
             sound.set_volume(thrust)
             sound.set_play_rate(1 + thrust/20)
+
+            was_overheated = node.get_python_tag(THRUSTER_OVERHEATED)
+            is_overheated = self.thruster_heat > 1.0
+            if is_overheated and not was_overheated:
+                sound = node.get_python_tag(THRUSTER_OVERHEAT_SOUND)
+                sound.play()
+                node.set_python_tag(THRUSTER_OVERHEATED, True)
+            if not is_overheated:
+                node.set_python_tag(THRUSTER_OVERHEATED, False)
 
     def apply_airbrake(self):
         # Animation and state update only, since the effect is in air drag
