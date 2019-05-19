@@ -81,4 +81,4 @@ repulsor_turning_angle = 540
 force = 200000.0
 heating = 0.33
 cooling = 0.04
-ramp_time = 0.2
+ramp_time = 1.0

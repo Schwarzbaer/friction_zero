@@ -30,6 +30,7 @@ from tools import adjust_within_limit
 SPAWN_POINT_CONNECTOR = 'fz_spawn_point_connector'
 VEHICLE = 'fz_vehicle'
 MAX_GYRO_TORQUE = 'max_gyro_torque'
+GYROSCOPE_SOUND = 'gyroscope' # .wav
 REPULSOR = 'fz_repulsor'
 REPULSOR_SOUND = 'repulsor'
 ACTIVATION_DISTANCE = 'activation_distance'
@@ -363,6 +364,19 @@ class Vehicle:
         self.centroid = base.loader.load_model('models/smiley')
         self.centroid.reparent_to(self.vehicle)
         self.centroid.hide()
+
+        # Gyro sound
+        sound_file = 'assets/cars/{}/{}.wav'.format(
+            model_name,
+            GYROSCOPE_SOUND,
+        )
+        sound = base.audio3d.load_sfx(sound_file)
+        self.model.set_python_tag(GYROSCOPE_SOUND, sound)
+        base.audio3d.attach_sound_to_object(sound, self.model)
+        sound.set_volume(0)
+        sound.set_play_rate(0)
+        sound.set_loop(True)
+        sound.play()
 
         # Thruster limiting
         self.thruster_state = 0.0
@@ -866,8 +880,8 @@ class Vehicle:
                 contact_node.show()
                 # Sound
                 sound = node.get_python_tag(REPULSOR_SOUND)
-                sound.set_volume(activation)
-                sound.set_play_rate(1 + activation/2)
+                sound.set_volume(activation * 20)
+                sound.set_play_rate((1 + activation/2) * 2)
             else:
                 node.get_python_tag('ray_end').hide()
                 sound = node.get_python_tag(REPULSOR_SOUND)
@@ -894,6 +908,11 @@ class Vehicle:
             clamped_impulse = impulse
 
         self.physics_node.apply_torque_impulse(clamped_impulse)
+
+        impulse_ratio = clamped_impulse.length() / max_impulse
+        sound = self.model.get_python_tag(GYROSCOPE_SOUND)
+        sound.set_volume(0.5 * impulse_ratio)
+        sound.set_play_rate(0.9 + 0.1 * impulse_ratio)
 
     def apply_thrusters(self):
         dt = globalClock.dt
@@ -935,13 +954,14 @@ class Vehicle:
 
             # Sound
             sound = node.get_python_tag(THRUSTER_SOUND)
-            sound.set_volume(thrust)
-            sound.set_play_rate(1 + thrust/20)
+            sound.set_volume(thrust * 5)
+            sound.set_play_rate((1 + thrust/20) / 3)
 
             was_overheated = node.get_python_tag(THRUSTER_OVERHEATED)
             is_overheated = self.thruster_heat > 1.0
             if is_overheated and not was_overheated:
                 sound = node.get_python_tag(THRUSTER_OVERHEAT_SOUND)
+                sound.set_volume(5)
                 sound.play()
                 node.set_python_tag(THRUSTER_OVERHEATED, True)
             if not is_overheated:
