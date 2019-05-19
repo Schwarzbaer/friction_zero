@@ -2,7 +2,10 @@ import os
 import sys
 
 from direct.showbase.ShowBase import ShowBase
+from direct.showbase.Audio3DManager import Audio3DManager
+
 import panda3d
+
 import pman.shim
 
 from panda3d.core import NodePath
@@ -24,6 +27,12 @@ class GameApp(ShowBase):
     def __init__(self, map="lab"):
         ShowBase.__init__(self)
         pman.shim.init(self)
+
+        self.audio3d = Audio3DManager(
+            base.sfxManagerList[0],
+            base.cam,
+        )
+
         self.accept('escape', sys.exit)
         #self.render.setShaderAuto()
         self.set_frame_rate_meter(True)
