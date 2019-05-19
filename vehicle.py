@@ -24,6 +24,7 @@ from common_vars import CM_VEHICLE
 from common_vars import CM_COLLIDE
 
 from model_data import ModelData
+from tools import adjust_within_limit
 
 
 SPAWN_POINT_CONNECTOR = 'fz_spawn_point_connector'
@@ -31,10 +32,13 @@ VEHICLE = 'fz_vehicle'
 MAX_GYRO_TORQUE = 'max_gyro_torque'
 REPULSOR = 'fz_repulsor'
 ACTIVATION_DISTANCE = 'activation_distance'
-THRUSTER = 'fz_thruster'
-FORCE = 'force'
+THRUSTER_NODE = 'fz_thruster'
+THRUSTER_SOUND = 'thruster'
+THRUSTER_POWER = 'thruster_power'  # Current power [0-1] of a thruster
+FORCE = 'force' # Maximum force in N produced by a thruster
 THRUSTER_HEATING = 'heating'
 THRUSTER_COOLING = 'cooling'
+THRUSTER_RAMP_TIME = 'ramp_time'
 DRAG_COEFFICIENT_X = 'drag_coefficient_x'
 DRAG_COEFFICIENT_Y = 'drag_coefficient_y'
 DRAG_COEFFICIENT_Z = 'drag_coefficient_z'
@@ -211,7 +215,7 @@ class VehicleData(ModelData):
             self.transcribe_repulsor_tags(node, repulsor_specs)
 
         self.thruster_nodes = model.find_all_matches(
-            '**/{}*'.format(THRUSTER),
+            '**/{}*'.format(THRUSTER_NODE),
         )
         for node in self.thruster_nodes:
             node_name = node.get_name()
@@ -250,6 +254,8 @@ class VehicleData(ModelData):
         node.set_python_tag(THRUSTER_HEATING, heating)
         cooling = self.get_value(THRUSTER_COOLING, node, specs)
         node.set_python_tag(THRUSTER_COOLING, cooling)
+        ramp_time = self.get_value(THRUSTER_RAMP_TIME, node, specs)
+        node.set_python_tag(THRUSTER_RAMP_TIME, ramp_time)
 
 
 class RepulsorData:
@@ -362,7 +368,7 @@ class Vehicle:
         for repulsor in self.vehicle_data.repulsor_nodes:
             self.add_repulsor(repulsor)
         for thruster in self.vehicle_data.thruster_nodes:
-            self.add_thruster(thruster)
+            self.add_thruster(thruster, model_name)
 
         # ECU data storage from frame to frame
         self.last_flight_height = None
@@ -410,8 +416,22 @@ class Vehicle:
         ground_contact.reparent_to(self.app.render)
         repulsor.set_python_tag('ray_end', ground_contact)
 
-    def add_thruster(self, thruster):
-        pass
+    def add_thruster(self, thruster, model_name):
+        thruster.set_python_tag(THRUSTER_POWER, 0.0)
+        thruster_sound_file = 'assets/cars/{}/{}.wav'.format(
+            model_name,
+            THRUSTER_SOUND,
+        )
+        thruster_sound = base.audio3d.load_sfx(thruster_sound_file)
+        thruster.set_python_tag(THRUSTER_SOUND, thruster_sound)
+        base.audio3d.attach_sound_to_object(
+            thruster_sound,
+            thruster,
+        )
+        thruster_sound.set_volume(0)
+        thruster_sound.set_play_rate(0)
+        thruster_sound.set_loop(True)
+        thruster_sound.play()
 
     def game_loop(self):
         self.gather_sensors()
@@ -820,8 +840,15 @@ class Vehicle:
                 contact_node.set_scale(1-frac)
 
                 contact_node.show()
+                # Sound
+                #sound = node.get_python_tag(REPULSOR_SOUND)
+                #sound.set_volume(activation)
+                #sound.set_play_rate(1 + activation/100)
             else:
                 node.get_python_tag('ray_end').hide()
+                #sound = node.get_python_tag(REPULSOR_SOUND)
+                #sound.set_volume(0.0)
+                #sound.set_play_rate(0.0)
             # Reorient
             old_hpr = node.get_python_tag(REPULSOR_OLD_ORIENTATION)
             want_hpr = VBase3(angle.z, angle.x, angle.y)
@@ -853,6 +880,13 @@ class Vehicle:
         for node, thrust in thruster_data:
             if self.thruster_heat >= 1.0:
                 thrust = 0.0
+            current_power = node.get_python_tag(THRUSTER_POWER)
+            # Adjust thrust to be within bounds of thruster's ability to adjust
+            # thrust.
+            ramp_time = node.get_python_tag(THRUSTER_RAMP_TIME)
+            ramp_step = (1 / ramp_time) * globalClock.dt
+            thrust = adjust_within_limit(thrust, current_power, ramp_step)
+            node.set_python_tag(THRUSTER_POWER, thrust)
             max_force = node.get_python_tag(FORCE)
             real_force = max_force * thrust
             # FIXME: See repulsors above for the shortcoming that this suffers
@@ -874,6 +908,11 @@ class Vehicle:
             self.thruster_heat += effective_heating * dt
             if self.thruster_heat < 0.0:
                 self.thruster_heat = 0.0
+
+            # Sound
+            sound = node.get_python_tag(THRUSTER_SOUND)
+            sound.set_volume(thrust)
+            sound.set_play_rate(1 + thrust/20)
 
     def apply_airbrake(self):
         # Animation and state update only, since the effect is in air drag
