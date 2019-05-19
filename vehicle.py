@@ -31,6 +31,7 @@ SPAWN_POINT_CONNECTOR = 'fz_spawn_point_connector'
 VEHICLE = 'fz_vehicle'
 MAX_GYRO_TORQUE = 'max_gyro_torque'
 REPULSOR = 'fz_repulsor'
+REPULSOR_SOUND = 'repulsor'
 ACTIVATION_DISTANCE = 'activation_distance'
 THRUSTER_NODE = 'fz_thruster'
 THRUSTER_SOUND = 'thruster' # .wav
@@ -368,7 +369,7 @@ class Vehicle:
         self.thruster_heat = 0.0
 
         for repulsor in self.vehicle_data.repulsor_nodes:
-            self.add_repulsor(repulsor)
+            self.add_repulsor(repulsor, model_name)
         for thruster in self.vehicle_data.thruster_nodes:
             self.add_thruster(thruster, model_name)
 
@@ -412,11 +413,23 @@ class Vehicle:
     def set_inputs(self, inputs):
         self.inputs = inputs
 
-    def add_repulsor(self, repulsor):
+    def add_repulsor(self, node, model_name):
         ground_contact = self.app.loader.load_model("assets/effect/repulsorhit.egg")
         ground_contact.set_scale(1)
         ground_contact.reparent_to(self.app.render)
-        repulsor.set_python_tag('ray_end', ground_contact)
+        node.set_python_tag('ray_end', ground_contact)
+
+        sound_file = 'assets/cars/{}/{}.wav'.format(
+            model_name,
+            REPULSOR_SOUND,
+        )
+        sound = base.audio3d.load_sfx(sound_file)
+        node.set_python_tag(REPULSOR_SOUND, sound)
+        base.audio3d.attach_sound_to_object(sound, node)
+        sound.set_volume(0)
+        sound.set_play_rate(0)
+        sound.set_loop(True)
+        sound.play()
 
     def add_thruster(self, node, model_name):
         node.set_python_tag(THRUSTER_POWER, 0.0)
@@ -852,14 +865,14 @@ class Vehicle:
 
                 contact_node.show()
                 # Sound
-                #sound = node.get_python_tag(REPULSOR_SOUND)
-                #sound.set_volume(activation)
-                #sound.set_play_rate(1 + activation/100)
+                sound = node.get_python_tag(REPULSOR_SOUND)
+                sound.set_volume(activation)
+                sound.set_play_rate(1 + activation/2)
             else:
                 node.get_python_tag('ray_end').hide()
-                #sound = node.get_python_tag(REPULSOR_SOUND)
-                #sound.set_volume(0.0)
-                #sound.set_play_rate(0.0)
+                sound = node.get_python_tag(REPULSOR_SOUND)
+                sound.set_volume(0.0)
+                sound.set_play_rate(0.0)
             # Reorient
             old_hpr = node.get_python_tag(REPULSOR_OLD_ORIENTATION)
             want_hpr = VBase3(angle.z, angle.x, angle.y)
