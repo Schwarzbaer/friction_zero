@@ -36,11 +36,11 @@ class GameApp(ShowBase):
         self.accept('escape', sys.exit)
         #self.render.setShaderAuto()
         self.set_frame_rate_meter(True)
-        self.accept('tilde', self.debug)
+        self.accept('f12', self.debug)
 
         self.environment = Environment(self, map)
         self.bullet_debug()
-        self.accept("b", self.toggle_bullet_debug)
+        self.accept("f1", self.toggle_bullet_debug)
 
         self.vehicles = []
         vehicle_files = [
