@@ -83,28 +83,16 @@ class CameraController(DirectObject):
             shadow = (0.2, 0.2, 0.2, 1.0),
             align = TextNode.ARight,
         )
-        self.repulsor_power_needed = DirectWaitBar(
+        self.thruster_heat = DirectWaitBar(
             text = "",
             value = 0,
             pos = (0.9, 0, 0.65),
             scale = 0.4,
         )
-        self.gyro_power_needed = DirectWaitBar(
-            text = "",
-            value = 0,
-            pos = (0.9, 0, 0.58),
-            scale = 0.4,
-        )
-        self.thruster_heat = DirectWaitBar(
-            text = "",
-            value = 0,
-            pos = (0.9, 0, 0.51),
-            scale = 0.4,
-        )
 
         self.flight_height = OnscreenText(
             text = '',
-            pos = (1.3, -0.65),
+            pos = (1.3, -0.6),
             scale = 0.1,
             fg = (0.0, 0.0, 0.0, 1.0),
             shadow = (0.2, 0.2, 0.2, 1.0),
@@ -112,7 +100,7 @@ class CameraController(DirectObject):
         )
         self.target_flight_height = OnscreenText(
             text = '',
-            pos = (1.3, -0.75),
+            pos = (1.3, -0.7),
             scale = 0.1,
             fg = (0.2, 0.8, 0.2, 1.0),
             shadow = (0.2, 0.2, 0.2, 1.0),
@@ -120,11 +108,23 @@ class CameraController(DirectObject):
         )
         self.climb_rate = OnscreenText(
             text = '',
-            pos = (1.3, -0.85),
+            pos = (1.3, -0.8),
             scale = 0.1,
             fg = (0.0, 0.0, 0.0, 1.0),
             shadow = (0.2, 0.2, 0.2, 1.0),
             align = TextNode.ARight,
+        )
+        self.repulsor_power_needed = DirectWaitBar(
+            text = "",
+            value = 0,
+            pos = (0.9, 0, -0.87),
+            scale = 0.4,
+        )
+        self.gyro_power_needed = DirectWaitBar(
+            text = "",
+            value = 0,
+            pos = (0.9, 0, -0.94),
+            scale = 0.4,
         )
 
         # Height meters and repulsor self-control
@@ -309,7 +309,7 @@ class CameraController(DirectObject):
                 flight_height,
             )
             self.flight_height['fg'] = (0.2, 0.8, 0.2, 1.0)
-            self.climb_rate['text'] = "{:3.1f}m/s climb".format(climb_rate)
+            self.climb_rate['text'] = "{:3.2f}m/s climb".format(climb_rate)
             self.climb_rate['fg'] = (0.8, 0.8, 0.8, 1.0)
             clamped_power = min(max(repulsor_power_needed, 0), 1)
             self.repulsor_power_needed['value'] = clamped_power * 100
@@ -363,10 +363,13 @@ class CameraController(DirectObject):
         else: # repulsor_power_needed > 1.0
             self.gyro_power_needed['barColor'] = (1.0, 0.0, 0.0, 1.0)
 
-        self.thruster_heat['value'] = self.vehicle.thruster_heat * 100
-        self.thruster_heat['barColor'] = color_gradient(
-            self.vehicle.thruster_heat,
-        )
+        thruster_heat = self.vehicle.thruster_heat
+        self.thruster_heat['value'] = thruster_heat * 100
+
+        if thruster_heat <= 1.0:
+            self.thruster_heat['barColor'] = color_gradient(thruster_heat)
+        else:
+            self.thruster_heat['barColor'] = (1.0, 1.0, 1.0, 1.0)
         thruster_heat_str = "{:3.1f}% thruster heat".format(
             self.vehicle.thruster_heat * 100,
         )

@@ -26,6 +26,8 @@ TODO
 
 ### Features
 
+* Clamp timestep in physics simulation
+  * (SMALL) Move value min_frame_rate into settings file
 * (SMALL STUFF) Default controller for NPC vehicles
 * Controls
   * Space mouse bindings
@@ -44,7 +46,6 @@ TODO
   * Vehicle-terrain crashes
   * Vehicle-vehicle crashes
 * Sound
-  * Repulsor activity
   * Background music
   * Crashes
 * GUI
@@ -58,8 +59,6 @@ TODO
   * Cinematics
 * Shadows
 * Repulsoring other vehicles
-* Clamp timestep in physics simulation
-  * (SMALL) Move value min_frame_rate into settings file
 * Game Mode: Free Driving
 * Countdown to start
 * Game Mode: Timed solo race
