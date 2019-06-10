@@ -1,0 +1,342 @@
+{
+    "accessors": [
+        {
+            "bufferView": 0,
+            "byteOffset": 0,
+            "componentType": 5126,
+            "count": 62,
+            "max": [
+                1.7163712978363037,
+                0.12053395062685013,
+                1.9818947315216064
+            ],
+            "min": [
+                -1.7163712978363037,
+                -0.4610136151313782,
+                -1.9818947315216064
+            ],
+            "name": "accessor_buffer_Circle.001_POSITION_0",
+            "type": "VEC3"
+        },
+        {
+            "bufferView": 1,
+            "byteOffset": 0,
+            "componentType": 5126,
+            "count": 62,
+            "max": [
+                0.8898282051086426,
+                0.651387095451355,
+                0.965727686882019
+            ],
+            "min": [
+                -0.8898282051086426,
+                0.2594683766365051,
+                -0.965727686882019
+            ],
+            "name": "accessor_buffer_Circle.001_NORMAL_0",
+            "type": "VEC3"
+        },
+        {
+            "bufferView": 2,
+            "byteOffset": 0,
+            "componentType": 5126,
+            "count": 62,
+            "max": [
+                1.0,
+                1.0
+            ],
+            "min": [
+                0.0,
+                5.960464477539063e-08
+            ],
+            "name": "accessor_buffer_Circle.001_TEXCOORD_0_0",
+            "type": "VEC2"
+        },
+        {
+            "bufferView": 3,
+            "byteOffset": 0,
+            "componentType": 5123,
+            "count": 108,
+            "max": [
+                61
+            ],
+            "min": [
+                0
+            ],
+            "name": "accessor_buffer_Circle.001_0",
+            "type": "SCALAR"
+        }
+    ],
+    "asset": {
+        "copyright": "",
+        "generator": "blendergltf v1.2.0",
+        "version": "2.0"
+    },
+    "bufferViews": [
+        {
+            "buffer": 0,
+            "byteLength": 744,
+            "byteOffset": 0,
+            "byteStride": 12,
+            "name": "bufferView_buffer_Circle.001_POSITION_0",
+            "target": 34962
+        },
+        {
+            "buffer": 1,
+            "byteLength": 744,
+            "byteOffset": 0,
+            "byteStride": 12,
+            "name": "bufferView_buffer_Circle.001_NORMAL_0",
+            "target": 34962
+        },
+        {
+            "buffer": 2,
+            "byteLength": 496,
+            "byteOffset": 0,
+            "byteStride": 8,
+            "name": "bufferView_buffer_Circle.001_TEXCOORD_0_0",
+            "target": 34962
+        },
+        {
+            "buffer": 3,
+            "byteLength": 216,
+            "byteOffset": 0,
+            "name": "bufferView_buffer_Circle.001_0",
+            "target": 34963
+        }
+    ],
+    "buffers": [
+        {
+            "byteLength": 744,
+            "name": "buffer_Circle.001_POSITION",
+            "uri": "data:application/octet-stream;base64,Koq5v33a9j0pPla/DbLbv7ATdL68rn2/DrLbv7YTdL66rn0/Koq5v3Pa9j0nPlY/Koq5P3Pa9j0lPlY/DrLbP7YTdL64rn0/DrLbP7ATdL62rn2/Koq5P33a9j0jPla/JPUINIHa9j0oPta/Sl0cNKwTdL66rv2/DbLbv7ATdL68rn2/Koq5v33a9j0pPla/fWbtsrgTdL66rv0/tUShsm3a9j0oPtY/tUShsm3a9j0oPtY/fWbtsrgTdL66rv0/DrLbP7YTdL64rn0/Koq5P3Pa9j0lPlY/Sl0cNKwTdL66rv2/JPUINIHa9j0oPta/b5yZvyuqyT2ZGZ47oOO1vzIzqr5ANLs7YJ80vzQzqr7j4p0/mIoYvyWqyT0CV4U/bpyZPyuqyT0JG567n+O1PzIzqr4gNru7YZ80PzAzqr7i4p2/mYoYPzGqyT0BV4W/Ra4avzGqyT3nuIS/3yc3vzAzqr6sJ52/oOO1vzIzqr5ANLs7b5yZvyuqyT2ZGZ47mIoYvyWqyT0CV4U/YJ80vzQzqr7j4p0/4Cc3PzQzqr6sJ50/Rq4aPyWqyT3ouIQ/Rq4aPyWqyT3ouIQ/4Cc3PzQzqr6sJ50/n+O1PzIzqr4gNru7bpyZPyuqyT0JG567mYoYPzGqyT0BV4W/YZ80PzAzqr7i4p2/ZSg4vzNy3T2qpdS+Jg9av/gJ7L4Ky/u+Jg9av/oJ7L4Dy/s+ZSg4vy1y3T2mpdQ+ZSg4Py1y3T2jpdQ+Jg9aP/oJ7L7/yvs+Jg9aP/gJ7L4Dy/u+ZSg4PzNy3T2lpdS+bwacMzVy3T2npVS/9yKtM/gJ7L4Ey3u/Jg9av/gJ7L4Ky/u+ZSg4vzNy3T2qpdS+dEa4sfoJ7L4Gy3s/AFoiLity3T2npVQ/AFoiLity3T2npVQ/dEa4sfoJ7L4Gy3s/Jg9aP/oJ7L7/yvs+ZSg4Py1y3T2jpdQ+9yKtM/gJ7L4Ey3u/bwacMzVy3T2npVS/"
+        },
+        {
+            "byteLength": 744,
+            "name": "buffer_Circle.001_NORMAL",
+            "uri": "data:application/octet-stream;base64,UDUov07BJj+EOcK+UDUov07BJj+EOcK+UDUov07BJj+EOcI+UDUov07BJj+EOcI+UDUoP07BJj+EOcI+UDUoP07BJj+EOcI+UDUoP07BJj+EOcK+UDUoP07BJj+EOcK+AAAAAE7BJj+EO0K/AAAAAE7BJj+EO0K/UDUov07BJj+EOcK+UDUov07BJj+EOcK+AAAAAE7BJj+EO0I/AAAAAE7BJj+EO0I/AAAAAE7BJj+EO0I/AAAAAE7BJj+EO0I/UDUoP07BJj+EOcI+UDUoP07BJj+EOcI+AAAAAE7BJj+EO0K/AAAAAE7BJj+EO0K/yMtjv9OV6T7UAWo7yMtjv9OV6T7UAWo7xDXivtOV6T6Lu0U/xDXivtOV6T6Lu0U/yMtjP9OV6T7UAWq7yMtjP9OV6T7UAWq7xDXiPtOV6T6Lu0W/xDXiPtOV6T6Lu0W/y2HlvtOV6T6K0US/y2HlvtOV6T6K0US/yMtjv9OV6T7UAWo7yMtjv9OV6T7UAWo7xDXivtOV6T6Lu0U/xDXivtOV6T6Lu0U/y2HlPtOV6T6K0UQ/y2HlPtOV6T6K0UQ/y2HlPtOV6T6K0UQ/y2HlPtOV6T6K0UQ/yMtjP9OV6T7UAWq7yMtjP9OV6T7UAWq7xDXiPtOV6T6Lu0W/xDXiPtOV6T6Lu0W/rBtWvwrZhD7uOfe+rBtWvwrZhD7uOfe+rBtWvwrZhD7uOfc+rBtWvwrZhD7uOfc+rBtWPwrZhD7uOfc+rBtWPwrZhD7uOfc+rBtWPwrZhD7uOfe+rBtWPwrZhD7uOfe+AAAAAArZhD7uOXe/AAAAAArZhD7uOXe/rBtWvwrZhD7uOfe+rBtWvwrZhD7uOfe+AAAAAArZhD7uOXc/AAAAAArZhD7uOXc/AAAAAArZhD7uOXc/AAAAAArZhD7uOXc/rBtWPwrZhD7uOfc+rBtWPwrZhD7uOfc+AAAAAArZhD7uOXe/AAAAAArZhD7uOXe/"
+        },
+        {
+            "byteLength": 496,
+            "name": "buffer_Circle.001_TEXCOORD_0",
+            "uri": "data:application/octet-stream;base64,eXAlNAAAgDNT++U9AACAM0b75T3s3f8++IbGM+zd/z5S+2U+//9/P2f75T0AAIA/XfvlPQwRAD9M+2U+DBEAP3l8rD4AAIA/UvtlPgAAgD9n+2U+qmXYPoN8rD6qZdg+RfvlPQAAgD8AAAAA//9/P4R8rD6oZdg+VPvlPqhl2D5S++U+AACAP4N8rD4AAIA/U/vlPQAAQDRK+2U+AABANPTaMD8AAIA/MJMfPwAAgD8ukx8/ygYWP/PaMD/KBhY/uiJCPwAAgD/22jA/AACAP/TaMD/NBhY/uSJCP8wGFj9V++U+llYkP29FBD+XViQ/cUUEPwAAgD9Z++U+AACAP35qUz8AAIA/uSJCPwAAgD+7IkI/IhwkP4BqUz8iHCQ/RbJkPwAAgD+AalM/AACAP4BqUz+XViQ/RLJkP5dWJD9T++U+cuWQPm9FBD9y5ZA+UOwRPwAAgD9yRQQ/AACAP3JFBD9iiDc/TuwRP2KINz9S7BE/7vrdPi6THz/u+t0+LZMfPxR1Nz9Q7BE/FHU3PyFZcj8AAIA/RbJkPwAAgD9HsmQ/U0csPyNZcj9URyw/cUUEP+763T5O7BE/7vrdPiRZcj9TRyw/AACAP1JHLD///38/AACAPyNZcj8AAIA/LJMfPwAAgD9Q7BE///9/Pw=="
+        },
+        {
+            "byteLength": 216,
+            "name": "buffer_Circle.001",
+            "uri": "data:application/octet-stream;base64,AAABAAIAAwAAAAIABQAGAAcABQAHAAQACAAJAAoACwAIAAoADQADAAIADQACAAwAEAARAA4ADwAQAA4ABgASABMABgATAAcAFwAUABUAFwAVABYAGQAaABsAGQAbABgAHAAdAB4AHwAcAB4AIgAjACAAIgAgACEAJQAmACcAJQAnACQAKAApAB0AKAAdABwAKgArACwALQAqACwALwAwADEALwAxAC4AMgAzADQANQAyADQANwAtACwANwAsADYAOgA7ADgAOQA6ADgAMAA8AD0AMAA9ADEA"
+        }
+    ],
+    "extensions": {
+        "KHR_lights": {
+            "lights": []
+        }
+    },
+    "extensionsUsed": [
+        "KHR_lights",
+        "BLENDER_physics",
+        "BP_materials_legacy"
+    ],
+    "images": [
+        {
+            "name": "rayhit",
+            "uri": "../textures/effect/rayhit.png"
+        }
+    ],
+    "materials": [
+        {
+            "alphaMode": "BLEND",
+            "doubleSided": true,
+            "emissiveFactor": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "extensions": {
+                "BP_materials_legacy": {
+                    "bpLegacy": {
+                        "ambientFactor": [
+                            1.0,
+                            1.0,
+                            1.0,
+                            1.0
+                        ],
+                        "diffuseFactor": [
+                            0.800000011920929,
+                            0.800000011920929,
+                            0.800000011920929,
+                            0.0
+                        ],
+                        "diffuseTexture": {
+                            "index": 0,
+                            "texCoord": 0
+                        },
+                        "diffuseTextureSrgb": true,
+                        "emissionFactor": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "shininessFactor": 50,
+                        "specularFactor": [
+                            1.0,
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    }
+                }
+            },
+            "name": "rayhit",
+            "pbrMetallicRoughness": {
+                "baseColorFactor": [
+                    0.800000011920929,
+                    0.800000011920929,
+                    0.800000011920929,
+                    0.0
+                ],
+                "baseColorTexture": {
+                    "index": 0,
+                    "texCoord": 0
+                },
+                "metallicFactor": 0.0,
+                "roughnessFactor": 1.0
+            }
+        },
+        {
+            "alphaMode": "BLEND",
+            "doubleSided": false,
+            "emissiveFactor": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "extensions": {
+                "BP_materials_legacy": {
+                    "bpLegacy": {
+                        "ambientFactor": [
+                            1.0,
+                            1.0,
+                            1.0,
+                            1.0
+                        ],
+                        "diffuseFactor": [
+                            0.800000011920929,
+                            0.800000011920929,
+                            0.800000011920929,
+                            0.41584157943725586
+                        ],
+                        "emissionFactor": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.41584157943725586
+                        ],
+                        "shininessFactor": 50,
+                        "specularFactor": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ]
+                    }
+                }
+            },
+            "name": "raytrans",
+            "pbrMetallicRoughness": {
+                "baseColorFactor": [
+                    0.800000011920929,
+                    0.800000011920929,
+                    0.800000011920929,
+                    0.41584157943725586
+                ],
+                "metallicFactor": 0.0,
+                "roughnessFactor": 1.0
+            }
+        }
+    ],
+    "meshes": [
+        {
+            "extras": {
+                "yabee_name": "Circle.001"
+            },
+            "name": "Circle.001",
+            "primitives": [
+                {
+                    "attributes": {
+                        "NORMAL": 1,
+                        "POSITION": 0,
+                        "TEXCOORD_0": 2
+                    },
+                    "indices": 3,
+                    "material": 0,
+                    "mode": 4
+                }
+            ]
+        }
+    ],
+    "nodes": [
+        {
+            "extras": {
+                "yabee_name": "rayhist"
+            },
+            "mesh": 0,
+            "name": "rayhist",
+            "rotation": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "translation": [
+                0.0,
+                0.0,
+                0.0
+            ]
+        }
+    ],
+    "samplers": [
+        {
+            "magFilter": 9729,
+            "minFilter": 9987,
+            "name": "Texture",
+            "wrapS": 10497,
+            "wrapT": 10497
+        }
+    ],
+    "scene": 0,
+    "scenes": [
+        {
+            "extensions": {
+                "BLENDER_physics": {
+                    "gravity": -9.8100004196167
+                }
+            },
+            "extras": {
+                "background_color": [
+                    0.05087608844041824,
+                    0.05087608844041824,
+                    0.05087608844041824
+                ],
+                "frames_per_second": 24
+            },
+            "name": "Scene",
+            "nodes": [
+                0
+            ]
+        }
+    ],
+    "textures": [
+        {
+            "name": "Texture",
+            "sampler": 0,
+            "source": 0
+        }
+    ]
+}

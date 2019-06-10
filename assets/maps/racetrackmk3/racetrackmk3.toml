@@ -1,0 +1,5 @@
+friction = 1.25
+gravity_x = 0
+gravity_y = 0
+gravity_z = -9.81
+air_density = 1.225
