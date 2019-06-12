@@ -1,7 +1,6 @@
 import os
 import sys
 
-from direct.showbase.ShowBase import ShowBase
 from direct.showbase.Audio3DManager import Audio3DManager
 
 import panda3d
@@ -10,6 +9,8 @@ import pman.shim
 
 from panda3d.core import NodePath
 from panda3d.bullet import BulletDebugNode
+
+from wecs.panda3d import ECSShowBase
 
 from environment import Environment
 from vehicle import Vehicle
@@ -23,9 +24,9 @@ panda3d.core.load_prc_file(
 )
 
 
-class GameApp(ShowBase):
+class GameApp(ECSShowBase):
     def __init__(self, map="lab"):
-        ShowBase.__init__(self)
+        super().__init__(self)
         pman.shim.init(self)
 
         self.audio3d = Audio3DManager(
