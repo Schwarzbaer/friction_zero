@@ -1,4 +1,5 @@
 from panda3d.core import Vec3
+from panda3d.core import NodePath
 
 from panda3d.bullet import BulletWorld
 from panda3d.bullet import BulletRigidBodyNode
@@ -52,10 +53,10 @@ class Environment:
 
         self.physics_world = BulletWorld()
 
-        node = BulletRigidBodyNode('Ground')
-        self.np = self.app.render.attach_new_node(node)
-        self.np.setPos(0, 0, 0)
-        self.physics_world.attachRigidBody(node)
+        self.body = BulletRigidBodyNode('Ground')
+        self.np = NodePath(self.body)
+        #self.np.setPos(0, 0, 0)
+        #self.physics_world.attachRigidBody(node)
 
         self.model = loader.load_model(map_file)
         self.model.reparent_to(self.np)

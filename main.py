@@ -10,7 +10,7 @@ import pman.shim
 from panda3d.core import NodePath
 from panda3d.bullet import BulletDebugNode
 
-from wecs.panda3d import ECSShowBase
+from wecs import panda3d as wecs_panda3d
 
 from environment import Environment
 from vehicle import Vehicle
@@ -24,7 +24,7 @@ panda3d.core.load_prc_file(
 )
 
 
-class GameApp(ECSShowBase):
+class GameApp(wecs_panda3d.ECSShowBase):
     def __init__(self, map="lab"):
         super().__init__(self)
         pman.shim.init(self)
@@ -39,14 +39,36 @@ class GameApp(ECSShowBase):
         self.set_frame_rate_meter(True)
         self.accept('f12', self.debug)
 
+        # Environment
+
         self.environment = Environment(self, map)
         self.bullet_debug()
         self.accept("f1", self.toggle_bullet_debug)
+        env_entity = base.ecs_world.create_entity(
+            wecs_panda3d.PhysicsWorld(
+                world=self.environment.physics_world,
+                clock=globalClock,
+            ),
+            wecs_panda3d.Scene(node=base.render),
+            wecs_panda3d.Model(node=self.environment.model),
+            wecs_panda3d.Position(value=panda3d.core.Vec3(0, 0, 0)),
+        )
+        env_entity[wecs_panda3d.PhysicsBody] = wecs_panda3d.PhysicsBody(
+            node=self.environment.np,
+            body=self.environment.body,
+            world=env_entity._uid,
+            scene=env_entity._uid,
+        )
+
+        base.add_system(wecs_panda3d.SetUpPhysics(), 0)
+        base.add_system(wecs_panda3d.LoadModels(), 1)
+
+        # Vehicles
 
         self.vehicles = []
         vehicle_files = [
             'Ricardeaut_Magnesium',
-            'Ricardeaut_Himony',
+            #'Ricardeaut_Himony',
             #'Psyoni_Culture',
             #'Texopec_Nako',
             #'Texopec_Reaal',
@@ -78,26 +100,20 @@ class GameApp(ECSShowBase):
             self.player_controller,
         )
 
+        base.add_system(wecs_panda3d.DetermineTimestep(), 44)
         base.task_mgr.add(
             self.game_loop_pre_render,
             "game_loop_pre_render",
             sort=45,
         )
-        base.task_mgr.add(
-            self.game_loop_post_render,
-            "game_loop_post_render",
-            sort=55,
-        )
+
+        base.add_system(wecs_panda3d.DoPhysics(), 55)
 
     def game_loop_pre_render(self, task):
         self.player_controller.gather_inputs()
         for vehicle in self.vehicles:
             vehicle.game_loop()
         self.player_camera.update()
-        return task.cont
-
-    def game_loop_post_render(self, task):
-        self.environment.update_physics()
         return task.cont
 
     def next_vehicle(self):
