@@ -86,6 +86,8 @@ class GameApp(wecs_panda3d.ECSShowBase):
         for vehicle, spawn_point in zip(self.vehicles, spawn_points):
             vehicle.place(spawn_point)
 
+        # Controller objects
+
         self.controller_listener = DeviceListener()
 
         self.player_vehicle_idx = 0
@@ -100,19 +102,36 @@ class GameApp(wecs_panda3d.ECSShowBase):
             self.player_controller,
         )
 
+        # Systems / Tasks
+
         base.add_system(wecs_panda3d.DetermineTimestep(), 44)
         base.task_mgr.add(
-            self.game_loop_pre_render,
-            "game_loop_pre_render",
+            self.game_loop_gather_inputs,
+            "game_loop_gather_inputs",
             sort=45,
         )
-
+        base.task_mgr.add(
+            self.game_loop_vehicles,
+            "game_loop_vehicles",
+            sort=46,
+        )
+        base.task_mgr.add(
+            self.game_loop_update_camera,
+            "game_loop_update_camera",
+            sort=47,
+        )
         base.add_system(wecs_panda3d.DoPhysics(), 55)
 
-    def game_loop_pre_render(self, task):
+    def game_loop_gather_inputs(self, task):
         self.player_controller.gather_inputs()
+        return task.cont
+
+    def game_loop_vehicles(self, task):
         for vehicle in self.vehicles:
             vehicle.game_loop()
+        return task.cont
+
+    def game_loop_update_camera(self, task):
         self.player_camera.update()
         return task.cont
 
