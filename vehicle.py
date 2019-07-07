@@ -341,6 +341,7 @@ class Vehicle:
         self.physics_node.add_shape(shape)
         self.vehicle = NodePath(self.physics_node)
         self.vehicle.set_collide_mask(CM_VEHICLE | CM_COLLIDE)
+        # TODO: Comment out during WECSificationself.environment.model
         self.model.reparent_to(self.vehicle)
 
         # Navigational aids
@@ -415,14 +416,6 @@ class Vehicle:
 
     def np(self):
         return self.vehicle
-
-    def place(self, spawn_point):
-        # FIXME: Pass a root node to __init__ instead
-        self.vehicle.reparent_to(self.app.environment.model)
-        connector = self.model.find("**/"+SPAWN_POINT_CONNECTOR)
-        self.vehicle.set_hpr(-connector.get_hpr(spawn_point))
-        self.vehicle.set_pos(-connector.get_pos(spawn_point))
-        self.app.environment.add_physics_node(self.physics_node)
 
     def set_inputs(self, inputs):
         self.inputs = inputs

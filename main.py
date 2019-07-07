@@ -65,7 +65,6 @@ class GameApp(wecs_panda3d.ECSShowBase):
 
         # Vehicles
 
-        self.vehicles = []
         vehicle_files = [
             'Ricardeaut_Magnesium',
             #'Ricardeaut_Himony',
@@ -74,7 +73,11 @@ class GameApp(wecs_panda3d.ECSShowBase):
             #'Texopec_Reaal',
             # 'Doby_Phalix',
         ]
+        spawn_points = self.environment.get_spawn_points()
+        SPAWN_POINT_CONNECTOR = 'fz_spawn_point_connector'
 
+        self.vehicles = []
+        self.vehicle_entities = []
         for vehicle_file in vehicle_files:
             vehicle = Vehicle(
                 self,
@@ -82,9 +85,20 @@ class GameApp(wecs_panda3d.ECSShowBase):
             )
             self.vehicles.append(vehicle)
 
-        spawn_points = self.environment.get_spawn_points()
         for vehicle, spawn_point in zip(self.vehicles, spawn_points):
-            vehicle.place(spawn_point)
+            connector = vehicle.model.find("**/"+SPAWN_POINT_CONNECTOR)
+            hpr = -connector.get_hpr(spawn_point)
+            pos = -connector.get_pos(spawn_point)
+            self.vehicle_entities.append(base.ecs_world.create_entity(
+                wecs_panda3d.PhysicsBody(
+                    node=vehicle.vehicle,
+                    body=vehicle.physics_node,
+                    world=env_entity._uid,
+                    scene=env_entity._uid,
+                ),
+                wecs_panda3d.Model(node=vehicle.model),
+                wecs_panda3d.Position(value=None, xyz=pos, hpr=hpr),
+            ))
 
         # Controller objects
 
