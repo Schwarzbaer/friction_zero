@@ -295,7 +295,6 @@ class Vehicle:
         self.model = Actor(
             model_file_name,
             {
-            #    AIRBRAKE: 'assets/cars/animations/{}-{}.bam'.format(model_name, AIRBRAKE),
             #    AIRBRAKE: animation_path(model_name, AIRBRAKE),
             #    STABILIZER_FINS: animation_path(model_name, STABILIZER_FINS),
             }
@@ -341,8 +340,7 @@ class Vehicle:
         self.physics_node.add_shape(shape)
         self.vehicle = NodePath(self.physics_node)
         self.vehicle.set_collide_mask(CM_VEHICLE | CM_COLLIDE)
-        # TODO: Comment out during WECSificationself.environment.model
-        self.model.reparent_to(self.vehicle)
+        # self.model.reparent_to(self.vehicle)
 
         # Navigational aids
         self.target_node = self.app.loader.load_model('models/zup-axis')

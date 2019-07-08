@@ -57,7 +57,6 @@ class GameApp(wecs_panda3d.ECSShowBase):
             node=self.environment.np,
             body=self.environment.body,
             world=env_entity._uid,
-            scene=env_entity._uid,
         )
 
         base.add_system(wecs_panda3d.SetUpPhysics(), 0)
@@ -90,11 +89,11 @@ class GameApp(wecs_panda3d.ECSShowBase):
             hpr = -connector.get_hpr(spawn_point)
             pos = -connector.get_pos(spawn_point)
             self.vehicle_entities.append(base.ecs_world.create_entity(
+                wecs_panda3d.Scene(node=self.environment.model),
                 wecs_panda3d.PhysicsBody(
                     node=vehicle.vehicle,
                     body=vehicle.physics_node,
                     world=env_entity._uid,
-                    scene=env_entity._uid,
                 ),
                 wecs_panda3d.Model(node=vehicle.model),
                 wecs_panda3d.Position(value=None, xyz=pos, hpr=hpr),
