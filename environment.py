@@ -93,19 +93,6 @@ class Environment:
                 terrain_np.set_collide_mask(CM_TERRAIN | CM_COLLIDE)
                 self.physics_world.attach_rigid_body(terrain_node)
 
-    def add_physics_node(self, node):
-        self.physics_world.attach_rigid_body(node)
-
-    def update_physics(self):
-        dt = globalClock.dt
-        # FIXME: Pull from settings
-        min_frame_rate = 30
-        max_frame_time = 1.0 / min_frame_rate
-        if dt <= max_frame_time:
-            self.physics_world.do_physics(dt)
-        else:
-            self.physics_world.do_physics(max_frame_time)
-
     def get_spawn_points(self):
         spawn_nodes = [
             sp
