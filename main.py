@@ -37,14 +37,13 @@ class GameApp(wecs_panda3d.ECSShowBase):
         super().__init__(self)
         pman.shim.init(self)
         # self.render.setShaderAuto()
-
         self.audio3d = Audio3DManager(
             base.sfxManagerList[0],
             base.cam,
         )
-
-        self.accept('escape', sys.exit)
         self.set_frame_rate_meter(True)
+        self.accept('escape', sys.exit)
+        self.accept("f1", self.toggle_bullet_debug)
         self.accept('f12', self.debug)
 
         # Systems
@@ -60,8 +59,6 @@ class GameApp(wecs_panda3d.ECSShowBase):
         # Environment
 
         self.environment = Environment(self, map)
-        self.bullet_debug()
-        self.accept("f1", self.toggle_bullet_debug)
         env_entity = base.ecs_world.create_entity(
             wecs_panda3d.PhysicsWorld(
                 world=self.environment.physics_world,
@@ -75,6 +72,7 @@ class GameApp(wecs_panda3d.ECSShowBase):
             wecs_panda3d.Model(node=self.environment.model),
             wecs_panda3d.Position(value=panda3d.core.Vec3(0, 0, 0)),
         )
+        self.bullet_debug(env_entity)
 
         # Vehicles
 
@@ -150,14 +148,14 @@ class GameApp(wecs_panda3d.ECSShowBase):
         new_entity[CameraControllerECS].pyobj.set_vehicle(vehicle)
         new_entity[VehicleControllerECS].pyobj.set_vehicle(vehicle)
 
-    def bullet_debug(self):
+    def bullet_debug(self, env_entity):
         debug_node = BulletDebugNode('Debug')
         debug_node.show_wireframe(True)
         debug_node.show_constraints(True)
         debug_node.show_bounding_boxes(False)
         debug_node.show_normals(False)
         self.debug_np = self.render.attach_new_node(debug_node)
-        self.environment.physics_world.set_debug_node(debug_node)
+        env_entity[wecs_panda3d.PhysicsWorld].world.set_debug_node(debug_node)
 
     def toggle_bullet_debug(self):
         if self.debug_np.is_hidden():
