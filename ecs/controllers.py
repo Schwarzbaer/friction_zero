@@ -41,6 +41,18 @@ class GatherInputs(System):
             entity[VehicleControllerECS].pyobj.gather_inputs()
 
 
+class UpdateVehicles(System):
+    entity_filters = {
+        'vehicle': and_filter([
+            VehicleControllerECS,
+        ]),
+    }
+
+    def update(self, entities_by_filter):
+        for entity in entities_by_filter['vehicle']:
+            entity[FZVehicle].pyobj.game_loop()
+
+
 @Component()
 class CameraControllerECS:
     pyobj: object

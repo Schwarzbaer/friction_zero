@@ -24,6 +24,7 @@ from ecs.controllers import GatherInputs
 from ecs.controllers import VehicleControllerECS
 from ecs.controllers import CameraControllerECS
 from ecs.controllers import UpdateCamera
+from ecs.controllers import UpdateVehicles
 
 
 panda3d.core.load_prc_file(
@@ -35,6 +36,7 @@ class GameApp(wecs_panda3d.ECSShowBase):
     def __init__(self, map="lab"):
         super().__init__(self)
         pman.shim.init(self)
+        # self.render.setShaderAuto()
 
         self.audio3d = Audio3DManager(
             base.sfxManagerList[0],
@@ -42,9 +44,18 @@ class GameApp(wecs_panda3d.ECSShowBase):
         )
 
         self.accept('escape', sys.exit)
-        #self.render.setShaderAuto()
         self.set_frame_rate_meter(True)
         self.accept('f12', self.debug)
+
+        # Systems
+
+        base.add_system(wecs_panda3d.SetUpPhysics(), 0)
+        base.add_system(wecs_panda3d.LoadModels(), 1)
+        base.add_system(wecs_panda3d.DetermineTimestep(), 44)
+        base.add_system(GatherInputs(), 45)
+        base.add_system(UpdateVehicles(), 46)
+        base.add_system(UpdateCamera(), 47)
+        base.add_system(wecs_panda3d.DoPhysics(), 55)
 
         # Environment
 
@@ -57,17 +68,13 @@ class GameApp(wecs_panda3d.ECSShowBase):
                 clock=globalClock,
             ),
             wecs_panda3d.Scene(node=base.render),
+            wecs_panda3d.PhysicsBody(
+                node=self.environment.np,
+                body=self.environment.body,
+            ),
             wecs_panda3d.Model(node=self.environment.model),
             wecs_panda3d.Position(value=panda3d.core.Vec3(0, 0, 0)),
         )
-        env_entity[wecs_panda3d.PhysicsBody] = wecs_panda3d.PhysicsBody(
-            node=self.environment.np,
-            body=self.environment.body,
-            world=env_entity._uid,
-        )
-
-        base.add_system(wecs_panda3d.SetUpPhysics(), 0)
-        base.add_system(wecs_panda3d.LoadModels(), 1)
 
         # Vehicles
 
@@ -123,29 +130,6 @@ class GameApp(wecs_panda3d.ECSShowBase):
                 camera=base.cam,
             ),
         )
-
-        # Legacy references. If removing these breaks code, that code
-        # needs to be WECSified.
-        self.controller_listener = player_entity[InputControllerECS].listener
-        self.player_controller = player_entity[VehicleControllerECS].pyobj
-        self.player_camera = player_entity[CameraControllerECS].pyobj
-
-        # Systems / Tasks
-
-        base.add_system(wecs_panda3d.DetermineTimestep(), 44)
-        base.add_system(GatherInputs(), 45)
-        base.task_mgr.add(
-            self.game_loop_vehicles,
-            "game_loop_vehicles",
-            sort=46,
-        )
-        base.add_system(UpdateCamera(), 47)
-        base.add_system(wecs_panda3d.DoPhysics(), 55)
-
-    def game_loop_vehicles(self, task):
-        for vehicle in self.vehicles:
-            vehicle.game_loop()
-        return task.cont
 
     def next_vehicle(self):
         old_entity = self.vehicle_entities[self.player_vehicle_idx]
