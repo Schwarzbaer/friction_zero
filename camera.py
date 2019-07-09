@@ -56,7 +56,10 @@ def color_gradient(v):
 
 
 class CameraController(DirectObject):
-    def __init__(self, camera, vehicle, control):
+    def __init__(self):
+        pass
+
+    def init(self, camera, vehicle, control):
         self.vehicle = vehicle
         self.control = control
 

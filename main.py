@@ -10,6 +10,7 @@ import pman.shim
 from panda3d.core import NodePath
 from panda3d.bullet import BulletDebugNode
 
+from wecs.core import Component
 from wecs import panda3d as wecs_panda3d
 
 from environment import Environment
@@ -17,6 +18,12 @@ from vehicle import Vehicle
 from keybindings import DeviceListener
 from camera import CameraController
 from controller import VehicleController
+from ecs.controllers import FZVehicle
+from ecs.controllers import InputControllerECS
+from ecs.controllers import GatherInputs
+from ecs.controllers import VehicleControllerECS
+from ecs.controllers import CameraControllerECS
+from ecs.controllers import UpdateCamera
 
 
 panda3d.core.load_prc_file(
@@ -66,7 +73,7 @@ class GameApp(wecs_panda3d.ECSShowBase):
 
         vehicle_files = [
             'Ricardeaut_Magnesium',
-            #'Ricardeaut_Himony',
+            'Ricardeaut_Himony',
             #'Psyoni_Culture',
             #'Texopec_Nako',
             #'Texopec_Reaal',
@@ -89,6 +96,7 @@ class GameApp(wecs_panda3d.ECSShowBase):
             hpr = -connector.get_hpr(spawn_point)
             pos = -connector.get_pos(spawn_point)
             self.vehicle_entities.append(base.ecs_world.create_entity(
+                FZVehicle(pyobj=vehicle),
                 wecs_panda3d.Scene(node=self.environment.model),
                 wecs_panda3d.PhysicsBody(
                     node=vehicle.vehicle,
@@ -101,59 +109,62 @@ class GameApp(wecs_panda3d.ECSShowBase):
 
         # Controller objects
 
-        self.controller_listener = DeviceListener()
-
         self.player_vehicle_idx = 0
-        self.player_controller = VehicleController(
-            self,
-            self.vehicles[self.player_vehicle_idx],
-            self.controller_listener,
+        player_entity = self.vehicle_entities[self.player_vehicle_idx]
+        player_entity.add_component(InputControllerECS())
+        player_entity.add_component(
+            VehicleControllerECS(
+                pyobj=VehicleController(self),
+            ),
         )
-        self.player_camera = CameraController(
-            base.cam,
-            self.vehicles[self.player_vehicle_idx],
-            self.player_controller,
+        player_entity.add_component(
+            CameraControllerECS(
+                pyobj=CameraController(),
+                camera=base.cam,
+            ),
         )
+
+        # Legacy references. If removing these breaks code, that code
+        # needs to be WECSified.
+        self.controller_listener = player_entity[InputControllerECS].listener
+        self.player_controller = player_entity[VehicleControllerECS].pyobj
+        self.player_camera = player_entity[CameraControllerECS].pyobj
 
         # Systems / Tasks
 
         base.add_system(wecs_panda3d.DetermineTimestep(), 44)
-        base.task_mgr.add(
-            self.game_loop_gather_inputs,
-            "game_loop_gather_inputs",
-            sort=45,
-        )
+        base.add_system(GatherInputs(), 45)
         base.task_mgr.add(
             self.game_loop_vehicles,
             "game_loop_vehicles",
             sort=46,
         )
-        base.task_mgr.add(
-            self.game_loop_update_camera,
-            "game_loop_update_camera",
-            sort=47,
-        )
+        base.add_system(UpdateCamera(), 47)
         base.add_system(wecs_panda3d.DoPhysics(), 55)
-
-    def game_loop_gather_inputs(self, task):
-        self.player_controller.gather_inputs()
-        return task.cont
 
     def game_loop_vehicles(self, task):
         for vehicle in self.vehicles:
             vehicle.game_loop()
         return task.cont
 
-    def game_loop_update_camera(self, task):
-        self.player_camera.update()
-        return task.cont
-
     def next_vehicle(self):
+        old_entity = self.vehicle_entities[self.player_vehicle_idx]
         num_vehicles = len(self.vehicles)
         self.player_vehicle_idx = (self.player_vehicle_idx + 1) % num_vehicles
-        new_vehicle = self.vehicles[self.player_vehicle_idx]
-        self.player_camera.set_vehicle(new_vehicle)
-        self.player_controller.set_vehicle(new_vehicle)
+        new_entity = self.vehicle_entities[self.player_vehicle_idx]
+
+        new_entity.add_component(old_entity[InputControllerECS])
+        new_entity.add_component(old_entity[VehicleControllerECS])
+        new_entity.add_component(old_entity[CameraControllerECS])
+        del old_entity[InputControllerECS]
+        del old_entity[VehicleControllerECS]
+        del old_entity[CameraControllerECS]
+
+        # FIXME: WECSification: This should be looked up each frame by
+        # the System.
+        vehicle = new_entity[FZVehicle].pyobj
+        new_entity[CameraControllerECS].pyobj.set_vehicle(vehicle)
+        new_entity[VehicleControllerECS].pyobj.set_vehicle(vehicle)
 
     def bullet_debug(self):
         debug_node = BulletDebugNode('Debug')

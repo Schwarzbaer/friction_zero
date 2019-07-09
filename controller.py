@@ -53,8 +53,10 @@ DM_STUNT = 'dm_stunt'
 
 
 class VehicleController:
-    def __init__(self, app, vehicle, controller):
+    def __init__(self, app):
         self.app = app
+
+    def init(self, vehicle, controller):
         self.vehicle = vehicle
         self.controller = controller
         self.repulsors_active = True
@@ -351,5 +353,6 @@ class VehicleController:
                 STABILIZER_FINS: stabilizer_fins,
             }
         )
+
     def shock(self, x=0, y=0, z=0):
         self.vehicle.shock(x, y, z)
