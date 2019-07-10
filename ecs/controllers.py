@@ -50,7 +50,16 @@ class UpdateVehicles(System):
 
     def update(self, entities_by_filter):
         for entity in entities_by_filter['vehicle']:
-            entity[FZVehicle].pyobj.game_loop()
+            pyobj = entity[FZVehicle].pyobj
+            pyobj.gather_sensors(entity)
+            pyobj.ecu()
+            pyobj.apply_air_drag()
+            pyobj.apply_repulsors()
+            pyobj.apply_gyroscope()
+            pyobj.apply_thrusters()
+            pyobj.apply_airbrake()
+            pyobj.apply_stabilizer_fins()
+
 
 
 @Component()

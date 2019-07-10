@@ -462,17 +462,7 @@ class Vehicle:
         node.set_python_tag(THRUSTER_OVERHEAT_SOUND, sound)
         base.audio3d.attach_sound_to_object(sound, node)
 
-    def game_loop(self):
-        self.gather_sensors()
-        self.ecu()
-        self.apply_air_drag()
-        self.apply_repulsors()
-        self.apply_gyroscope()
-        self.apply_thrusters()
-        self.apply_airbrake()
-        self.apply_stabilizer_fins()
-
-    def gather_sensors(self):
+    def gather_sensors(self, entity):
         # Gather data repulsor ray collisions with ground
         repulsor_data = []
         for node in self.vehicle_data.repulsor_nodes:
@@ -484,7 +474,6 @@ class Vehicle:
                 node,
                 Vec3(0, 0, -max_distance),
             )
-            # FIXME: `self.app.environment.physics_world` is ugly.
             feeler = self.app.environment.physics_world.ray_test_closest(
                 base.render.get_relative_point(self.vehicle, data.position),
                 base.render.get_relative_point(self.vehicle, data.position + data.direction),
@@ -997,10 +986,3 @@ class Vehicle:
             #partName=STABILIZER_FINS,
         )
         # FIXME: Implement stabilizing effect
-
-    def shock(self, x=0, y=0, z=0):
-        self.physics_node.apply_impulse(
-            Vec3(0,0,0),
-            Vec3(random(), random(), random()) * 10,
-        )
-        self.physics_node.apply_torque_impulse(Vec3(x, y, z))
