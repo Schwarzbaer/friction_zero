@@ -6,11 +6,17 @@ auto_save = true
 [general]
 name = "Game"
 renderer = "none"
-material_mode = "legacy"
-physics_engine = "builtin"
 
 [build]
 asset_dir = "assets/"
 export_dir = "assets/"
 ignore_patterns = [ "*.blend1", "*.blend2",]
 converters = [ "native2bam", "blend2bam",]
+
+[blend2bam]
+material_mode = "legacy"
+physics_engine = "builtin"
+[[blend2bam.overrides]]
+pattern = "*_y.blend"
+pipeline = "egg"
+

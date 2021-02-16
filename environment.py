@@ -48,6 +48,7 @@ class EnvironmentData(ModelData):
 class Environment:
     def __init__(self, app, map_name):
         map_file = 'assets/maps/{}/{}.bam'.format(map_name, map_name)
+        map_file_yabee = 'assets/maps/{}/{}_y.bam'.format(map_name, map_name)
         self.app = app
 
         self.physics_world = BulletWorld()
@@ -60,16 +61,22 @@ class Environment:
         self.model = loader.load_model(map_file)
         self.model.reparent_to(self.np)
 
+        try:
+            self.model_yabee = loader.load_model(map_file_yabee)
+            self.model_yabee.reparent_to(self.model)
+        except OSError:
+            pass
+
         self.env_data = EnvironmentData(self.model, map_name, 'maps')
 
         self.physics_world.setGravity(self.env_data.gravity)
 
-        sky = self.model.find(SKYSPHERE)
-        sky.reparent_to(base.cam)
-        sky.set_bin('background', 0)
-        sky.set_depth_write(False)
-        sky.set_compass()
-        sky.set_light_off()
+        #sky = self.model.find(SKYSPHERE)
+        #sky.reparent_to(base.cam)
+        #sky.set_bin('background', 0)
+        #sky.set_depth_write(False)
+        #sky.set_compass()
+        #sky.set_light_off()
 
         # Bullet collision mesh
         collision_solids = self.model.find_all_matches(
